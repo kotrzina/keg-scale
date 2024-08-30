@@ -100,10 +100,10 @@ func (hr *HandlerRepository) metricsHandler() http.Handler {
 }
 
 // homepageHandler returns HTTP handler for homepage
-func homepageHandler() http.Handler {
+func (hr *HandlerRepository) homepageHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write([]byte(`<html>
-			<head><title>Planet exporter</title></head>
+			<head><title>Keg scale exporter</title></head>
 			<body>
 			<h1>Keg scale exporter</h1>
 			<p><a href="/metrics">Metrics</a></p>

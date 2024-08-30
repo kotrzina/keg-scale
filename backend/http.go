@@ -15,7 +15,7 @@ import (
 func NewRouter(hr *HandlerRepository) *http.ServeMux {
 	router := http.NewServeMux()
 	router.Handle("/metrics", hr.metricsHandler())
-	router.Handle("/", homepageHandler())
+	router.Handle("/", hr.homepageHandler())
 	router.HandleFunc("/api/scale/keg", hr.scaleValueHandler())
 	router.HandleFunc("/api/scale/ping", hr.scalePingHandler())
 	router.HandleFunc("/api/scale/status", hr.scaleStatusHandler())
