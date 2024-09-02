@@ -4,20 +4,13 @@ HttpConnection::HttpConnection()
 {
 }
 
-void HttpConnection::setup(char *ssid, char *pass, char *backendHost, int backendPort, char *backendPassword)
+void HttpConnection::setup()
 {
-    settings.ssid = ssid;
-    settings.pass = pass;
-    settings.backendHost = backendHost;
-    settings.backendPort = backendPort;
-    settings.backendPassword = backendPassword;
-
     connect();
 
     client = new WiFiClient();
     client->setTimeout(5000);
-    sslClient = new WiFiSSLClient();
-    backend = new HttpClient(*client, settings.backendHost, settings.backendPort);   
+    backend = new HttpClient(*client, BACKEND_IP, BACKEND_PORT);   
 }
 
 void HttpConnection::connect()
@@ -26,11 +19,11 @@ void HttpConnection::connect()
     status = WiFi.status();
     if (status != WL_CONNECTED)
     {
-        status = WiFi.begin(settings.ssid, settings.pass);
+        status = WiFi.begin(WIFI_SSID, WIFI_PASS);
 
         while (status != WL_CONNECTED)
         {
-            status = WiFi.begin(settings.ssid, settings.pass);
+            status = WiFi.begin(WIFI_SSID, WIFI_PASS);
             delay(5000);
         }
     }
@@ -46,7 +39,8 @@ void HttpConnection::sendValue(String value)
     backend->post("/api/scale/keg");
     backend->sendHeader(HTTP_HEADER_CONTENT_TYPE, "text/plain");
     backend->sendHeader(HTTP_HEADER_CONTENT_LENGTH, value.length());
-    backend->sendHeader("Authorization", settings.backendPassword);
+    backend->sendHeader("Authorization", BACKEND_PASSWORD);
+    backend->sendHeader("Host", BACKEND_HOST);
     backend->write((const byte*)value.c_str(), value.length());
     int statusCode = backend->responseStatusCode();
     backend->endRequest();
@@ -65,7 +59,8 @@ void HttpConnection::sendPing()
     backend->post("/api/scale/ping");
     backend->sendHeader(HTTP_HEADER_CONTENT_TYPE, "text/plain");
     backend->sendHeader(HTTP_HEADER_CONTENT_LENGTH, value.length());
-    backend->sendHeader("Authorization", settings.backendPassword);
+    backend->sendHeader("Authorization", BACKEND_PASSWORD);
+    backend->sendHeader("Host", BACKEND_HOST);
     backend->write((const byte*)value.c_str(), value.length());
     int statusCode = backend->responseStatusCode();
     backend->endRequest();

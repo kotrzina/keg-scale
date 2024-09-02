@@ -1,4 +1,3 @@
-#include "secrets.h"
 #include "httpConnection.h"
 #include <SoftwareSerial.h>
 
@@ -15,9 +14,7 @@ void setup()
     pinMode(8, OUTPUT); // error - red light
     pinMode(9, OUTPUT); // success - green light
 
-    // values are stored in secrets.h
-    conn.setup(WIFI_SSID, WIFI_PASS, BACKEND_HOST, BACKEND_PORT, BACKEND_PASSWORD);
-
+    conn.setup();
     conn.sendPing();
 }
 
@@ -50,7 +47,7 @@ void loop()
         scale.read();
     }
 
-    delay(300); // seems enought
+    delay(500);
 }
 
 // data are sent as ascii characters
@@ -134,13 +131,11 @@ void signal(bool success) {
 
 void signalError() {
     digitalWrite(8, HIGH);
-    delay(210);
-    digitalWrite(8, LOW);
+    digitalWrite(9, LOW);
 }
 
 void signalSuccess() {
     digitalWrite(9, HIGH);
-    delay(210);
-    digitalWrite(9, LOW);
+    digitalWrite(8, LOW);
 }
 

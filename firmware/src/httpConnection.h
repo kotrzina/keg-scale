@@ -3,12 +3,13 @@
 
 #include <WiFiNINA.h>
 #include <ArduinoHttpClient.h>
+#include "secrets.h"
 
 class HttpConnection
 {
 public:
     HttpConnection();
-    void setup(char *ssid, char *pass, char *backendHost, int backendPort, char *backendPassword);
+    void setup();
     void connect();
 
     void sendValue(String value);
@@ -18,15 +19,6 @@ public:
     int getCode();
 
 private:
-    struct moduleSettings
-    {
-        char *ssid;
-        char *pass;
-        char *backendHost;
-        int backendPort;
-        char *backendPassword;
-    } settings;
-
     int status = WL_IDLE_STATUS; // wifi status
     WiFiSSLClient *sslClient;
     WiFiClient *client;
