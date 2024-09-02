@@ -27,6 +27,7 @@ func NewMonitor() *Monitor {
 		}, []string{}),
 	}
 
+	reg.MustRegister(monitor.lastUpdate)
 	reg.MustRegister(monitor.kegWeight)
 
 	return monitor
