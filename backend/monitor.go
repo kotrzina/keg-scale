@@ -5,8 +5,9 @@ import "github.com/prometheus/client_golang/prometheus"
 // Monitor represents a Prometheus monitor
 // It contains Prometheus registry and all available metrics
 type Monitor struct {
-	Registry  *prometheus.Registry
-	kegWeight *prometheus.GaugeVec
+	Registry   *prometheus.Registry
+	kegWeight  *prometheus.GaugeVec
+	lastUpdate *prometheus.GaugeVec
 }
 
 // NewMonitor creates a new Monitor
@@ -15,8 +16,13 @@ func NewMonitor() *Monitor {
 	monitor := &Monitor{
 		Registry: reg,
 
+		lastUpdate: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Name: "scale_last_update",
+			Help: "Last update time",
+		}, []string{}),
+
 		kegWeight: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Name: "keg_weight",
+			Name: "scale_keg_weight",
 			Help: "Current weight of the keg in grams",
 		}, []string{}),
 	}

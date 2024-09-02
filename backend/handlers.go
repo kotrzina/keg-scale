@@ -49,6 +49,8 @@ func (hr *HandlerRepository) scalePingHandler() func(http.ResponseWriter, *http.
 		log.Printf("Ping received")
 
 		hr.scale.Ping()
+		hr.monitor.lastUpdate.WithLabelValues().SetToCurrentTime()
+
 		_, _ = w.Write([]byte("OK"))
 	}
 }
@@ -80,7 +82,10 @@ func (hr *HandlerRepository) scaleValueHandler() func(http.ResponseWriter, *http
 		}
 
 		log.Printf("Keg weight: %f", current)
+
 		hr.monitor.kegWeight.WithLabelValues().Set(current)
+		hr.monitor.lastUpdate.WithLabelValues().SetToCurrentTime()
+
 		hr.scale.AddMeasurement(current)
 		hr.scale.Ping() // we can also ping with the new value
 
