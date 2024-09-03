@@ -50,8 +50,11 @@ void HttpConnection::sendValue(String value)
 
 void HttpConnection::sendPing()
 {
-    String value = "ping";
     connect();
+
+    String value = "ping;";
+    long rssi = WiFi.RSSI();
+    value.concat(String(rssi));
     
     backend->beginRequest();
     backend->setHttpResponseTimeout(5000);

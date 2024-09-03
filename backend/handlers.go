@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 )
 
 type HandlerRepository struct {
@@ -46,9 +47,27 @@ func (hr *HandlerRepository) scalePingHandler() func(http.ResponseWriter, *http.
 			return
 		}
 
-		log.Printf("Ping received")
+		body, err := io.ReadAll(r.Body)
+		fmt.Printf("body: %q\n", body)
+		if err != nil {
+			http.Error(w, "Could not read post body", http.StatusInternalServerError)
+			return
+		}
+
+		chunks := strings.Split(string(body), ";")
+		if len(chunks) != 2 {
+			http.Error(w, "Invalid body", http.StatusBadRequest)
+			return
+		}
+
+		rssi, err := strconv.ParseFloat(chunks[1], 64)
+		if err != nil {
+			http.Error(w, "Could not convert RSSI from scale to number", http.StatusBadRequest)
+			return
+		}
 
 		hr.scale.Ping()
+		hr.monitor.scaleWifiRssi.WithLabelValues().Set(rssi)
 		hr.monitor.lastUpdate.WithLabelValues().SetToCurrentTime()
 
 		_, _ = w.Write([]byte("OK"))
