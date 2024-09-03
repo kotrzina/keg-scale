@@ -7,14 +7,21 @@ import (
 )
 
 type Config struct {
+	PrometheusUrl      string
+	PrometheusUser     string
+	PrometheusPassword string
+
 	AuthToken  string
 	BufferSize int
 }
 
 func NewConfig() *Config {
 	return &Config{
-		AuthToken:  getStringEnvDefault("AUTH_TOKEN", "test"),
-		BufferSize: getIntEnvDefault("BUFFER_SIZE", 1000),
+		PrometheusUrl:      getStringEnvDefault("PROMETHEUS_URL", "http://localhost:9090"),
+		PrometheusUser:     getStringEnvDefault("PROMETHEUS_USER", ""),
+		PrometheusPassword: getStringEnvDefault("PROMETHEUS_PASSWORD", ""),
+		AuthToken:          getStringEnvDefault("AUTH_TOKEN", "test"),
+		BufferSize:         getIntEnvDefault("BUFFER_SIZE", 1000),
 	}
 }
 
