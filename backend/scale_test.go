@@ -2,6 +2,30 @@ package main
 
 import "testing"
 
+func TestScale_GetValidCount(t *testing.T) {
+	type testcase struct {
+		size    int
+		weights []float64
+		count   int
+	}
+
+	testcases := []testcase{
+		{10, []float64{}, 0},
+		{10, []float64{10, 20, 30, 40, 50, 60}, 6},
+		{1000, []float64{10, 20, 30, 40, 50, 60}, 6},
+		{4, []float64{10, 20, 30, 40, 50, 60}, 4}, // buffer is full and overflown
+	}
+
+	for _, tc := range testcases {
+		s := CreateScaleWithMeasurements(tc.size, tc.weights...)
+		count := s.GetValidCount()
+
+		if count != tc.count {
+			t.Errorf("Expected count to be %d, got %d", tc.count, count)
+		}
+	}
+}
+
 func TestScale_SumLastN(t *testing.T) {
 	type testcase struct {
 		size    int

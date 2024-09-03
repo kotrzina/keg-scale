@@ -67,6 +67,23 @@ func (s *Scale) Ping() {
 	s.LastOk = time.Now()
 }
 
+// GetValidCount returns the number of valid measurements
+func (s *Scale) GetValidCount() int {
+	s.mux.Lock()
+	defer s.mux.Unlock()
+
+	count := 0
+	for _, m := range s.Measurements {
+		if m.At.Unix() > 0 {
+			count++
+		} else {
+			return count
+		}
+	}
+
+	return count
+}
+
 // HasLastN returns true if the last n measurements are not empty
 func (s *Scale) HasLastN(n int) bool {
 	if n > s.size {
