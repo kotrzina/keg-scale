@@ -2,6 +2,31 @@ package main
 
 import "testing"
 
+func TestScale_GetMeasurement(t *testing.T) {
+	type testcase struct {
+		size    int
+		weights []float64
+		index   int
+		weight  float64
+	}
+
+	testcases := []testcase{
+		{10, []float64{10, 20, 30, 40, 50, 60}, 0, 60},
+		{10, []float64{10, 20, 30, 40, 50, 60}, 1, 50},
+		{10, []float64{10, 20, 30, 40, 50, 60}, 5, 10},
+		{4, []float64{10, 20, 30, 40, 50, 60}, 2, 40}, // overflown buffer
+	}
+
+	for _, tc := range testcases {
+		s := CreateScaleWithMeasurements(tc.size, tc.weights...)
+		measurement := s.GetMeasurement(tc.index)
+
+		if measurement.Weight != tc.weight {
+			t.Errorf("Expected weight to be %f, got %f", tc.weight, measurement.Weight)
+		}
+	}
+}
+
 func TestScale_GetValidCount(t *testing.T) {
 	type testcase struct {
 		size    int

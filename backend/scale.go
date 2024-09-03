@@ -52,6 +52,25 @@ func (s *Scale) AddMeasurement(weight float64) {
 	}
 }
 
+func (s *Scale) GetLastMeasurement() Measurement {
+	return s.GetMeasurement(0)
+}
+
+func (s *Scale) GetMeasurement(index int) Measurement {
+	if index > s.GetValidCount() || index > s.size {
+		return Measurement{
+			Weight: 0,
+			Index:  -1,
+		}
+	}
+
+	s.mux.Lock()
+	defer s.mux.Unlock()
+
+	idx := (s.index - index + s.size) % s.size
+	return s.Measurements[idx]
+}
+
 func (s *Scale) JsonState() ([]byte, error) {
 	s.mux.Lock()
 	defer s.mux.Unlock()
