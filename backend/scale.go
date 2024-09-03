@@ -6,8 +6,6 @@ import (
 	"time"
 )
 
-const MEASUREMENTS = 10
-
 type Measurement struct {
 	Index  int       `json:"index"`
 	Weight float64   `json:"weight"`

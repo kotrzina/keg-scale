@@ -4,10 +4,10 @@ import "github.com/prometheus/client_golang/prometheus"
 
 func main() {
 	monitor := NewMonitor()
-	monitor.kegWeight.With(prometheus.Labels{}).Set(1000)
+	monitor.kegWeight.With(prometheus.Labels{}).Set(1000) // @todo: get value from prometheus
 
 	config := NewConfig()
-	scale := NewScale(MEASUREMENTS)
+	scale := NewScale(config.BufferSize)
 
 	StartServer(NewRouter(&HandlerRepository{
 		scale:   scale,
