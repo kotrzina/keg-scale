@@ -93,6 +93,21 @@ func (hr *HandlerRepository) scaleValueHandler() func(http.ResponseWriter, *http
 	}
 }
 
+func (hr *HandlerRepository) scalePrintHandler() func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		c := hr.scale.GetValidCount()
+		for i := 0; i < c; i++ {
+			m := hr.scale.GetMeasurement(i)
+			_, _ = w.Write([]byte(fmt.Sprintf("%.2f;", m.Weight)))
+		}
+	}
+}
+
 // metricsHandler returns HTTP handler for metrics endpoint
 func (hr *HandlerRepository) metricsHandler() http.Handler {
 	return promhttp.HandlerFor(

@@ -92,8 +92,9 @@ func (s *Scale) GetValidCount() int {
 	defer s.mux.Unlock()
 
 	count := 0
-	for _, m := range s.Measurements {
-		if m.At.Unix() > 0 {
+	for i := 0; i < s.size; i++ {
+		idx := (s.index - i + s.size) % s.size
+		if s.Measurements[idx].At.Unix() > 0 {
 			count++
 		} else {
 			return count

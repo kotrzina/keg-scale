@@ -19,6 +19,7 @@ func NewRouter(hr *HandlerRepository) *http.ServeMux {
 	router.HandleFunc("/api/scale/keg", hr.scaleValueHandler())
 	router.HandleFunc("/api/scale/ping", hr.scalePingHandler())
 	router.HandleFunc("/api/scale/status", hr.scaleStatusHandler())
+	router.HandleFunc("/api/scale/print", hr.scalePrintHandler())
 
 	return router
 }

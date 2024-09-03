@@ -1,5 +1,5 @@
-POST http://localhost:8080
-
+POST http://localhost:8080/api/scale/keg
 Content-Type: text/plain
+Authorization: test
 
-74444.8
+74441.5521
