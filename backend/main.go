@@ -3,7 +3,9 @@ package main
 import (
 	"github.com/joho/godotenv"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/sirupsen/logrus"
 	"log"
+	"os"
 )
 
 func main() {
@@ -11,6 +13,8 @@ func main() {
 	// we don't care about errors here
 	_ = godotenv.Load(".env")
 	config := NewConfig()
+
+	logger := createLogger()
 
 	promector := NewPromector(config.PrometheusUrl, config.PrometheusUser, config.PrometheusPassword)
 	scaleCurrentValue, err := promector.GetLastValue("scale_keg_weight")
@@ -31,5 +35,14 @@ func main() {
 		scale:   scale,
 		config:  config,
 		monitor: monitor,
+		logger:  logger,
 	}), 8080)
+}
+
+func createLogger() *logrus.Logger {
+	logger := logrus.New()
+	logger.SetOutput(os.Stdout)
+	logger.SetLevel(logrus.InfoLevel)
+
+	return logger
 }

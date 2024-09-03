@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/sirupsen/logrus"
 	"io"
 	"log"
 	"net/http"
@@ -14,10 +15,13 @@ type HandlerRepository struct {
 	scale   *Scale
 	config  *Config
 	monitor *Monitor
+	logger  *logrus.Logger
 }
 
 func (hr *HandlerRepository) scaleStatusHandler() func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
+		hr.logger.Info("Scale status requested")
+
 		if r.Method != http.MethodGet {
 			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 			return
@@ -36,6 +40,8 @@ func (hr *HandlerRepository) scaleStatusHandler() func(http.ResponseWriter, *htt
 
 func (hr *HandlerRepository) scalePingHandler() func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
+		hr.logger.Info("Scale pinged")
+
 		if r.Method != http.MethodPost {
 			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 			return
@@ -48,7 +54,6 @@ func (hr *HandlerRepository) scalePingHandler() func(http.ResponseWriter, *http.
 		}
 
 		body, err := io.ReadAll(r.Body)
-		fmt.Printf("body: %q\n", body)
 		if err != nil {
 			http.Error(w, "Could not read post body", http.StatusInternalServerError)
 			return
@@ -76,6 +81,8 @@ func (hr *HandlerRepository) scalePingHandler() func(http.ResponseWriter, *http.
 
 func (hr *HandlerRepository) scaleValueHandler() func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
+		hr.logger.Info("Scale value sent")
+
 		if r.Method != http.MethodPost {
 			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 			return
@@ -88,7 +95,6 @@ func (hr *HandlerRepository) scaleValueHandler() func(http.ResponseWriter, *http
 		}
 
 		body, err := io.ReadAll(r.Body)
-		fmt.Printf("body: %q\n", body)
 		if err != nil {
 			http.Error(w, "Could not read post body", http.StatusInternalServerError)
 			return
