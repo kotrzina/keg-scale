@@ -19,7 +19,9 @@ function Dashboard() {
 
     async function update() {
         try {
-            const data = await fetch("/api/scale/dashboard")
+            // REACT_APP_BACKEND_PREFIX is defined in .env file for development
+            // and it is empty for production because the backend is on the same domain and port
+            const data = await fetch(process.env.REACT_APP_BACKEND_PREFIX + "/api/scale/dashboard")
             const json = await data.json()
 
             setWeight(json.weight_formated)

@@ -4,4 +4,4 @@
 /firmware/headers
 /firmware/src/secrets.h
 
-/backend/.env
+.env
