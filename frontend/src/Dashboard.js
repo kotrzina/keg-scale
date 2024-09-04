@@ -22,7 +22,12 @@ function Dashboard() {
         try {
             // REACT_APP_BACKEND_PREFIX is defined in .env file for development
             // and it is empty for production because the backend is on the same domain and port
-            const data = await fetch(process.env.REACT_APP_BACKEND_PREFIX + "/api/scale/dashboard")
+            let url = "/api/scale/dashboard"
+            if (process.env.REACT_APP_BACKEND_PREFIX !== undefined) {
+                url = process.env.REACT_APP_BACKEND_PREFIX + "/api/scale/dashboard"
+            }
+
+            const data = await fetch(url)
             const json = await data.json()
 
             setWeight(json.weight_formated)
