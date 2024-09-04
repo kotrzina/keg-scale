@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
@@ -9,6 +10,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type HandlerRepository struct {
@@ -71,7 +73,7 @@ func (hr *HandlerRepository) scalePingHandler() func(http.ResponseWriter, *http.
 			return
 		}
 
-		hr.scale.Ping()
+		hr.scale.SetRssi(rssi)
 		hr.monitor.scaleWifiRssi.WithLabelValues().Set(rssi)
 		hr.monitor.lastUpdate.WithLabelValues().SetToCurrentTime()
 
@@ -144,15 +146,40 @@ func (hr *HandlerRepository) metricsHandler() http.Handler {
 	)
 }
 
-// homepageHandler returns HTTP handler for homepage
-func (hr *HandlerRepository) homepageHandler() http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		_, _ = w.Write([]byte(`<html>
-			<head><title>Keg scale exporter</title></head>
-			<body>
-			<h1>Keg scale exporter</h1>
-			<p><a href="/metrics">Metrics</a></p>
-			</body>
-			</html>`))
-	})
+func (hr *HandlerRepository) scaleDashboardHandler() func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		type output struct {
+			Weight             float64 `json:"weight"`
+			WeightFormated     string  `json:"weight_formated"`
+			LastUpdate         string  `json:"last_update"`
+			LastUpdateDuration string  `json:"last_update_duration"`
+			Rssi               float64 `json:"rssi"`
+		}
+
+		if !hr.scale.HasLastN(1) {
+			// we don't have any measurements yet
+			http.Error(w, "No measurements yet", http.StatusTooEarly)
+			return
+		}
+
+		last := hr.scale.GetLastMeasurement()
+
+		data := output{
+			Weight:             last.Weight,
+			WeightFormated:     fmt.Sprintf("%.2f", last.Weight/1000),
+			LastUpdate:         last.At.Format("2006-01-02 15:04:05"),
+			LastUpdateDuration: time.Since(last.At).String(),
+			Rssi:               hr.scale.Rssi,
+		}
+
+		res, err := json.Marshal(data)
+
+		if err != nil {
+			http.Error(w, "Could not marshal data to JSON", http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(res)
+	}
 }

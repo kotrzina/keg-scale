@@ -21,6 +21,7 @@ type Scale struct {
 
 	IsOk   bool      `json:"is_ok"`
 	LastOk time.Time `json:"last_ok"`
+	Rssi   float64   `json:"rssi"`
 }
 
 func NewScale(bufferSize int) *Scale {
@@ -84,6 +85,13 @@ func (s *Scale) Ping() {
 
 	s.IsOk = true
 	s.LastOk = time.Now()
+}
+
+func (s *Scale) SetRssi(rssi float64) {
+	s.mux.Lock()
+	defer s.mux.Unlock()
+
+	s.Rssi = rssi
 }
 
 // GetValidCount returns the number of valid measurements

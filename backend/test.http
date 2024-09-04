@@ -1,5 +1,13 @@
+### Value
 POST http://localhost:8080/api/scale/keg
 Content-Type: text/plain
 Authorization: test
 
-74441.5521
+24251.55
+
+### Ping
+POST http://localhost:8080/api/scale/ping
+Content-Type: text/plain
+Authorization: test
+
+ping;-74

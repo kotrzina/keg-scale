@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path"
+	"strings"
 	"syscall"
 	"time"
 
@@ -18,13 +20,27 @@ import (
 func NewRouter(hr *HandlerRepository) *mux.Router {
 
 	router := mux.NewRouter()
+
 	router.Use(func(handler http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			start := time.Now()
-			handler.ServeHTTP(w, r)
+
+			w.Header().Set("Access-Control-Allow-Origin", "*")
+			w.Header().Set("Access-Control-Allow-Credentials", "true")
+			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
+			w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT, DELETE")
+
+			if r.Method == "OPTIONS" {
+				w.WriteHeader(204)
+				return
+			}
+
+			lrw := NewLoggingResponseWriter(w)
+			handler.ServeHTTP(lrw, r)
 			d := time.Since(start)
 
 			hr.logger.WithFields(logrus.Fields{
+				"status":     lrw.statusCode,
 				"method":     r.Method,
 				"path":       r.URL.Path,
 				"remoteAddr": r.RemoteAddr,
@@ -35,13 +51,39 @@ func NewRouter(hr *HandlerRepository) *mux.Router {
 	})
 
 	router.Handle("/metrics", hr.metricsHandler())
-	router.Handle("/", hr.homepageHandler())
 	router.HandleFunc("/api/scale/keg", hr.scaleValueHandler())
 	router.HandleFunc("/api/scale/ping", hr.scalePingHandler())
 	router.HandleFunc("/api/scale/status", hr.scaleStatusHandler())
 	router.HandleFunc("/api/scale/print", hr.scalePrintHandler())
+	router.HandleFunc("/api/scale/dashboard", hr.scaleDashboardHandler())
+
+	// frontend
+	dir := "./../frontend/build/"
+	router.PathPrefix("/").Handler(http.StripPrefix("/", reactRedirect(http.FileServer(http.Dir(dir)), dir)))
 
 	return router
+}
+
+// reactRedirect is a middleware that redirects all requests to the React app (index.html)
+// it checks if the requested file exists and if not it redirects to index.html
+func reactRedirect(server http.Handler, dir string) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Println(r.URL.Path)
+		// If the requested file exists then return if; otherwise return index.html (file server default page)
+		if r.URL.Path != "/" {
+			fullPath := dir + strings.TrimPrefix(path.Clean(r.URL.Path), "/")
+			_, err := os.Stat(fullPath)
+			if err != nil {
+				if !os.IsNotExist(err) {
+					panic(err)
+				}
+				// Requested file does not exist so we return the default (resolves to index.html)
+				r.URL.Path = "/"
+			}
+		}
+
+		server.ServeHTTP(w, r)
+	})
 }
 
 // StartServer starts HTTP server
@@ -76,4 +118,18 @@ func StartServer(router *mux.Router, port int) {
 	}
 
 	log.Printf("Server Exited Properly")
+}
+
+type loggingResponseWriter struct {
+	http.ResponseWriter
+	statusCode int
+}
+
+func NewLoggingResponseWriter(w http.ResponseWriter) *loggingResponseWriter {
+	return &loggingResponseWriter{w, http.StatusOK}
+}
+
+func (lrw *loggingResponseWriter) WriteHeader(code int) {
+	lrw.statusCode = code
+	lrw.ResponseWriter.WriteHeader(code)
 }
