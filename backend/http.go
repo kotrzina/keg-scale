@@ -58,7 +58,7 @@ func NewRouter(hr *HandlerRepository) *mux.Router {
 	router.HandleFunc("/api/scale/dashboard", hr.scaleDashboardHandler())
 
 	// frontend
-	dir := "./../frontend/build/"
+	dir := hr.config.FrontendPath
 	router.PathPrefix("/").Handler(http.StripPrefix("/", reactRedirect(http.FileServer(http.Dir(dir)), dir)))
 
 	return router
@@ -68,7 +68,6 @@ func NewRouter(hr *HandlerRepository) *mux.Router {
 // it checks if the requested file exists and if not it redirects to index.html
 func reactRedirect(server http.Handler, dir string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println(r.URL.Path)
 		// If the requested file exists then return if; otherwise return index.html (file server default page)
 		if r.URL.Path != "/" {
 			fullPath := dir + strings.TrimPrefix(path.Clean(r.URL.Path), "/")

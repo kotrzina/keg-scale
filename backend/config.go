@@ -13,6 +13,8 @@ type Config struct {
 
 	AuthToken  string
 	BufferSize int
+
+	FrontendPath string
 }
 
 func NewConfig() *Config {
@@ -22,6 +24,7 @@ func NewConfig() *Config {
 		PrometheusPassword: getStringEnvDefault("PROMETHEUS_PASSWORD", ""),
 		AuthToken:          getStringEnvDefault("AUTH_TOKEN", "test"),
 		BufferSize:         getIntEnvDefault("BUFFER_SIZE", 1000),
+		FrontendPath:       getStringEnvDefault("FRONTEND_PATH", "./../frontend/build/"),
 	}
 }
 
