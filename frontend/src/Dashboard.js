@@ -13,7 +13,7 @@ function Dashboard() {
         void update()
         const interval = setInterval(() => {
             void update()
-        }, 5000)
+        }, 10000)
         return () => clearInterval(interval)
     }, []);
 
