@@ -16,3 +16,11 @@
 1. Arduino does not process all messages -> actual value is processed in Arduino every ~5 seconds.
 1. Arduino sends actual value over HTTP to Backend service written in GoLang.
 1. Backend processes values and expose them as metrics for Prometheus.
+
+## Components:
+
+- `firmware` - Firmware for Arduino
+- `backend` - Backend service written in GoLang
+- `frontend` - Frontend service written in React
+
+!! Backend and frontend are packed together in a single Docker container.
