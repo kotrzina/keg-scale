@@ -40,6 +40,53 @@ func (hr *HandlerRepository) scaleStatusHandler() func(http.ResponseWriter, *htt
 	}
 }
 
+func (hr *HandlerRepository) scaleMessageHandler() func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		if r.Method != http.MethodPost {
+			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		auth := r.Header.Get("Authorization")
+		if auth != hr.config.AuthToken {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			http.Error(w, "Could not read post body", http.StatusInternalServerError)
+			return
+		}
+
+		message, err := ParseScaleMessage(string(body))
+		if err != nil {
+			hr.logger.Warnf("Could not parse scale message: %s because %v", string(body), err)
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		hr.scale.Ping()
+		hr.monitor.lastUpdate.WithLabelValues().SetToCurrentTime()
+
+		if message.MessageType == PushMessageType {
+			hr.scale.AddMeasurement(message.Value)
+			hr.monitor.kegWeight.WithLabelValues().Set(message.Value)
+
+			hr.logger.WithFields(logrus.Fields{
+				"message_id": message.MessageId,
+			}).Infof("Scale new value: %0.2f", message.Value)
+		}
+		if message.MessageType == PushMessageType || message.MessageType == PingMessageType {
+			hr.scale.SetRssi(message.Rssi)
+		}
+
+		_, _ = w.Write([]byte("OK"))
+	}
+}
+
+// @deprecated - will be replaced by scaleMessageHandler
 func (hr *HandlerRepository) scalePingHandler() func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		hr.logger.Info("Scale pinged")
@@ -81,6 +128,7 @@ func (hr *HandlerRepository) scalePingHandler() func(http.ResponseWriter, *http.
 	}
 }
 
+// @deprecated - will be replaced by scaleMessageHandler
 func (hr *HandlerRepository) scaleValueHandler() func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		hr.logger.Info("Scale value sent")
