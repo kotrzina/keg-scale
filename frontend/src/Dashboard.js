@@ -2,7 +2,6 @@ import {Container, Row, Toast} from "react-bootstrap";
 import {useEffect, useState} from "react";
 import "./Dashboard.css";
 
-
 function Dashboard() {
 
     const [weight, setWeight] = useState(0);
@@ -11,16 +10,16 @@ function Dashboard() {
     const [rssi, setRssi] = useState(1);
 
     useEffect(() => {
-        update()
+        void update()
         const interval = setInterval(() => {
-            update()
+            void update()
         }, 5000)
         return () => clearInterval(interval)
     }, []);
 
     async function update() {
         try {
-            const data = await fetch("http://localhost:8080/api/scale/dashboard")
+            const data = await fetch("/api/scale/dashboard")
             const json = await data.json()
 
             setWeight(json.weight_formated)
