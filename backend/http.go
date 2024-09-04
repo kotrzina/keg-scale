@@ -3,17 +3,37 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/gorilla/mux"
 )
 
 // NewRouter creates a new HTTP router
-func NewRouter(hr *HandlerRepository) *http.ServeMux {
-	router := http.NewServeMux()
+func NewRouter(hr *HandlerRepository) *mux.Router {
+
+	router := mux.NewRouter()
+	router.Use(func(handler http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			start := time.Now()
+			handler.ServeHTTP(w, r)
+			d := time.Since(start)
+
+			hr.logger.WithFields(logrus.Fields{
+				"method":     r.Method,
+				"path":       r.URL.Path,
+				"remoteAddr": r.RemoteAddr,
+				"durationMs": d.Milliseconds(),
+				"duration":   d.String(),
+			}).Info("Request")
+		})
+	})
+
 	router.Handle("/metrics", hr.metricsHandler())
 	router.Handle("/", hr.homepageHandler())
 	router.HandleFunc("/api/scale/keg", hr.scaleValueHandler())
@@ -26,7 +46,7 @@ func NewRouter(hr *HandlerRepository) *http.ServeMux {
 
 // StartServer starts HTTP server
 // It listens for SIGINT and SIGTERM signals and gracefully stops the server
-func StartServer(router *http.ServeMux, port int) {
+func StartServer(router *mux.Router, port int) {
 	srv := &http.Server{
 		Addr:    fmt.Sprintf(":%d", port),
 		Handler: router,

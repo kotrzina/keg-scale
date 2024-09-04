@@ -42,6 +42,7 @@ func main() {
 func createLogger() *logrus.Logger {
 	logger := logrus.New()
 	logger.SetOutput(os.Stdout)
+	logger.SetFormatter(&logrus.JSONFormatter{})
 	logger.SetLevel(logrus.InfoLevel)
 
 	return logger
