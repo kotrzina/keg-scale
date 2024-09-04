@@ -4,12 +4,13 @@ import "./Dashboard.css";
 
 function Dashboard() {
 
-    const [weight, setWeight] = useState(0);
+    const [weight, setWeight] = useState("error");
     const [lastUpdate, setLastUpdate] = useState("");
 
     const [rssi, setRssi] = useState(1);
 
     useEffect(() => {
+        document.title = "Keg Scale Dashboard"
         void update()
         const interval = setInterval(() => {
             void update()
