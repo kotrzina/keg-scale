@@ -88,7 +88,7 @@ function Dashboard() {
                     </Toast.Header>
                     <Toast.Body>
                         <div className={scale.is_ok ? "cell cell-green" : "cell cell-red"}>
-                            {scale.is_ok ? "OK" : "ERROR"}
+                            {scale.is_ok ? "OK" : "OFFLINE"}
                         </div>
                     </Toast.Body>
                 </Toast>
