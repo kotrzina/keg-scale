@@ -227,10 +227,10 @@ func (hr *HandlerRepository) scaleDashboardHandler() func(http.ResponseWriter, *
 			LastWeight:         last.Weight,
 			LastWeightFormated: fmt.Sprintf("%.2f", last.Weight/1000),
 			LastAt:             last.At.Format("2006-01-02 15:04:05"),
-			LastAtDuration:     durafmt.Parse(time.Since(last.At)).LimitFirstN(2).Format(units),
+			LastAtDuration:     durafmt.Parse(time.Since(last.At).Round(time.Second)).LimitFirstN(2).Format(units),
 			Rssi:               hr.scale.Rssi,
 			LastUpdate:         hr.scale.LastOk.Format("2006-01-02 15:04:05"),
-			LastUpdateDuration: durafmt.Parse(time.Since(hr.scale.LastOk)).LimitFirstN(2).Format(units),
+			LastUpdateDuration: durafmt.Parse(time.Since(hr.scale.LastOk).Round(time.Second)).LimitFirstN(2).Format(units),
 		}
 
 		res, err := json.Marshal(data)
