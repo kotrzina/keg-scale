@@ -29,45 +29,32 @@ void HttpConnection::connect()
     }
 }
 
-void HttpConnection::sendValue(String value)
-{
-    connect();
-    
-    backend->beginRequest();
-    backend->setHttpResponseTimeout(5000);
-    backend->setTimeout(5000);
-    backend->post("/api/scale/keg");
-    backend->sendHeader(HTTP_HEADER_CONTENT_TYPE, "text/plain");
-    backend->sendHeader(HTTP_HEADER_CONTENT_LENGTH, value.length());
-    backend->sendHeader("Authorization", BACKEND_PASSWORD);
-    backend->sendHeader("Host", BACKEND_HOST);
-    backend->write((const byte*)value.c_str(), value.length());
-    int statusCode = backend->responseStatusCode();
-    backend->endRequest();
-    
-    lastCode = statusCode;
-}
-
-void HttpConnection::sendPing()
+void HttpConnection::push(String message, String value)
 {
     connect();
 
-    String value = "ping;";
+    // format:
+    // messageType|messageId|rssi|value
+    message.concat("|");
+    message.concat(String(millis() / 1000));
+    message.concat("|");
     long rssi = WiFi.RSSI();
-    value.concat(String(rssi));
+    message.concat(String(rssi));
+    message.concat("|");
+    message.concat(String(value));
     
     backend->beginRequest();
     backend->setHttpResponseTimeout(5000);
     backend->setTimeout(5000);
-    backend->post("/api/scale/ping");
+    backend->post("/api/scale/push");
     backend->sendHeader(HTTP_HEADER_CONTENT_TYPE, "text/plain");
-    backend->sendHeader(HTTP_HEADER_CONTENT_LENGTH, value.length());
+    backend->sendHeader(HTTP_HEADER_CONTENT_LENGTH, message.length());
     backend->sendHeader("Authorization", BACKEND_PASSWORD);
     backend->sendHeader("Host", BACKEND_HOST);
-    backend->write((const byte*)value.c_str(), value.length());
+    backend->write((const byte*)message.c_str(), message.length());
     int statusCode = backend->responseStatusCode();
     backend->endRequest();
-
+    
     lastCode = statusCode;
 }
 

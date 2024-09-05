@@ -14,8 +14,30 @@ void setup()
     pinMode(8, OUTPUT); // error - red light
     pinMode(9, OUTPUT); // success - green light
 
+    digitalWrite(8, HIGH);
+    digitalWrite(9, HIGH);
+    delay(150);
+    digitalWrite(8, LOW);
+    digitalWrite(9, LOW);
+    delay(150);
+    digitalWrite(8, HIGH);
+    digitalWrite(9, HIGH);
+    delay(150);
+    digitalWrite(8, LOW);
+    digitalWrite(9, LOW);
+
     conn.setup();
-    conn.sendPing();
+    conn.push("ping", "");
+    if (conn.success()) {
+        digitalWrite(9, HIGH);
+        delay(150);
+        digitalWrite(9, LOW);
+        delay(150);
+        digitalWrite(9, HIGH);
+        delay(150);
+        digitalWrite(9, LOW);
+        delay(150);
+    }
 }
 
 int value = 1; // imposible random value - always send value after restart
@@ -28,7 +50,7 @@ void loop()
 
     // send ping every minute
     if (lastPing + 60 < ts) {
-        conn.sendPing();
+        conn.push("ping", "");
         signal(conn.success());
         lastPing = ts;
     }
@@ -92,7 +114,7 @@ void readScale() {
 
             if (p == 0x6b) { // there needs to be "k" - no idea why
                 if (n != value) { // the value is not the same as in the last measurement
-                    conn.sendValue(String(n)); // send value to backend
+                    conn.push("push", String(n)); // send value to backend
                     if (conn.success()) {
                         value = n; // update global value
                         signalSuccess();

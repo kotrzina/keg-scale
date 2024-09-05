@@ -12,9 +12,8 @@ public:
     void setup();
     void connect();
 
-    void sendValue(String value);
-    void sendPing();
-
+    void push(String message, String value);
+    
     bool success();
     int getCode();
 
