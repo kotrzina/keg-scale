@@ -24,6 +24,7 @@ function Dashboard() {
             void update()
         }, 5000)
         return () => clearInterval(interval)
+        // eslint-disable-next-line
     }, []);
 
     async function update() {
