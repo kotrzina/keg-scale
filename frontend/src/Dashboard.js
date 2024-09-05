@@ -4,17 +4,25 @@ import "./Dashboard.css";
 
 function Dashboard() {
 
-    const [weight, setWeight] = useState("error");
-    const [lastUpdate, setLastUpdate] = useState("");
+    const defaultScale = {
+        is_ok: false,
+        last_weight: 0.0,
+        last_weight_formated: "0.0",
+        last_at: "0",
+        last_at_duration: "0",
+        rssi: 0,
+        last_update: 0,
+        last_update_duration: 0,
+    }
 
-    const [rssi, setRssi] = useState(1);
+    const [scale, setScale] = useState(defaultScale);
 
     useEffect(() => {
         document.title = "Keg Scale Dashboard"
         void update()
         const interval = setInterval(() => {
             void update()
-        }, 10000)
+        }, 5000)
         return () => clearInterval(interval)
     }, []);
 
@@ -27,16 +35,16 @@ function Dashboard() {
                 url = process.env.REACT_APP_BACKEND_PREFIX + "/api/scale/dashboard"
             }
 
-            const data = await fetch(url)
-            const json = await data.json()
+            const res = await fetch(url)
+            if (res.statusCode === 425) {
+                setScale(defaultScale)
+                return // scale does not have any data yet
+            }
 
-            setWeight(json.weight_formated)
-            setLastUpdate(json.last_update_duration)
-            setRssi(json.rssi)
+            const data = await res.json()
+            setScale(data)
         } catch {
-            setLastUpdate("error")
-            setWeight("error")
-            setRssi("")
+            setScale(defaultScale)
         }
     }
 
@@ -45,22 +53,35 @@ function Dashboard() {
             <Row md={12} style={{textAlign: "center", marginTop: "30px"}}>
                 <Toast style={{margin: "5px"}}>
                     <Toast.Header closeButton={false}>
-                        <strong className="me-auto">Váha</strong>
-                        <small>{lastUpdate} ago</small>
+                        <strong className="me-auto">Status</strong>
+                        <small>{scale.last_update_duration} ago</small>
                     </Toast.Header>
                     <Toast.Body>
-                        <div className={"cell"}>
-                            {weight}<span hidden={weight === "error"}> kg</span>
+                        <div className={scale.is_ok ? "cell cell-green" : "cell cell-red"}>
+                            {scale.is_ok ? "OK" : "ERROR"}
                         </div>
                     </Toast.Body>
                 </Toast>
-                <Toast style={{margin: "5px"}}>
+
+                <Toast hidden={!scale.is_ok || scale.last_at <= 0} style={{margin: "5px"}}>
                     <Toast.Header closeButton={false}>
-                        <strong className="me-auto">WiFi</strong>
+                        <strong className="me-auto">Váha</strong>
+                        <small>{scale.last_at_duration} ago</small>
                     </Toast.Header>
                     <Toast.Body>
-                        <div className={"cell"}>
-                            {rssi}<span hidden={rssi === ""}> db</span>
+                        <div className={"cell cell-green"}>
+                            {scale.last_weight_formated} kg
+                        </div>
+                    </Toast.Body>
+                </Toast>
+                <Toast hidden={!scale.is_ok} style={{margin: "5px"}}>
+                    <Toast.Header closeButton={false}>
+                        <strong className="me-auto">WiFi</strong>
+                        <small>{scale.last_update_duration} ago</small>
+                    </Toast.Header>
+                    <Toast.Body>
+                        <div className={"cell cell-green"}>
+                            {scale.rssi} db
                         </div>
                     </Toast.Body>
                 </Toast>

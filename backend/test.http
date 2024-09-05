@@ -1,13 +1,13 @@
 ### Value
-POST http://localhost:8080/api/scale/keg
+POST http://localhost:8080/api/scale/push
 Content-Type: text/plain
 Authorization: test
 
-24251.55
+push|1234|-74|14587.05
 
 ### Ping
-POST http://localhost:8080/api/scale/ping
+POST http://localhost:8080/api/scale/push
 Content-Type: text/plain
 Authorization: test
 
-ping;-74
+ping|1234|-71|

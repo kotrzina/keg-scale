@@ -2,9 +2,17 @@
     width: 100%;
     text-align: center;
     font-size: 4em;
-    background-color: #0a3622;
-    color: #FFF;
     padding: 12px;
     font-weight: bold;
     border-radius: 10px;
+}
+
+.cell-green {
+    background-color: #0a3622;
+    color: #FFF;
+}
+
+.cell-red {
+    background-color: #630e10;
+    color: #FFF;
 }

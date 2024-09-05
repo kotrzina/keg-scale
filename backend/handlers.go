@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/hako/durafmt"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
 	"io"
@@ -68,6 +69,7 @@ func (hr *HandlerRepository) scaleMessageHandler() func(http.ResponseWriter, *ht
 		}
 
 		hr.scale.Ping()
+		hr.scale.SetRssi(message.Rssi)
 		hr.monitor.lastUpdate.WithLabelValues().SetToCurrentTime()
 
 		if message.MessageType == PushMessageType {
@@ -77,9 +79,6 @@ func (hr *HandlerRepository) scaleMessageHandler() func(http.ResponseWriter, *ht
 			hr.logger.WithFields(logrus.Fields{
 				"message_id": message.MessageId,
 			}).Infof("Scale new value: %0.2f", message.Value)
-		}
-		if message.MessageType == PushMessageType || message.MessageType == PingMessageType {
-			hr.scale.SetRssi(message.Rssi)
 		}
 
 		_, _ = w.Write([]byte("OK"))
@@ -194,14 +193,19 @@ func (hr *HandlerRepository) metricsHandler() http.Handler {
 	)
 }
 
+const localizationUnits = "r:r,t:t,d:d,h:h,m:m,s:s,ms:ms,microsecond"
+
 func (hr *HandlerRepository) scaleDashboardHandler() func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		type output struct {
-			Weight             float64 `json:"weight"`
-			WeightFormated     string  `json:"weight_formated"`
+			IsOk               bool    `json:"is_ok"`
+			LastWeight         float64 `json:"last_weight"`
+			LastWeightFormated string  `json:"last_weight_formated"`
+			LastAt             string  `json:"last_at"`
+			LastAtDuration     string  `json:"last_at_duration"`
+			Rssi               float64 `json:"rssi"`
 			LastUpdate         string  `json:"last_update"`
 			LastUpdateDuration string  `json:"last_update_duration"`
-			Rssi               float64 `json:"rssi"`
 		}
 
 		if !hr.scale.HasLastN(1) {
@@ -212,12 +216,21 @@ func (hr *HandlerRepository) scaleDashboardHandler() func(http.ResponseWriter, *
 
 		last := hr.scale.GetLastMeasurement()
 
+		units, err := durafmt.DefaultUnitsCoder.Decode(localizationUnits)
+		if err != nil {
+			http.Error(w, "Could not decode units", http.StatusInternalServerError)
+			return
+		}
+
 		data := output{
-			Weight:             last.Weight,
-			WeightFormated:     fmt.Sprintf("%.2f", last.Weight/1000),
-			LastUpdate:         last.At.Format("2006-01-02 15:04:05"),
-			LastUpdateDuration: time.Since(last.At).String(),
+			IsOk:               hr.scale.IsOk && time.Since(hr.scale.LastOk) < 5*time.Minute,
+			LastWeight:         last.Weight,
+			LastWeightFormated: fmt.Sprintf("%.2f", last.Weight/1000),
+			LastAt:             last.At.Format("2006-01-02 15:04:05"),
+			LastAtDuration:     durafmt.Parse(time.Since(last.At)).LimitFirstN(2).Format(units),
 			Rssi:               hr.scale.Rssi,
+			LastUpdate:         hr.scale.LastOk.Format("2006-01-02 15:04:05"),
+			LastUpdateDuration: durafmt.Parse(time.Since(hr.scale.LastOk)).LimitFirstN(2).Format(units),
 		}
 
 		res, err := json.Marshal(data)
