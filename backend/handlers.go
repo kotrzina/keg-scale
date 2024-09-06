@@ -7,10 +7,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
 	"io"
-	"log"
 	"net/http"
-	"strconv"
-	"strings"
 	"time"
 )
 
@@ -80,88 +77,6 @@ func (hr *HandlerRepository) scaleMessageHandler() func(http.ResponseWriter, *ht
 				"message_id": message.MessageId,
 			}).Infof("Scale new value: %0.2f", message.Value)
 		}
-
-		_, _ = w.Write([]byte("OK"))
-	}
-}
-
-// @deprecated - will be replaced by scaleMessageHandler
-func (hr *HandlerRepository) scalePingHandler() func(http.ResponseWriter, *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		hr.logger.Info("Scale pinged")
-
-		if r.Method != http.MethodPost {
-			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
-			return
-		}
-
-		auth := r.Header.Get("Authorization")
-		if auth != hr.config.AuthToken {
-			http.Error(w, "Unauthorized", http.StatusUnauthorized)
-			return
-		}
-
-		body, err := io.ReadAll(r.Body)
-		if err != nil {
-			http.Error(w, "Could not read post body", http.StatusInternalServerError)
-			return
-		}
-
-		chunks := strings.Split(string(body), ";")
-		if len(chunks) != 2 {
-			http.Error(w, "Invalid body", http.StatusBadRequest)
-			return
-		}
-
-		rssi, err := strconv.ParseFloat(chunks[1], 64)
-		if err != nil {
-			http.Error(w, "Could not convert RSSI from scale to number", http.StatusBadRequest)
-			return
-		}
-
-		hr.scale.SetRssi(rssi)
-		hr.monitor.scaleWifiRssi.WithLabelValues().Set(rssi)
-		hr.monitor.lastUpdate.WithLabelValues().SetToCurrentTime()
-
-		_, _ = w.Write([]byte("OK"))
-	}
-}
-
-// @deprecated - will be replaced by scaleMessageHandler
-func (hr *HandlerRepository) scaleValueHandler() func(http.ResponseWriter, *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		hr.logger.Info("Scale value sent")
-
-		if r.Method != http.MethodPost {
-			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
-			return
-		}
-
-		auth := r.Header.Get("Authorization")
-		if auth != hr.config.AuthToken {
-			http.Error(w, "Unauthorized", http.StatusUnauthorized)
-			return
-		}
-
-		body, err := io.ReadAll(r.Body)
-		if err != nil {
-			http.Error(w, "Could not read post body", http.StatusInternalServerError)
-			return
-		}
-
-		current, err := strconv.ParseFloat(string(body), 64)
-		if err != nil {
-			http.Error(w, "Could not convert value to number", http.StatusBadRequest)
-			return
-		}
-
-		log.Printf("Keg weight: %f", current)
-
-		hr.monitor.kegWeight.WithLabelValues().Set(current)
-		hr.monitor.lastUpdate.WithLabelValues().SetToCurrentTime()
-
-		hr.scale.AddMeasurement(current)
-		hr.scale.Ping() // we can also ping with the new value
 
 		_, _ = w.Write([]byte("OK"))
 	}
