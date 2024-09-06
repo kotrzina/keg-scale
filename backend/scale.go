@@ -19,7 +19,8 @@ type Pub struct {
 }
 
 type Scale struct {
-	mux sync.Mutex
+	mux     sync.Mutex
+	monitor *Monitor
 
 	Measurements []Measurement `json:"measurements"`
 	index        int
@@ -31,9 +32,10 @@ type Scale struct {
 	Rssi   float64   `json:"rssi"`
 }
 
-func NewScale(bufferSize int) *Scale {
+func NewScale(bufferSize int, monitor *Monitor) *Scale {
 	return &Scale{
-		mux: sync.Mutex{},
+		mux:     sync.Mutex{},
+		monitor: monitor,
 
 		Measurements: make([]Measurement, bufferSize),
 		index:        -1,
@@ -50,6 +52,8 @@ func NewScale(bufferSize int) *Scale {
 }
 
 func (s *Scale) AddMeasurement(weight float64) {
+	s.monitor.kegWeight.WithLabelValues().Set(weight)
+
 	s.mux.Lock()
 	defer s.mux.Unlock()
 
@@ -92,6 +96,8 @@ func (s *Scale) JsonState() ([]byte, error) {
 }
 
 func (s *Scale) Ping() {
+	s.monitor.lastUpdate.WithLabelValues().SetToCurrentTime()
+
 	s.mux.Lock()
 	defer s.mux.Unlock()
 
@@ -126,6 +132,8 @@ func (s *Scale) IsOk() bool {
 }
 
 func (s *Scale) SetRssi(rssi float64) {
+	s.monitor.scaleWifiRssi.WithLabelValues().Set(rssi)
+
 	s.mux.Lock()
 	defer s.mux.Unlock()
 

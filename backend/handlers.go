@@ -67,11 +67,9 @@ func (hr *HandlerRepository) scaleMessageHandler() func(http.ResponseWriter, *ht
 
 		hr.scale.Ping()
 		hr.scale.SetRssi(message.Rssi)
-		hr.monitor.lastUpdate.WithLabelValues().SetToCurrentTime()
 
 		if message.MessageType == PushMessageType {
 			hr.scale.AddMeasurement(message.Value)
-			hr.monitor.kegWeight.WithLabelValues().Set(message.Value)
 
 			hr.logger.WithFields(logrus.Fields{
 				"message_id": message.MessageId,

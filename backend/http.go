@@ -52,8 +52,6 @@ func NewRouter(hr *HandlerRepository) *mux.Router {
 
 	router.Handle("/metrics", hr.metricsHandler())
 	router.HandleFunc("/api/scale/push", hr.scaleMessageHandler())
-	router.HandleFunc("/api/scale/keg", hr.scaleValueHandler()) // deprecated
-	router.HandleFunc("/api/scale/ping", hr.scalePingHandler()) // deprecated
 	router.HandleFunc("/api/scale/status", hr.scaleStatusHandler())
 	router.HandleFunc("/api/scale/print", hr.scalePrintHandler())
 	router.HandleFunc("/api/scale/dashboard", hr.scaleDashboardHandler())
