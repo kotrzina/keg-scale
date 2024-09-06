@@ -10,6 +10,7 @@ type Monitor struct {
 	kegWeight     *prometheus.GaugeVec
 	scaleWifiRssi *prometheus.GaugeVec
 	lastUpdate    *prometheus.GaugeVec
+	pubIsOpen     *prometheus.GaugeVec
 }
 
 // NewMonitor creates a new Monitor
@@ -32,11 +33,17 @@ func NewMonitor() *Monitor {
 			Name: "scale_last_update",
 			Help: "Last update time",
 		}, []string{}),
+
+		pubIsOpen: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Name: "scale_pub_open",
+			Help: "Is the pub open/closed",
+		}, []string{}),
 	}
 
 	reg.MustRegister(monitor.lastUpdate)
 	reg.MustRegister(monitor.kegWeight)
 	reg.MustRegister(monitor.scaleWifiRssi)
+	reg.MustRegister(monitor.pubIsOpen)
 
 	return monitor
 }

@@ -6,6 +6,8 @@ import (
 	"time"
 )
 
+const OkLimit = 5 * time.Minute
+
 type Measurement struct {
 	Index  int       `json:"index"`
 	Weight float64   `json:"weight"`
@@ -33,7 +35,7 @@ type Scale struct {
 }
 
 func NewScale(bufferSize int, monitor *Monitor) *Scale {
-	return &Scale{
+	s := &Scale{
 		mux:     sync.Mutex{},
 		monitor: monitor,
 
@@ -49,6 +51,17 @@ func NewScale(bufferSize int, monitor *Monitor) *Scale {
 
 		LastOk: time.Now().Add(-9999 * time.Hour),
 	}
+
+	// periodically call recheck
+	go func(s *Scale) {
+		for {
+			time.Sleep(15 * time.Second)
+			s.Recheck()
+		}
+		// @todo - I don't really care about cancellation right now
+	}(s)
+
+	return s
 }
 
 func (s *Scale) AddMeasurement(weight float64) {
@@ -102,6 +115,7 @@ func (s *Scale) Ping() {
 	defer s.mux.Unlock()
 
 	if !s.Pub.IsOpen {
+		s.monitor.pubIsOpen.WithLabelValues().Set(1)
 		s.Pub.IsOpen = true
 		s.Pub.OpenedAt = time.Now()
 	}
@@ -115,12 +129,17 @@ func (s *Scale) Ping() {
 func (s *Scale) Recheck() {
 	ok := s.IsOk() // mutex
 
+	if ok {
+		return
+	}
+
 	s.mux.Lock()
 	defer s.mux.Unlock()
 
-	if s.Pub.IsOpen && !ok { // we haven't received any data for 5 minutes and pub is open
+	if s.Pub.IsOpen { // we haven't received any data for [OkLimit] minutes and pub is open
+		s.monitor.pubIsOpen.WithLabelValues().Set(0)
 		s.Pub.IsOpen = false
-		s.Pub.ClosedAt = time.Now()
+		s.Pub.ClosedAt = time.Now().Add(-1 * OkLimit)
 	}
 }
 
@@ -128,7 +147,7 @@ func (s *Scale) IsOk() bool {
 	s.mux.Lock()
 	defer s.mux.Unlock()
 
-	return time.Since(s.LastOk) < 5*time.Minute
+	return time.Since(s.LastOk) < OkLimit
 }
 
 func (s *Scale) SetRssi(rssi float64) {
