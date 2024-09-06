@@ -12,6 +12,12 @@ type Measurement struct {
 	At     time.Time `json:"at"`
 }
 
+type Pub struct {
+	IsOpen   bool      `json:"is_open"`
+	OpenedAt time.Time `json:"open_at"`
+	ClosedAt time.Time `json:"closed_at"`
+}
+
 type Scale struct {
 	mux sync.Mutex
 
@@ -19,7 +25,8 @@ type Scale struct {
 	index        int
 	size         int
 
-	IsOk   bool      `json:"is_ok"`
+	Pub Pub `json:"pub"`
+
 	LastOk time.Time `json:"last_ok"`
 	Rssi   float64   `json:"rssi"`
 }
@@ -32,7 +39,12 @@ func NewScale(bufferSize int) *Scale {
 		index:        -1,
 		size:         bufferSize,
 
-		IsOk:   false,
+		Pub: Pub{
+			IsOpen:   false,
+			OpenedAt: time.Now().Add(-9999 * time.Hour),
+			ClosedAt: time.Now().Add(-9999 * time.Hour),
+		},
+
 		LastOk: time.Now().Add(-9999 * time.Hour),
 	}
 }
@@ -83,8 +95,34 @@ func (s *Scale) Ping() {
 	s.mux.Lock()
 	defer s.mux.Unlock()
 
-	s.IsOk = true
+	if !s.Pub.IsOpen {
+		s.Pub.IsOpen = true
+		s.Pub.OpenedAt = time.Now()
+	}
+
 	s.LastOk = time.Now()
+}
+
+// Recheck sets the scale to not open
+// it should be called everytime we want to get some calculations
+// to recalculate the state of the scale
+func (s *Scale) Recheck() {
+	ok := s.IsOk() // mutex
+
+	s.mux.Lock()
+	defer s.mux.Unlock()
+
+	if s.Pub.IsOpen && !ok { // we haven't received any data for 5 minutes and pub is open
+		s.Pub.IsOpen = false
+		s.Pub.ClosedAt = time.Now()
+	}
+}
+
+func (s *Scale) IsOk() bool {
+	s.mux.Lock()
+	defer s.mux.Unlock()
+
+	return time.Since(s.LastOk) < 5*time.Minute
 }
 
 func (s *Scale) SetRssi(rssi float64) {

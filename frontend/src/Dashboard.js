@@ -15,6 +15,11 @@ function Dashboard() {
         rssi: 0,
         last_update: 0,
         last_update_duration: 0,
+        pub: {
+            is_open: false,
+            opened_at: 0,
+            closed_at: 0,
+        }
     }
 
     const [scale, setScale] = useState(defaultScale);
@@ -74,7 +79,7 @@ function Dashboard() {
                 <Toast style={{margin: "5px"}}>
                     <Toast.Header closeButton={false}>
                         <strong className="me-auto">
-                            Status&nbsp;&nbsp;
+                            Hospoda&nbsp;&nbsp;
                             <img
                                 hidden={!showSpinner}
                                 src={"/Rhombus.gif"}
@@ -84,11 +89,11 @@ function Dashboard() {
                                 alt="Loader"
                             />
                         </strong>
-                        <small>před {scale.last_update_duration}</small>
+                        <small>{scale.pub.is_open ? scale.pub.opened_at : scale.pub.closed_at}</small>
                     </Toast.Header>
                     <Toast.Body>
-                        <div className={scale.is_ok ? "cell cell-green" : "cell cell-red"}>
-                            {scale.is_ok ? "OK" : "OFFLINE"}
+                        <div className={scale.pub.is_open ? "cell cell-green" : "cell cell-red"}>
+                            {scale.pub.is_open ? "OTEVŘENO" : "ZAVŘENO"}
                         </div>
                     </Toast.Body>
                 </Toast>
@@ -111,6 +116,28 @@ function Dashboard() {
                     <Toast.Body>
                         <div className={"cell cell-green"}>
                             {scale.last_weight_formated} kg
+                        </div>
+                    </Toast.Body>
+                </Toast>
+
+                <Toast style={{margin: "5px"}}>
+                    <Toast.Header closeButton={false}>
+                        <strong className="me-auto">
+                            Status&nbsp;&nbsp;
+                            <img
+                                hidden={!showSpinner}
+                                src={"/Rhombus.gif"}
+                                width="16"
+                                height="16"
+                                className="align-middle"
+                                alt="Loader"
+                            />
+                        </strong>
+                        <small>před {scale.last_update_duration}</small>
+                    </Toast.Header>
+                    <Toast.Body>
+                        <div className={scale.is_ok ? "cell cell-green" : "cell cell-red"}>
+                            {scale.is_ok ? "OK" : "OFFLINE"}
                         </div>
                     </Toast.Body>
                 </Toast>

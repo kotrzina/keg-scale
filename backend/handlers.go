@@ -197,15 +197,24 @@ const localizationUnits = "r:r,t:t,d:d,h:h,m:m,s:s,ms:ms,microsecond"
 
 func (hr *HandlerRepository) scaleDashboardHandler() func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
+		hr.scale.Recheck()
+
+		type pubOutput struct {
+			IsOpen   bool   `json:"is_open"`
+			OpenedAt string `json:"opened_at"`
+			ClosedAt string `json:"closed_at"`
+		}
+
 		type output struct {
-			IsOk               bool    `json:"is_ok"`
-			LastWeight         float64 `json:"last_weight"`
-			LastWeightFormated string  `json:"last_weight_formated"`
-			LastAt             string  `json:"last_at"`
-			LastAtDuration     string  `json:"last_at_duration"`
-			Rssi               float64 `json:"rssi"`
-			LastUpdate         string  `json:"last_update"`
-			LastUpdateDuration string  `json:"last_update_duration"`
+			IsOk               bool      `json:"is_ok"`
+			LastWeight         float64   `json:"last_weight"`
+			LastWeightFormated string    `json:"last_weight_formated"`
+			LastAt             string    `json:"last_at"`
+			LastAtDuration     string    `json:"last_at_duration"`
+			Rssi               float64   `json:"rssi"`
+			LastUpdate         string    `json:"last_update"`
+			LastUpdateDuration string    `json:"last_update_duration"`
+			Pub                pubOutput `json:"pub"`
 		}
 
 		if !hr.scale.HasLastN(1) {
@@ -223,7 +232,7 @@ func (hr *HandlerRepository) scaleDashboardHandler() func(http.ResponseWriter, *
 		}
 
 		data := output{
-			IsOk:               hr.scale.IsOk && time.Since(hr.scale.LastOk) < 5*time.Minute,
+			IsOk:               hr.scale.IsOk(),
 			LastWeight:         last.Weight,
 			LastWeightFormated: fmt.Sprintf("%.2f", last.Weight/1000),
 			LastAt:             last.At.Format("2006-01-02 15:04:05"),
@@ -231,6 +240,11 @@ func (hr *HandlerRepository) scaleDashboardHandler() func(http.ResponseWriter, *
 			Rssi:               hr.scale.Rssi,
 			LastUpdate:         hr.scale.LastOk.Format("2006-01-02 15:04:05"),
 			LastUpdateDuration: durafmt.Parse(time.Since(hr.scale.LastOk).Round(time.Second)).LimitFirstN(2).Format(units),
+			Pub: pubOutput{
+				IsOpen:   hr.scale.Pub.IsOpen,
+				OpenedAt: hr.scale.Pub.OpenedAt.Format("15:04"),
+				ClosedAt: hr.scale.Pub.ClosedAt.Format("15:04"),
+			},
 		}
 
 		res, err := json.Marshal(data)
