@@ -130,13 +130,7 @@ func (hr *HandlerRepository) scaleDashboardHandler() func(http.ResponseWriter, *
 			Pub                pubOutput `json:"pub"`
 		}
 
-		if !hr.scale.HasLastN(1) {
-			// we don't have any measurements yet
-			http.Error(w, "No measurements yet", http.StatusTooEarly)
-			return
-		}
-
-		last := hr.scale.GetLastMeasurement()
+		last := hr.scale.GetLastMeasurement() // it could be fake measurement
 
 		units, err := durafmt.DefaultUnitsCoder.Decode(localizationUnits)
 		if err != nil {
@@ -148,16 +142,23 @@ func (hr *HandlerRepository) scaleDashboardHandler() func(http.ResponseWriter, *
 			IsOk:               hr.scale.IsOk(),
 			LastWeight:         last.Weight,
 			LastWeightFormated: fmt.Sprintf("%.2f", last.Weight/1000),
-			LastAt:             last.At.Format("2006-01-02 15:04:05"),
+			LastAt:             formatDate(last.At),
 			LastAtDuration:     durafmt.Parse(time.Since(last.At).Round(time.Second)).LimitFirstN(2).Format(units),
 			Rssi:               hr.scale.Rssi,
-			LastUpdate:         hr.scale.LastOk.Format("2006-01-02 15:04:05"),
+			LastUpdate:         formatDate(hr.scale.LastOk),
 			LastUpdateDuration: durafmt.Parse(time.Since(hr.scale.LastOk).Round(time.Second)).LimitFirstN(2).Format(units),
 			Pub: pubOutput{
 				IsOpen:   hr.scale.Pub.IsOpen,
-				OpenedAt: hr.scale.Pub.OpenedAt.Format("15:04"),
-				ClosedAt: hr.scale.Pub.ClosedAt.Format("15:04"),
+				OpenedAt: formatTime(hr.scale.Pub.OpenedAt),
+				ClosedAt: formatTime(hr.scale.Pub.ClosedAt),
 			},
+		}
+
+		// fake some result when we don't have anything
+		if !hr.scale.HasLastN(1) {
+			data.LastWeight = 0
+			data.LastWeightFormated = ""
+			data.LastAt = ""
 		}
 
 		res, err := json.Marshal(data)

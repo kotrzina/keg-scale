@@ -27,6 +27,7 @@ type Scale struct {
 	Measurements []Measurement `json:"measurements"`
 	index        int
 	size         int
+	valid        int // number of valid measurements
 
 	Pub Pub `json:"pub"`
 
@@ -42,6 +43,7 @@ func NewScale(bufferSize int, monitor *Monitor) *Scale {
 		Measurements: make([]Measurement, bufferSize),
 		index:        -1,
 		size:         bufferSize,
+		valid:        0,
 
 		Pub: Pub{
 			IsOpen:   false,
@@ -80,12 +82,17 @@ func (s *Scale) AddMeasurement(weight float64) {
 		Weight: weight,
 		At:     time.Now(),
 	}
+
+	if s.valid < s.size {
+		s.valid++
+	}
 }
 
 func (s *Scale) GetLastMeasurement() Measurement {
 	return s.GetMeasurement(0)
 }
 
+// GetMeasurement GetValidCount return number of valid measurements
 func (s *Scale) GetMeasurement(index int) Measurement {
 	if index > s.GetValidCount() || index > s.size {
 		return Measurement{
@@ -164,17 +171,7 @@ func (s *Scale) GetValidCount() int {
 	s.mux.Lock()
 	defer s.mux.Unlock()
 
-	count := 0
-	for i := 0; i < s.size; i++ {
-		idx := (s.index - i + s.size) % s.size
-		if s.Measurements[idx].At.Unix() > 0 {
-			count++
-		} else {
-			return count
-		}
-	}
-
-	return count
+	return s.valid
 }
 
 // HasLastN returns true if the last n measurements are not empty
@@ -186,14 +183,7 @@ func (s *Scale) HasLastN(n int) bool {
 	s.mux.Lock()
 	defer s.mux.Unlock()
 
-	for i := 0; i < n; i++ {
-		idx := (s.index - i + s.size) % s.size
-		if s.Measurements[idx].At.Unix() < 0 {
-			return false
-		}
-	}
-
-	return true
+	return s.valid >= n
 }
 
 // SumLastN returns the sum of the last n measurements

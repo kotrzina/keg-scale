@@ -1,6 +1,9 @@
 package main
 
-import "strings"
+import (
+	"strings"
+	"time"
+)
 
 func strip(s string) string {
 	var result strings.Builder
@@ -12,4 +15,25 @@ func strip(s string) string {
 		}
 	}
 	return result.String()
+}
+
+func formatDate(t time.Time) string {
+	if t.Unix() <= 0 {
+		return ""
+	}
+
+	return t.In(getTz()).Format("2006-01-02 15:04:05")
+}
+
+func formatTime(t time.Time) string {
+	if t.Unix() <= 0 {
+		return ""
+	}
+
+	return t.Format("15:04")
+}
+
+func getTz() *time.Location {
+	tz, _ := time.LoadLocation("Europe/Prague")
+	return tz
 }
