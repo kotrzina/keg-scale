@@ -111,6 +111,45 @@ func (hr *HandlerRepository) metricsHandler() http.Handler {
 	)
 }
 
+func (hr *HandlerRepository) activeKegHandler() func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		auth := r.Header.Get("Authorization")
+		if auth != hr.config.Password {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		type input struct {
+			Keg int `json:"keg"`
+		}
+
+		var data input
+		err := json.NewDecoder(r.Body).Decode(&data)
+		if err != nil {
+			http.Error(w, "Could not read post body", http.StatusBadRequest)
+			return
+		}
+
+		switch data.Keg {
+		case 10, 15, 20, 30, 50:
+			// all is well
+		default:
+			http.Error(w, "Invalid keg size", http.StatusBadRequest)
+			return
+		}
+
+		if err = hr.scale.SetActiveKeg(data.Keg); err != nil {
+			http.Error(w, "Could not set active keg", http.StatusInternalServerError)
+			return
+		}
+	}
+}
+
 const localizationUnits = "r:r,t:t,d:d,h:h,m:m,s:s,ms:ms,microsecond"
 
 func (hr *HandlerRepository) scaleDashboardHandler() func(http.ResponseWriter, *http.Request) {
@@ -125,6 +164,7 @@ func (hr *HandlerRepository) scaleDashboardHandler() func(http.ResponseWriter, *
 
 		type output struct {
 			IsOk               bool      `json:"is_ok"`
+			BeersLeft          int       `json:"beers_left"`
 			LastWeight         float64   `json:"last_weight"`
 			LastWeightFormated string    `json:"last_weight_formated"`
 			LastAt             string    `json:"last_at"`
@@ -133,6 +173,7 @@ func (hr *HandlerRepository) scaleDashboardHandler() func(http.ResponseWriter, *
 			LastUpdate         string    `json:"last_update"`
 			LastUpdateDuration string    `json:"last_update_duration"`
 			Pub                pubOutput `json:"pub"`
+			ActiveKeg          int       `json:"active_keg"`
 		}
 
 		last := hr.scale.GetLastMeasurement() // it could be fake measurement
@@ -145,6 +186,7 @@ func (hr *HandlerRepository) scaleDashboardHandler() func(http.ResponseWriter, *
 
 		data := output{
 			IsOk:               hr.scale.IsOk(),
+			BeersLeft:          calcBeersLeft(hr.scale.ActiveKeg, last.Weight),
 			LastWeight:         last.Weight,
 			LastWeightFormated: fmt.Sprintf("%.2f", last.Weight/1000),
 			LastAt:             formatDate(last.At),
@@ -157,6 +199,7 @@ func (hr *HandlerRepository) scaleDashboardHandler() func(http.ResponseWriter, *
 				OpenedAt: formatTime(hr.scale.Pub.OpenedAt),
 				ClosedAt: formatTime(hr.scale.Pub.ClosedAt),
 			},
+			ActiveKeg: hr.scale.ActiveKeg,
 		}
 
 		// fake some result when we don't have anything

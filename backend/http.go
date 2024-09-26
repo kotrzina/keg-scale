@@ -56,6 +56,8 @@ func NewRouter(hr *HandlerRepository) *mux.Router {
 	router.HandleFunc("/api/scale/print", hr.scalePrintHandler())
 	router.HandleFunc("/api/scale/dashboard", hr.scaleDashboardHandler())
 
+	router.HandleFunc("/api/pub/active_keg", hr.activeKegHandler())
+
 	// frontend
 	dir := hr.config.FrontendPath
 	router.PathPrefix("/").Handler(http.StripPrefix("/", reactRedirect(http.FileServer(http.Dir(dir)), dir)))

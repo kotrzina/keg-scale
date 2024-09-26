@@ -3,11 +3,15 @@ import {useEffect, useState} from "react";
 import "./Dashboard.css";
 import Menu from "./Menu";
 import Warehouse from "./Warehouse";
+import Keg from "./Keg";
+import {buildUrl} from "./Api";
+import Pivo from "./Pivo";
 
 function Dashboard() {
 
     const defaultScale = {
         is_ok: false,
+        beers_left: 0,
         last_weight: 0.0,
         last_weight_formated: "0.0",
         last_at: "0",
@@ -19,39 +23,35 @@ function Dashboard() {
             is_open: false,
             opened_at: 0,
             closed_at: 0,
-        }
+        },
+        active_keg: 0,
     }
 
     const [scale, setScale] = useState(defaultScale);
-    const [showCanvas, setShowCanvas] = useState(false);
+    const [showKeg, setShowKeg] = useState(false);
+    const [showWarehouse, setShowWarehouse] = useState(false);
     const [showSpinner, setShowSpinner] = useState(false);
 
     useEffect(() => {
         document.title = "Keg Scale Dashboard"
-        void update()
+        void refresh()
 
-        window.addEventListener("focus", update)
+        window.addEventListener("focus", refresh)
         const interval = setInterval(() => {
-            void update()
+            void refresh()
         }, 10000)
 
         return () => {
-            window.removeEventListener("focus", update)
+            window.removeEventListener("focus", refresh)
             clearInterval(interval)
         }
         // eslint-disable-next-line
     }, []);
 
-    async function update() {
+    async function refresh() {
         setShowSpinner(true)
         try {
-            // REACT_APP_BACKEND_PREFIX is defined in .env file for development
-            // and it is empty for production because the backend is on the same domain and port
-            let url = "/api/scale/dashboard"
-            if (process.env.REACT_APP_BACKEND_PREFIX !== undefined) {
-                url = process.env.REACT_APP_BACKEND_PREFIX + "/api/scale/dashboard"
-            }
-
+            const url = buildUrl("/api/scale/dashboard")
             const res = await fetch(url)
             if (res.statusCode === 425) {
                 setScale(defaultScale)
@@ -69,11 +69,14 @@ function Dashboard() {
 
     return (
         <Container>
-            <Menu showCanvas={() => {
-                setShowCanvas(true)
+            <Menu showWarehouse={() => {
+                setShowWarehouse(true)
+            }} showKeg={() => {
+                setShowKeg(true)
             }}/>
 
-            <Warehouse showCanvas={showCanvas} setShowCanvas={setShowCanvas}/>
+            <Warehouse showCanvas={showWarehouse} setShowCanvas={setShowWarehouse}/>
+            <Keg keg={scale.active_keg} showCanvas={showKeg} setShowCanvas={setShowKeg} refresh={refresh}/>
 
             <Row md={12} style={{textAlign: "center", marginTop: "30px"}}>
                 <Toast style={{margin: "5px"}}>
@@ -94,6 +97,49 @@ function Dashboard() {
                     <Toast.Body>
                         <div className={scale.pub.is_open ? "cell cell-green" : "cell cell-red"}>
                             {scale.pub.is_open ? "OTEVŘENO" : "ZAVŘENO"}
+                        </div>
+                    </Toast.Body>
+                </Toast>
+
+                <Toast hidden={!scale.is_ok || scale.last_at <= 0} style={{margin: "5px"}}>
+                    <Toast.Header closeButton={false}>
+                        <strong className="me-auto">
+                            Zbývá piv&nbsp;&nbsp;
+                            <img
+                                hidden={!showSpinner}
+                                src={"/Rhombus.gif"}
+                                width="16"
+                                height="16"
+                                className="align-middle"
+                                alt="Loader"
+                            />
+                        </strong>
+                        <small>před {scale.last_at_duration}</small>
+                    </Toast.Header>
+                    <Toast.Body>
+                        <div className={"cell cell-green"}>
+                            <Pivo amount={scale.beers_left}/>
+                        </div>
+                    </Toast.Body>
+                </Toast>
+
+                <Toast hidden={!scale.pub.is_open || scale.active_keg < 10} style={{margin: "5px"}}>
+                    <Toast.Header closeButton={false}>
+                        <strong className="me-auto">
+                            Naraženo&nbsp;&nbsp;
+                            <img
+                                hidden={!showSpinner}
+                                src={"/Rhombus.gif"}
+                                width="16"
+                                height="16"
+                                className="align-middle"
+                                alt="Loader"
+                            />
+                        </strong>
+                    </Toast.Header>
+                    <Toast.Body>
+                        <div className={"cell cell-green"}>
+                            {scale.active_keg}&nbsp;l
                         </div>
                     </Toast.Body>
                 </Toast>

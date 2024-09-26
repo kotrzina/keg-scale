@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/gob"
-	"fmt"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -43,7 +42,6 @@ func (s *RedisStore) AddMeasurement(m Measurement) error {
 		return err
 	}
 
-	fmt.Println(buf.String())
 	if err := s.Client.RPush(ctx, MeasurementListKey, buf.String()).Err(); err != nil {
 		return err
 	}

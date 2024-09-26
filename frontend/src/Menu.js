@@ -14,9 +14,15 @@ function Menu(props) {
                         style={{maxHeight: '100px'}}
                         navbarScroll
                     >
+
                         <Nav.Link onClick={() => {
-                            props.showCanvas()
-                        }}>Sklad</Nav.Link>
+                            props.showKeg()
+                        }}>Keg</Nav.Link>
+
+                        {/*<Nav.Link onClick={() => {*/}
+                        {/*    props.showWarehouse()*/}
+                        {/*}}>Sklad</Nav.Link>*/}
+
                     </Nav>
                 </Navbar.Collapse>
             </Container>

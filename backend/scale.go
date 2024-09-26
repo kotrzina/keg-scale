@@ -250,3 +250,11 @@ func (s *Scale) AvgLastN(n int) float64 {
 
 	return s.SumLastN(n) / float64(n)
 }
+
+func (s *Scale) SetActiveKeg(keg int) error {
+	s.mux.Lock()
+	defer s.mux.Unlock()
+
+	s.ActiveKeg = keg
+	return s.store.SetActiveKeg(keg)
+}
