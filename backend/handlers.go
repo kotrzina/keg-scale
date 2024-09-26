@@ -69,7 +69,12 @@ func (hr *HandlerRepository) scaleMessageHandler() func(http.ResponseWriter, *ht
 		hr.scale.SetRssi(message.Rssi)
 
 		if message.MessageType == PushMessageType {
-			hr.scale.AddMeasurement(message.Value)
+			err = hr.scale.AddMeasurement(message.Value)
+			if err != nil {
+				hr.logger.Warnf("Could not create measurement: %v", err)
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
 
 			hr.logger.WithFields(logrus.Fields{
 				"message_id": message.MessageId,

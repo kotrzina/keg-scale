@@ -11,7 +11,11 @@ type Config struct {
 	PrometheusUser     string
 	PrometheusPassword string
 
-	AuthToken  string
+	RedisAddr string
+	RedisDB   int
+
+	AuthToken  string // used for communication with the scale
+	Password   string // shared admin password
 	BufferSize int
 
 	FrontendPath string
@@ -22,9 +26,15 @@ func NewConfig() *Config {
 		PrometheusUrl:      getStringEnvDefault("PROMETHEUS_URL", "http://localhost:9090"),
 		PrometheusUser:     getStringEnvDefault("PROMETHEUS_USER", ""),
 		PrometheusPassword: getStringEnvDefault("PROMETHEUS_PASSWORD", ""),
-		AuthToken:          getStringEnvDefault("AUTH_TOKEN", "test"),
-		BufferSize:         getIntEnvDefault("BUFFER_SIZE", 1000),
-		FrontendPath:       getStringEnvDefault("FRONTEND_PATH", "./../frontend/build/"),
+
+		RedisAddr: getStringEnvDefault("REDIS_ADDR", "localhost:6379"),
+		RedisDB:   getIntEnvDefault("REDIS_DB", 0),
+
+		AuthToken: getStringEnvDefault("AUTH_TOKEN", "test"),
+		Password:  getStringEnvDefault("PASSWORD", "test"),
+
+		BufferSize:   getIntEnvDefault("BUFFER_SIZE", 1000),
+		FrontendPath: getStringEnvDefault("FRONTEND_PATH", "./../frontend/build/"),
 	}
 }
 

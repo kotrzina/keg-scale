@@ -132,9 +132,9 @@ func TestScale_HasLastN(t *testing.T) {
 }
 
 func CreateScaleWithMeasurements(size int, weights ...float64) *Scale {
-	s := NewScale(size, NewMonitor())
+	s := NewScale(size, NewMonitor(), &FakeStore{})
 	for _, weight := range weights {
-		s.AddMeasurement(weight)
+		_ = s.AddMeasurement(weight)
 	}
 
 	return s

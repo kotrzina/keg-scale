@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"sync"
 	"time"
 )
@@ -29,13 +30,16 @@ type Scale struct {
 	size         int
 	valid        int // number of valid measurements
 
-	Pub Pub `json:"pub"`
+	Pub       Pub `json:"pub"`
+	ActiveKeg int `json:"active_keg"`
 
 	LastOk time.Time `json:"last_ok"`
 	Rssi   float64   `json:"rssi"`
+
+	store Storage
 }
 
-func NewScale(bufferSize int, monitor *Monitor) *Scale {
+func NewScale(bufferSize int, monitor *Monitor, store Storage) *Scale {
 	s := &Scale{
 		mux:     sync.Mutex{},
 		monitor: monitor,
@@ -50,9 +54,14 @@ func NewScale(bufferSize int, monitor *Monitor) *Scale {
 			OpenedAt: time.Now().Add(-9999 * time.Hour),
 			ClosedAt: time.Now().Add(-9999 * time.Hour),
 		},
+		ActiveKeg: 0,
 
 		LastOk: time.Now().Add(-9999 * time.Hour),
+
+		store: store,
 	}
+
+	s.loadDataFromStore()
 
 	// periodically call recheck
 	go func(s *Scale) {
@@ -66,7 +75,23 @@ func NewScale(bufferSize int, monitor *Monitor) *Scale {
 	return s
 }
 
-func (s *Scale) AddMeasurement(weight float64) {
+func (s *Scale) loadDataFromStore() {
+	measurements, err := s.store.GetMeasurements()
+	if err == nil {
+		s.index = len(measurements) - 1
+		i := 0
+		for _, m := range measurements {
+			s.Measurements[i] = m
+		}
+	}
+
+	activeKeg, err := s.store.GetActiveKeg()
+	if err == nil {
+		s.ActiveKeg = activeKeg
+	}
+}
+
+func (s *Scale) AddMeasurement(weight float64) error {
 	s.monitor.kegWeight.WithLabelValues().Set(weight)
 
 	s.mux.Lock()
@@ -77,15 +102,23 @@ func (s *Scale) AddMeasurement(weight float64) {
 		s.index = 0
 	}
 
-	s.Measurements[s.index] = Measurement{
+	m := Measurement{
 		Index:  s.index,
 		Weight: weight,
 		At:     time.Now(),
 	}
 
+	s.Measurements[s.index] = m
+	err := s.store.AddMeasurement(m)
+	if err != nil {
+		return fmt.Errorf("could not store measurement: %w", err)
+	}
+
 	if s.valid < s.size {
 		s.valid++
 	}
+
+	return nil
 }
 
 func (s *Scale) GetLastMeasurement() Measurement {

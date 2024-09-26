@@ -30,7 +30,9 @@ func main() {
 	monitor.kegWeight.With(prometheus.Labels{}).Set(scaleCurrentValue)
 	monitor.lastUpdate.With(prometheus.Labels{}).Set(scaleLastUpdate)
 
-	scale := NewScale(config.BufferSize, monitor)
+	store := NewRedisStore(config)
+
+	scale := NewScale(config.BufferSize, monitor, store)
 	StartServer(NewRouter(&HandlerRepository{
 		scale:   scale,
 		config:  config,
