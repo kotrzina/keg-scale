@@ -1,4 +1,4 @@
-import {Container, Row, Toast} from "react-bootstrap";
+import {Container, Row} from "react-bootstrap";
 import {useEffect, useState} from "react";
 import "./Dashboard.css";
 import Menu from "./Menu";
@@ -6,6 +6,7 @@ import Warehouse from "./Warehouse";
 import Keg from "./Keg";
 import {buildUrl} from "./Api";
 import Pivo from "./Pivo";
+import Field from "./Field";
 
 function Dashboard() {
 
@@ -79,136 +80,64 @@ function Dashboard() {
             <Keg keg={scale.active_keg} showCanvas={showKeg} setShowCanvas={setShowKeg} refresh={refresh}/>
 
             <Row md={12} style={{textAlign: "center", marginTop: "30px"}}>
-                <Toast style={{margin: "5px"}}>
-                    <Toast.Header closeButton={false}>
-                        <strong className="me-auto">
-                            Hospoda&nbsp;&nbsp;
-                            <img
-                                hidden={!showSpinner}
-                                src={"/Rhombus.gif"}
-                                width="16"
-                                height="16"
-                                className="align-middle"
-                                alt="Loader"
-                            />
-                        </strong>
-                        <small>{scale.pub.is_open ? scale.pub.opened_at : scale.pub.closed_at}</small>
-                    </Toast.Header>
-                    <Toast.Body>
-                        <div className={scale.pub.is_open ? "cell cell-green" : "cell cell-red"}>
-                            {scale.pub.is_open ? "OTEVŘENO" : "ZAVŘENO"}
-                        </div>
-                    </Toast.Body>
-                </Toast>
+                <Field
+                    title={"Hospoda"}
+                    info={scale.pub.is_open ? scale.pub.opened_at : scale.pub.closed_at}
+                    variant={scale.pub.is_open ? "green" : "red"}
+                    loading={showSpinner}
+                    hidden={false}
+                >
+                    {scale.pub.is_open ? "OTEVŘENO" : "ZAVŘENO"}
+                </Field>
 
-                <Toast hidden={!scale.is_ok || scale.last_at <= 0} style={{margin: "5px"}}>
-                    <Toast.Header closeButton={false}>
-                        <strong className="me-auto">
-                            Zbývá piv&nbsp;&nbsp;
-                            <img
-                                hidden={!showSpinner}
-                                src={"/Rhombus.gif"}
-                                width="16"
-                                height="16"
-                                className="align-middle"
-                                alt="Loader"
-                            />
-                        </strong>
-                        <small>před {scale.last_at_duration}</small>
-                    </Toast.Header>
-                    <Toast.Body>
-                        <div className={"cell cell-green"}>
-                            <Pivo amount={scale.beers_left}/>
-                        </div>
-                    </Toast.Body>
-                </Toast>
+                <Field
+                    title={"Zbývá piv"}
+                    info={"před " + scale.last_at_duration}
+                    variant={"green"}
+                    loading={showSpinner}
+                    hidden={!scale.is_ok || scale.last_at <= 0}
+                >
+                    <Pivo amount={scale.beers_left}/>
+                </Field>
 
-                <Toast hidden={!scale.pub.is_open || scale.active_keg < 10} style={{margin: "5px"}}>
-                    <Toast.Header closeButton={false}>
-                        <strong className="me-auto">
-                            Naraženo&nbsp;&nbsp;
-                            <img
-                                hidden={!showSpinner}
-                                src={"/Rhombus.gif"}
-                                width="16"
-                                height="16"
-                                className="align-middle"
-                                alt="Loader"
-                            />
-                        </strong>
-                    </Toast.Header>
-                    <Toast.Body>
-                        <div className={"cell cell-green"}>
-                            {scale.active_keg}&nbsp;l
-                        </div>
-                    </Toast.Body>
-                </Toast>
+                <Field
+                    title={"Naraženo"}
+                    variant={"green"}
+                    loading={showSpinner}
+                    hidden={!scale.pub.is_open || scale.active_keg < 10}
+                >
+                    {scale.active_keg}&nbsp;l
+                </Field>
 
-                <Toast hidden={!scale.is_ok || scale.last_at <= 0} style={{margin: "5px"}}>
-                    <Toast.Header closeButton={false}>
-                        <strong className="me-auto">
-                            Váha&nbsp;&nbsp;
-                            <img
-                                hidden={!showSpinner}
-                                src={"/Rhombus.gif"}
-                                width="16"
-                                height="16"
-                                className="align-middle"
-                                alt="Loader"
-                            />
-                        </strong>
-                        <small>před {scale.last_at_duration}</small>
-                    </Toast.Header>
-                    <Toast.Body>
-                        <div className={"cell cell-green"}>
-                            {scale.last_weight_formated} kg
-                        </div>
-                    </Toast.Body>
-                </Toast>
+                <Field
+                    title={"Váha"}
+                    info={"před " + scale.last_at_duration}
+                    variant={"green"}
+                    loading={showSpinner}
+                    hidden={!scale.is_ok || scale.last_at <= 0}
+                >
+                    {scale.last_weight_formated}&nbsp;kg
+                </Field>
 
-                <Toast style={{margin: "5px"}}>
-                    <Toast.Header closeButton={false}>
-                        <strong className="me-auto">
-                            Status&nbsp;&nbsp;
-                            <img
-                                hidden={!showSpinner}
-                                src={"/Rhombus.gif"}
-                                width="16"
-                                height="16"
-                                className="align-middle"
-                                alt="Loader"
-                            />
-                        </strong>
-                        <small>před {scale.last_update_duration}</small>
-                    </Toast.Header>
-                    <Toast.Body>
-                        <div className={scale.is_ok ? "cell cell-green" : "cell cell-red"}>
-                            {scale.is_ok ? "OK" : "OFFLINE"}
-                        </div>
-                    </Toast.Body>
-                </Toast>
+                <Field
+                    title={"Status"}
+                    info={"před " + scale.last_update_duration}
+                    variant={scale.pub.is_open ? "green" : "red"}
+                    loading={showSpinner}
+                    hidden={false}
+                >
+                    {scale.is_ok ? "OK" : "OFFLINE"}
+                </Field>
 
-                <Toast hidden={!scale.is_ok} style={{margin: "5px"}}>
-                    <Toast.Header closeButton={false}>
-                        <strong className="me-auto">
-                            WiFi&nbsp;&nbsp;
-                            <img
-                                hidden={!showSpinner}
-                                src={"/Rhombus.gif"}
-                                width="16"
-                                height="16"
-                                className="align-middle"
-                                alt="Loader"
-                            />
-                        </strong>
-                        <small>před {scale.last_update_duration}</small>
-                    </Toast.Header>
-                    <Toast.Body>
-                        <div className={"cell cell-green"}>
-                            {scale.rssi} db
-                        </div>
-                    </Toast.Body>
-                </Toast>
+                <Field
+                    title={"WiFi"}
+                    info={"před " + scale.last_update_duration}
+                    variant={"green"}
+                    loading={showSpinner}
+                    hidden={!scale.is_ok}
+                >
+                    {scale.rssi}&nbsp;db
+                </Field>
 
             </Row>
         </Container>
