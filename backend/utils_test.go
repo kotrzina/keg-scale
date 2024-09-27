@@ -1,6 +1,9 @@
 package main
 
-import "testing"
+import (
+	"github.com/stretchr/testify/assert"
+	"testing"
+)
 
 func TestStrip(t *testing.T) {
 	tests := []struct {
@@ -18,4 +21,9 @@ func TestStrip(t *testing.T) {
 			t.Errorf("strip(%q) = %q; want %q", test.input, got, test.expected)
 		}
 	}
+}
+
+func TestGetOkJson(t *testing.T) {
+	got := getOkJson()
+	assert.Contains(t, string(got), "ok")
 }

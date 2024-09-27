@@ -147,6 +147,9 @@ func (hr *HandlerRepository) activeKegHandler() func(http.ResponseWriter, *http.
 			http.Error(w, "Could not set active keg", http.StatusInternalServerError)
 			return
 		}
+
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(getOkJson())
 	}
 }
 

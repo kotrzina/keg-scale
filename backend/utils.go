@@ -37,3 +37,7 @@ func getTz() *time.Location {
 	tz, _ := time.LoadLocation("Europe/Prague")
 	return tz
 }
+
+func getOkJson() []byte {
+	return []byte(`{"is_ok":true}`)
+}
