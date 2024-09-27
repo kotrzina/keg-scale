@@ -30,7 +30,7 @@ func formatTime(t time.Time) string {
 		return ""
 	}
 
-	return t.Format("15:04")
+	return t.In(getTz()).Format("15:04")
 }
 
 func getTz() *time.Location {
