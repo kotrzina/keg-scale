@@ -54,12 +54,6 @@ function Dashboard() {
         try {
             const url = buildUrl("/api/scale/dashboard")
             const res = await fetch(url)
-            if (res.statusCode === 425) {
-                setScale(defaultScale)
-                setShowSpinner(false)
-                return // scale does not have any data yet
-            }
-
             const data = await res.json()
             setScale(data)
         } catch {
