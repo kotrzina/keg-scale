@@ -185,9 +185,13 @@ func (s *Scale) AddMeasurement(weight float64) error {
 			if err != nil {
 				return err
 			}
-			s.Warehouse[index]--
-			if serr := s.store.SetWarehouse(s.Warehouse); serr != nil {
-				return fmt.Errorf("could not update store warehouse: %w", serr)
+			if s.Warehouse[index] > 0 {
+				s.Warehouse[index]--
+				if serr := s.store.SetWarehouse(s.Warehouse); serr != nil {
+					return fmt.Errorf("could not update store warehouse: %w", serr)
+				}
+			} else {
+				s.logger.Warnf("Keg %d is not available in the warehouse", keg)
 			}
 		}
 	}
@@ -360,6 +364,10 @@ func (s *Scale) DecreaseWarehouse(keg int) error {
 		return err
 	}
 
-	s.Warehouse[index]--
-	return s.store.SetWarehouse(s.Warehouse)
+	if s.Warehouse[index] > 0 {
+		s.Warehouse[index]--
+		return s.store.SetWarehouse(s.Warehouse)
+	}
+
+	return nil
 }
