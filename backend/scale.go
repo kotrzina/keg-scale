@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/sirupsen/logrus"
@@ -39,9 +40,10 @@ type Scale struct {
 
 	store  Storage
 	logger *logrus.Logger
+	ctx    context.Context
 }
 
-func NewScale(bufferSize int, monitor *Monitor, store Storage, logger *logrus.Logger) *Scale {
+func NewScale(bufferSize int, monitor *Monitor, store Storage, logger *logrus.Logger, ctx context.Context) *Scale {
 	s := &Scale{
 		mux:     sync.Mutex{},
 		monitor: monitor,
@@ -62,17 +64,24 @@ func NewScale(bufferSize int, monitor *Monitor, store Storage, logger *logrus.Lo
 
 		store:  store,
 		logger: logger,
+		ctx:    ctx,
 	}
 
 	s.loadDataFromStore()
 
 	// periodically call recheck
 	go func(s *Scale) {
+		tick := time.NewTicker(2 * time.Second)
+		defer tick.Stop()
 		for {
-			time.Sleep(15 * time.Second)
-			s.Recheck()
+			select {
+			case <-s.ctx.Done():
+				s.logger.Debug("Scale recheck stopped")
+				return
+			case <-tick.C:
+				s.Recheck()
+			}
 		}
-		// @todo - I don't really care about cancellation right now
 	}(s)
 
 	return s

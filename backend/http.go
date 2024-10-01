@@ -88,7 +88,7 @@ func reactRedirect(server http.Handler, dir string) http.Handler {
 
 // StartServer starts HTTP server
 // It listens for SIGINT and SIGTERM signals and gracefully stops the server
-func StartServer(router *mux.Router, port int) {
+func StartServer(router *mux.Router, port int, mainCancel context.CancelFunc) {
 	srv := &http.Server{
 		Addr:    fmt.Sprintf(":%d", port),
 		Handler: router,
@@ -105,6 +105,7 @@ func StartServer(router *mux.Router, port int) {
 	log.Printf("Server Started on port %d", port)
 
 	<-done
+	mainCancel()
 	log.Printf("Server Stopped")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)

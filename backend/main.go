@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"github.com/joho/godotenv"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
@@ -13,6 +14,9 @@ func main() {
 	// we don't care about errors here
 	_ = godotenv.Load(".env")
 	config := NewConfig()
+
+	c := context.Background()
+	ctx, cancel := context.WithCancel(c)
 
 	logger := createLogger()
 
@@ -32,13 +36,13 @@ func main() {
 
 	store := NewRedisStore(config)
 
-	scale := NewScale(config.BufferSize, monitor, store, logger)
+	scale := NewScale(config.BufferSize, monitor, store, logger, ctx)
 	StartServer(NewRouter(&HandlerRepository{
 		scale:   scale,
 		config:  config,
 		monitor: monitor,
 		logger:  logger,
-	}), 8080)
+	}), 8080, cancel)
 }
 
 func createLogger() *logrus.Logger {

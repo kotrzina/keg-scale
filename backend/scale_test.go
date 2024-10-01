@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"github.com/sirupsen/logrus"
 	"testing"
 )
@@ -160,7 +161,7 @@ func CreateScaleWithMeasurements(size int, weights ...float64) *Scale {
 	logger := logrus.New()
 	var buf bytes.Buffer
 	logger.SetOutput(&buf)
-	s := NewScale(size, NewMonitor(), &FakeStore{}, logger)
+	s := NewScale(size, NewMonitor(), &FakeStore{}, logger, context.Background())
 	for _, weight := range weights {
 		_ = s.AddMeasurement(weight * 1000)
 	}
