@@ -27,12 +27,13 @@ type Scale struct {
 	mux     sync.Mutex
 	monitor *Monitor
 
-	Measurements []Measurement `json:"measurements"`
+	Measurements []Measurement `json:"measurements"` // @todo - this might be useless (we need just the last value)
 	index        int
 	size         int
 	valid        int // number of valid measurements
 
-	IsLow bool // is the keg low and needs to be replaced soon
+	BeersLeft int  `json:"beers_left"` // how many beers are left in the keg
+	IsLow     bool `json:"is_low"`     // is the keg low and needs to be replaced soon
 
 	Pub       Pub `json:"pub"`
 	ActiveKeg int `json:"active_keg"`
@@ -55,7 +56,8 @@ func NewScale(bufferSize int, monitor *Monitor, store Storage, logger *logrus.Lo
 		size:         bufferSize,
 		valid:        0,
 
-		IsLow: false,
+		BeersLeft: 0,
+		IsLow:     false,
 
 		Pub: Pub{
 			IsOpen:   false,
@@ -104,6 +106,11 @@ func (s *Scale) loadDataFromStore() {
 	activeKeg, err := s.store.GetActiveKeg()
 	if err == nil {
 		s.ActiveKeg = activeKeg
+	}
+
+	beersLeft, err := s.store.GetBeersLeft()
+	if err == nil {
+		s.BeersLeft = beersLeft
 	}
 
 	isLow, err := s.store.GetIsLow()
@@ -169,6 +176,13 @@ func (s *Scale) AddMeasurement(weight float64) error {
 			// @todo: remove keg from warehouse
 		}
 	}
+
+	s.BeersLeft = CalcBeersLeft(s.ActiveKeg, weight)
+	if serr := s.store.SetBeersLeft(s.BeersLeft); serr != nil {
+		return fmt.Errorf("could not store beers_left: %w", serr)
+	}
+	s.monitor.beersLeft.WithLabelValues().Set(float64(s.BeersLeft))
+	s.monitor.activeKeg.WithLabelValues().Set(float64(s.ActiveKeg))
 
 	return nil
 }

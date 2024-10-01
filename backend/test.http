@@ -3,7 +3,7 @@ POST http://localhost:8080/api/scale/push
 Content-Type: text/plain
 Authorization: test
 
-push|1234|-74|8200.0
+push|1234|-74|15000.0
 
 ### Ping
 POST http://localhost:8080/api/scale/push

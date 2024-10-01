@@ -11,6 +11,7 @@ const (
 	ActiveKegKey       = "active_keg"
 	MeasurementListKey = "measurements"
 	IsLowKey           = "is_low"
+	BeersLeftKey       = "beers_left"
 )
 
 type RedisStore struct {
@@ -77,4 +78,12 @@ func (s *RedisStore) SetIsLow(isLow bool) error {
 
 func (s *RedisStore) GetIsLow() (bool, error) {
 	return s.Client.Get(context.Background(), IsLowKey).Bool()
+}
+
+func (s *RedisStore) SetBeersLeft(beersLeft int) error {
+	return s.Client.Set(context.Background(), BeersLeftKey, beersLeft, 0).Err()
+}
+
+func (s *RedisStore) GetBeersLeft() (int, error) {
+	return s.Client.Get(context.Background(), BeersLeftKey).Int()
 }

@@ -8,6 +8,8 @@ type Monitor struct {
 	Registry *prometheus.Registry
 
 	kegWeight     *prometheus.GaugeVec
+	activeKeg     *prometheus.GaugeVec
+	beersLeft     *prometheus.GaugeVec
 	scaleWifiRssi *prometheus.GaugeVec
 	lastUpdate    *prometheus.GaugeVec
 	pubIsOpen     *prometheus.GaugeVec
@@ -22,6 +24,16 @@ func NewMonitor() *Monitor {
 		kegWeight: prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Name: "scale_keg_weight",
 			Help: "Current weight of the keg in grams",
+		}, []string{}),
+
+		activeKeg: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Name: "scale_active_keg",
+			Help: "Size of current keg in liters",
+		}, []string{}),
+
+		beersLeft: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Name: "scale_beers_left",
+			Help: "How to beers are left in the current keg",
 		}, []string{}),
 
 		scaleWifiRssi: prometheus.NewGaugeVec(prometheus.GaugeOpts{
@@ -42,6 +54,8 @@ func NewMonitor() *Monitor {
 
 	reg.MustRegister(monitor.lastUpdate)
 	reg.MustRegister(monitor.kegWeight)
+	reg.MustRegister(monitor.activeKeg)
+	reg.MustRegister(monitor.beersLeft)
 	reg.MustRegister(monitor.scaleWifiRssi)
 	reg.MustRegister(monitor.pubIsOpen)
 

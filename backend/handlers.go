@@ -190,7 +190,7 @@ func (hr *HandlerRepository) scaleDashboardHandler() func(http.ResponseWriter, *
 
 		data := output{
 			IsOk:               hr.scale.IsOk(),
-			BeersLeft:          CalcBeersLeft(hr.scale.ActiveKeg, last.Weight),
+			BeersLeft:          hr.scale.BeersLeft,
 			LastWeight:         last.Weight,
 			LastWeightFormated: fmt.Sprintf("%.2f", last.Weight/1000),
 			LastAt:             formatDate(last.At),

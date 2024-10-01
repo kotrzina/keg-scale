@@ -2,7 +2,8 @@ package main
 
 // FakeStore is primarily used for testing purposes
 type FakeStore struct {
-	isLow bool
+	beersLeft int
+	isLow     bool
 }
 
 func (s *FakeStore) SetActiveKeg(weight int) error {
@@ -20,6 +21,15 @@ func (s *FakeStore) AddMeasurement(m Measurement) error {
 func (s *FakeStore) GetMeasurements() ([]Measurement, error) {
 	var measurements []Measurement
 	return measurements, nil
+}
+
+func (s *FakeStore) SetBeersLeft(beersLeft int) error {
+	s.beersLeft = beersLeft
+	return nil
+}
+
+func (s *FakeStore) GetBeersLeft() (int, error) {
+	return s.beersLeft, nil
 }
 
 func (s *FakeStore) SetIsLow(isLow bool) error {
