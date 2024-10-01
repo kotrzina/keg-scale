@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"sync"
 	"time"
 )
@@ -36,10 +37,11 @@ type Scale struct {
 	LastOk time.Time `json:"last_ok"`
 	Rssi   float64   `json:"rssi"`
 
-	store Storage
+	store  Storage
+	logger *logrus.Logger
 }
 
-func NewScale(bufferSize int, monitor *Monitor, store Storage) *Scale {
+func NewScale(bufferSize int, monitor *Monitor, store Storage, logger *logrus.Logger) *Scale {
 	s := &Scale{
 		mux:     sync.Mutex{},
 		monitor: monitor,
@@ -58,7 +60,8 @@ func NewScale(bufferSize int, monitor *Monitor, store Storage) *Scale {
 
 		LastOk: time.Now().Add(-9999 * time.Hour),
 
-		store: store,
+		store:  store,
+		logger: logger,
 	}
 
 	s.loadDataFromStore()
@@ -92,6 +95,11 @@ func (s *Scale) loadDataFromStore() {
 }
 
 func (s *Scale) AddMeasurement(weight float64) error {
+	if weight < 6000 || weight > 65000 {
+		s.logger.Infof("Invalid weight: %f", weight)
+		return nil
+	}
+
 	s.monitor.kegWeight.WithLabelValues().Set(weight)
 
 	s.mux.Lock()

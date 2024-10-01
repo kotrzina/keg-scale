@@ -32,7 +32,7 @@ func main() {
 
 	store := NewRedisStore(config)
 
-	scale := NewScale(config.BufferSize, monitor, store)
+	scale := NewScale(config.BufferSize, monitor, store, logger)
 	StartServer(NewRouter(&HandlerRepository{
 		scale:   scale,
 		config:  config,
