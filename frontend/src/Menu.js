@@ -19,9 +19,9 @@ function Menu(props) {
                             props.showKeg()
                         }}>Keg</Nav.Link>
 
-                        {/*<Nav.Link onClick={() => {*/}
-                        {/*    props.showWarehouse()*/}
-                        {/*}}>Sklad</Nav.Link>*/}
+                        <Nav.Link onClick={() => {
+                            props.showWarehouse()
+                        }}>Sklad</Nav.Link>
 
                     </Nav>
                 </Navbar.Collapse>

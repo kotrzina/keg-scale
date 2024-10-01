@@ -9,4 +9,6 @@ type Storage interface {
 	GetBeersLeft() (int, error)              // get beers left
 	SetIsLow(isLow bool) error               // set is low flag
 	GetIsLow() (bool, error)                 // get is low flag
+	SetWarehouse(warehouse [5]int) error     // set warehouse
+	GetWarehouse() ([5]int, error)           // get warehouse
 }

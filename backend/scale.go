@@ -32,11 +32,12 @@ type Scale struct {
 	size         int
 	valid        int // number of valid measurements
 
-	BeersLeft int  `json:"beers_left"` // how many beers are left in the keg
-	IsLow     bool `json:"is_low"`     // is the keg low and needs to be replaced soon
+	ActiveKeg int    `json:"active_keg"` // int value of the active keg in liters
+	BeersLeft int    `json:"beers_left"` // how many beers are left in the keg
+	IsLow     bool   `json:"is_low"`     // is the keg low and needs to be replaced soon
+	Warehouse [5]int `json:"warehouse"`  // warehouse of kegs [10l, 15l, 20l, 30l, 50l]
 
-	Pub       Pub `json:"pub"`
-	ActiveKeg int `json:"active_keg"` // int value of the active keg in liters
+	Pub Pub `json:"pub"`
 
 	LastOk time.Time `json:"last_ok"`
 	Rssi   float64   `json:"rssi"`
@@ -56,15 +57,16 @@ func NewScale(bufferSize int, monitor *Monitor, store Storage, logger *logrus.Lo
 		size:         bufferSize,
 		valid:        0,
 
+		ActiveKeg: 0,
 		BeersLeft: 0,
 		IsLow:     false,
+		Warehouse: [5]int{0, 0, 0, 0, 0},
 
 		Pub: Pub{
 			IsOpen:   false,
 			OpenedAt: time.Now().Add(-9999 * time.Hour),
 			ClosedAt: time.Now().Add(-9999 * time.Hour),
 		},
-		ActiveKeg: 0,
 
 		LastOk: time.Now().Add(-9999 * time.Hour),
 
@@ -116,6 +118,11 @@ func (s *Scale) loadDataFromStore() {
 	isLow, err := s.store.GetIsLow()
 	if err == nil {
 		s.IsLow = isLow
+	}
+
+	warehouse, err := s.store.GetWarehouse()
+	if err == nil {
+		s.Warehouse = warehouse
 	}
 }
 
@@ -173,7 +180,15 @@ func (s *Scale) AddMeasurement(weight float64) error {
 				return fmt.Errorf("could not store is_low: %w", serr)
 			}
 
-			// @todo: remove keg from warehouse
+			// remove keg from warehouse
+			index, err := GetWarehouseIndex(keg)
+			if err != nil {
+				return err
+			}
+			s.Warehouse[index]--
+			if serr := s.store.SetWarehouse(s.Warehouse); serr != nil {
+				return fmt.Errorf("could not update store warehouse: %w", serr)
+			}
 		}
 	}
 
@@ -321,4 +336,30 @@ func (s *Scale) SetActiveKeg(keg int) error {
 
 	s.ActiveKeg = keg
 	return s.store.SetActiveKeg(keg)
+}
+
+func (s *Scale) IncreaseWarehouse(keg int) error {
+	s.mux.Lock()
+	defer s.mux.Unlock()
+
+	index, err := GetWarehouseIndex(keg)
+	if err != nil {
+		return err
+	}
+
+	s.Warehouse[index]++
+	return s.store.SetWarehouse(s.Warehouse)
+}
+
+func (s *Scale) DecreaseWarehouse(keg int) error {
+	s.mux.Lock()
+	defer s.mux.Unlock()
+
+	index, err := GetWarehouseIndex(keg)
+	if err != nil {
+		return err
+	}
+
+	s.Warehouse[index]--
+	return s.store.SetWarehouse(s.Warehouse)
 }

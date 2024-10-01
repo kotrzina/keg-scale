@@ -4,7 +4,10 @@ import (
 	"bytes"
 	"context"
 	"encoding/gob"
+	"fmt"
 	"github.com/redis/go-redis/v9"
+	"strconv"
+	"strings"
 )
 
 const (
@@ -12,6 +15,7 @@ const (
 	MeasurementListKey = "measurements"
 	IsLowKey           = "is_low"
 	BeersLeftKey       = "beers_left"
+	WarehouseKey       = "warehouse"
 )
 
 type RedisStore struct {
@@ -86,4 +90,35 @@ func (s *RedisStore) SetBeersLeft(beersLeft int) error {
 
 func (s *RedisStore) GetBeersLeft() (int, error) {
 	return s.Client.Get(context.Background(), BeersLeftKey).Int()
+}
+
+func (s *RedisStore) SetWarehouse(warehouse [5]int) error {
+	val := fmt.Sprintf("%d,%d,%d,%d,%d", warehouse[0], warehouse[1], warehouse[2], warehouse[3], warehouse[4])
+	return s.Client.Set(context.Background(), WarehouseKey, val, 0).Err()
+}
+
+func (s *RedisStore) GetWarehouse() ([5]int, error) {
+	res, err := s.Client.Get(context.Background(), "warehouse").Result()
+	if err != nil {
+		return [5]int{0, 0, 0, 0, 0}, err
+	}
+
+	var warehouse [5]int
+	parts := strings.Split(res, ",")
+
+	if len(parts) != 5 {
+		return [5]int{0, 0, 0, 0, 0}, fmt.Errorf("invalid warehouse format in the storage")
+	}
+
+	for i, part := range parts {
+		x, err := strconv.Atoi(part)
+		if err != nil {
+			return [5]int{0, 0, 0, 0, 0}, fmt.Errorf("invalid warehouse format in the storage")
+		}
+
+		warehouse[i] = x
+
+	}
+
+	return warehouse, nil
 }

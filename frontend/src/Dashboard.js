@@ -27,6 +27,28 @@ function Dashboard() {
         },
         active_keg: 0,
         is_low: false,
+        warehouse: [
+            {
+                "keg": 10,
+                "amount": 0
+            },
+            {
+                "keg": 15,
+                "amount": 0
+            },
+            {
+                "keg": 20,
+                "amount": 0
+            },
+            {
+                "keg": 30,
+                "amount": 0
+            },
+            {
+                "keg": 50,
+                "amount": 0
+            }
+        ]
     }
 
     const [scale, setScale] = useState(defaultScale);
@@ -71,7 +93,7 @@ function Dashboard() {
                 setShowKeg(true)
             }}/>
 
-            <Warehouse showCanvas={showWarehouse} setShowCanvas={setShowWarehouse}/>
+            <Warehouse warehouse={scale.warehouse} showCanvas={showWarehouse} setShowCanvas={setShowWarehouse} refresh={refresh}/>
             <Keg keg={scale.active_keg} showCanvas={showKeg} setShowCanvas={setShowKeg} refresh={refresh}/>
 
             <Row md={12} style={{textAlign: "center", marginTop: "30px"}}>

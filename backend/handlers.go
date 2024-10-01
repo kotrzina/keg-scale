@@ -8,6 +8,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -159,6 +160,11 @@ func (hr *HandlerRepository) scaleDashboardHandler() func(http.ResponseWriter, *
 	return func(w http.ResponseWriter, r *http.Request) {
 		hr.scale.Recheck()
 
+		type warehouseItem struct {
+			Keg    int `json:"keg"`
+			Amount int `json:"amount"`
+		}
+
 		type pubOutput struct {
 			IsOpen   bool   `json:"is_open"`
 			OpenedAt string `json:"opened_at"`
@@ -166,18 +172,19 @@ func (hr *HandlerRepository) scaleDashboardHandler() func(http.ResponseWriter, *
 		}
 
 		type output struct {
-			IsOk               bool      `json:"is_ok"`
-			BeersLeft          int       `json:"beers_left"`
-			LastWeight         float64   `json:"last_weight"`
-			LastWeightFormated string    `json:"last_weight_formated"`
-			LastAt             string    `json:"last_at"`
-			LastAtDuration     string    `json:"last_at_duration"`
-			Rssi               float64   `json:"rssi"`
-			LastUpdate         string    `json:"last_update"`
-			LastUpdateDuration string    `json:"last_update_duration"`
-			Pub                pubOutput `json:"pub"`
-			ActiveKeg          int       `json:"active_keg"`
-			IsLow              bool      `json:"is_low"`
+			IsOk               bool            `json:"is_ok"`
+			BeersLeft          int             `json:"beers_left"`
+			LastWeight         float64         `json:"last_weight"`
+			LastWeightFormated string          `json:"last_weight_formated"`
+			LastAt             string          `json:"last_at"`
+			LastAtDuration     string          `json:"last_at_duration"`
+			Rssi               float64         `json:"rssi"`
+			LastUpdate         string          `json:"last_update"`
+			LastUpdateDuration string          `json:"last_update_duration"`
+			Pub                pubOutput       `json:"pub"`
+			ActiveKeg          int             `json:"active_keg"`
+			IsLow              bool            `json:"is_low"`
+			Warehouse          []warehouseItem `json:"warehouse"`
 		}
 
 		last := hr.scale.GetLastMeasurement() // it could be fake measurement
@@ -186,6 +193,14 @@ func (hr *HandlerRepository) scaleDashboardHandler() func(http.ResponseWriter, *
 		if err != nil {
 			http.Error(w, "Could not decode units", http.StatusInternalServerError)
 			return
+		}
+
+		warehouse := []warehouseItem{
+			{Keg: 10, Amount: hr.scale.Warehouse[0]},
+			{Keg: 15, Amount: hr.scale.Warehouse[1]},
+			{Keg: 20, Amount: hr.scale.Warehouse[2]},
+			{Keg: 30, Amount: hr.scale.Warehouse[3]},
+			{Keg: 50, Amount: hr.scale.Warehouse[4]},
 		}
 
 		data := output{
@@ -205,6 +220,7 @@ func (hr *HandlerRepository) scaleDashboardHandler() func(http.ResponseWriter, *
 			},
 			ActiveKeg: hr.scale.ActiveKeg,
 			IsLow:     hr.scale.IsLow,
+			Warehouse: warehouse,
 		}
 
 		// fake some result when we don't have anything
@@ -223,5 +239,49 @@ func (hr *HandlerRepository) scaleDashboardHandler() func(http.ResponseWriter, *
 
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write(res)
+	}
+}
+
+func (hr *HandlerRepository) scaleWarehouseHandler() func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		auth := r.Header.Get("Authorization")
+		if auth != hr.config.Password {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		type input struct {
+			Keg int    `json:"keg"`
+			Way string `json:"way"` // up or down
+		}
+
+		var data input
+		err := json.NewDecoder(r.Body).Decode(&data)
+		if err != nil {
+			http.Error(w, "Could not read post body", http.StatusBadRequest)
+			return
+		}
+
+		if strings.ToLower(data.Way) == "up" {
+			if err := hr.scale.IncreaseWarehouse(data.Keg); err != nil {
+				http.Error(w, "Could not increase warehouse", http.StatusInternalServerError)
+				return
+			}
+		}
+
+		if strings.ToLower(data.Way) == "down" {
+			if err := hr.scale.DecreaseWarehouse(data.Keg); err != nil {
+				http.Error(w, "Could not increase warehouse", http.StatusInternalServerError)
+				return
+			}
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(getOkJson())
 	}
 }

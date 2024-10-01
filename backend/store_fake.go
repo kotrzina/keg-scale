@@ -40,3 +40,12 @@ func (s *FakeStore) SetIsLow(isLow bool) error {
 func (s *FakeStore) GetIsLow() (bool, error) {
 	return s.isLow, nil
 }
+
+func (s *FakeStore) SetWarehouse(warehouse [5]int) error {
+	return nil
+}
+
+func (s *FakeStore) GetWarehouse() ([5]int, error) {
+	var warehouse = [5]int{1, 2, 3, 4, 5}
+	return warehouse, nil
+}
