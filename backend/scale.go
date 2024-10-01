@@ -11,12 +11,6 @@ import (
 
 const OkLimit = 5 * time.Minute
 
-type Measurement struct {
-	Index  int       `json:"index"`
-	Weight float64   `json:"weight"`
-	At     time.Time `json:"at"`
-}
-
 type Pub struct {
 	IsOpen   bool      `json:"is_open"`
 	OpenedAt time.Time `json:"open_at"`
@@ -27,15 +21,12 @@ type Scale struct {
 	mux     sync.Mutex
 	monitor *Monitor
 
-	Measurements []Measurement `json:"measurements"` // @todo - this might be useless (we need just the last value)
-	index        int
-	size         int
-	valid        int // number of valid measurements
-
-	ActiveKeg int    `json:"active_keg"` // int value of the active keg in liters
-	BeersLeft int    `json:"beers_left"` // how many beers are left in the keg
-	IsLow     bool   `json:"is_low"`     // is the keg low and needs to be replaced soon
-	Warehouse [5]int `json:"warehouse"`  // warehouse of kegs [10l, 15l, 20l, 30l, 50l]
+	Weight    float64   `json:"weight"` // current scale value
+	WeightAt  time.Time `json:"last_weight_at"`
+	ActiveKeg int       `json:"active_keg"` // int value of the active keg in liters
+	BeersLeft int       `json:"beers_left"` // how many beers are left in the keg
+	IsLow     bool      `json:"is_low"`     // is the keg low and needs to be replaced soon
+	Warehouse [5]int    `json:"warehouse"`  // warehouse of kegs [10l, 15l, 20l, 30l, 50l]
 
 	Pub Pub `json:"pub"`
 
@@ -47,16 +38,13 @@ type Scale struct {
 	ctx    context.Context
 }
 
-func NewScale(bufferSize int, monitor *Monitor, store Storage, logger *logrus.Logger, ctx context.Context) *Scale {
+func NewScale(monitor *Monitor, store Storage, logger *logrus.Logger, ctx context.Context) *Scale {
 	s := &Scale{
 		mux:     sync.Mutex{},
 		monitor: monitor,
 
-		Measurements: make([]Measurement, bufferSize),
-		index:        -1,
-		size:         bufferSize,
-		valid:        0,
-
+		Weight:    0,
+		WeightAt:  time.Unix(0, 0), // time of last weight measurement
 		ActiveKeg: 0,
 		BeersLeft: 0,
 		IsLow:     false,
@@ -96,23 +84,27 @@ func NewScale(bufferSize int, monitor *Monitor, store Storage, logger *logrus.Lo
 }
 
 func (s *Scale) loadDataFromStore() {
-	measurements, err := s.store.GetMeasurements()
+	weight, err := s.store.GetWeight()
 	if err == nil {
-		s.index = len(measurements) - 1
-		i := 0
-		for _, m := range measurements {
-			s.Measurements[i] = m
-		}
+		s.Weight = weight
+		s.monitor.weight.WithLabelValues().Set(weight)
+	}
+
+	weightAt, err := s.store.GetWeightAt()
+	if err == nil {
+		s.WeightAt = weightAt
 	}
 
 	activeKeg, err := s.store.GetActiveKeg()
 	if err == nil {
 		s.ActiveKeg = activeKeg
+		s.monitor.activeKeg.WithLabelValues().Set(float64(activeKeg))
 	}
 
 	beersLeft, err := s.store.GetBeersLeft()
 	if err == nil {
 		s.BeersLeft = beersLeft
+		s.monitor.beersLeft.WithLabelValues().Set(float64(beersLeft))
 	}
 
 	isLow, err := s.store.GetIsLow()
@@ -132,30 +124,16 @@ func (s *Scale) AddMeasurement(weight float64) error {
 		return nil
 	}
 
-	s.monitor.kegWeight.WithLabelValues().Set(weight)
-
 	s.mux.Lock()
 	defer s.mux.Unlock()
 
-	s.index++
-	if s.index >= len(s.Measurements) {
-		s.index = 0
+	s.Weight = weight
+	s.WeightAt = time.Now()
+	if serr := s.store.SetWeight(weight); serr != nil {
+		return fmt.Errorf("could not store weight: %w", serr)
 	}
-
-	m := Measurement{
-		Index:  s.index,
-		Weight: weight,
-		At:     time.Now(),
-	}
-
-	s.Measurements[s.index] = m
-	err := s.store.AddMeasurement(m)
-	if err != nil {
-		return fmt.Errorf("could not store measurement: %w", err)
-	}
-
-	if s.valid < s.size {
-		s.valid++
+	if serr := s.store.SetWeightAt(s.WeightAt); serr != nil {
+		return fmt.Errorf("could not store weight_at: %w", serr)
 	}
 
 	// check if keg is low
@@ -200,30 +178,12 @@ func (s *Scale) AddMeasurement(weight float64) error {
 	if serr := s.store.SetBeersLeft(s.BeersLeft); serr != nil {
 		return fmt.Errorf("could not store beers_left: %w", serr)
 	}
+
+	s.monitor.weight.WithLabelValues().Set(s.Weight)
 	s.monitor.beersLeft.WithLabelValues().Set(float64(s.BeersLeft))
 	s.monitor.activeKeg.WithLabelValues().Set(float64(s.ActiveKeg))
 
 	return nil
-}
-
-func (s *Scale) GetLastMeasurement() Measurement {
-	return s.GetMeasurement(0)
-}
-
-// GetMeasurement GetValidCount return number of valid measurements
-func (s *Scale) GetMeasurement(index int) Measurement {
-	if index > s.GetValidCount() || index > s.size {
-		return Measurement{
-			Weight: 0,
-			Index:  -1,
-		}
-	}
-
-	s.mux.Lock()
-	defer s.mux.Unlock()
-
-	idx := (s.index - index + s.size) % s.size
-	return s.Measurements[idx]
 }
 
 func (s *Scale) JsonState() ([]byte, error) {
@@ -234,7 +194,7 @@ func (s *Scale) JsonState() ([]byte, error) {
 }
 
 func (s *Scale) Ping() {
-	s.monitor.lastUpdate.WithLabelValues().SetToCurrentTime()
+	s.monitor.lastPing.WithLabelValues().SetToCurrentTime()
 
 	s.mux.Lock()
 	defer s.mux.Unlock()
@@ -266,6 +226,7 @@ func (s *Scale) Recheck() {
 	}
 }
 
+// IsOk returns true if the scale is ok based on the last update time
 func (s *Scale) IsOk() bool {
 	s.mux.Lock()
 	defer s.mux.Unlock()
@@ -273,6 +234,7 @@ func (s *Scale) IsOk() bool {
 	return time.Since(s.LastOk) < OkLimit
 }
 
+// SetRssi sets the RSSI value of the WiFi signal
 func (s *Scale) SetRssi(rssi float64) {
 	s.monitor.scaleWifiRssi.WithLabelValues().Set(rssi)
 
@@ -282,61 +244,15 @@ func (s *Scale) SetRssi(rssi float64) {
 	s.Rssi = rssi
 }
 
-// GetValidCount returns the number of valid measurements
-func (s *Scale) GetValidCount() int {
-	s.mux.Lock()
-	defer s.mux.Unlock()
-
-	return s.valid
-}
-
-// HasLastN returns true if the last n measurements are not empty
-func (s *Scale) HasLastN(n int) bool {
-	if n > s.size {
-		n = s.size
-	}
-
-	s.mux.Lock()
-	defer s.mux.Unlock()
-
-	return s.valid >= n
-}
-
-// SumLastN returns the sum of the last n measurements
-func (s *Scale) SumLastN(n int) float64 {
-	if n > s.size {
-		n = s.size
-	}
-
-	s.mux.Lock()
-	defer s.mux.Unlock()
-
-	sum := 0.0
-	for i := 0; i < n; i++ {
-		idx := (s.index - i + s.size) % s.size
-		sum += s.Measurements[idx].Weight
-	}
-
-	return sum
-}
-
-// AvgLastN returns the average of the last n measurements
-// It ignores empty measurements - you should call HasLastN before calling this
-func (s *Scale) AvgLastN(n int) float64 {
-	if n > s.size {
-		n = s.size
-	}
-
-	if n == 0 {
-		return 0
-	}
-
-	return s.SumLastN(n) / float64(n)
-}
-
+// SetActiveKeg sets the current active keg
 func (s *Scale) SetActiveKeg(keg int) error {
 	s.mux.Lock()
 	defer s.mux.Unlock()
+
+	s.IsLow = false
+	if err := s.store.SetIsLow(false); err != nil {
+		return err
+	}
 
 	s.ActiveKeg = keg
 	return s.store.SetActiveKeg(keg)

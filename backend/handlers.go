@@ -86,21 +86,6 @@ func (hr *HandlerRepository) scaleMessageHandler() func(http.ResponseWriter, *ht
 	}
 }
 
-func (hr *HandlerRepository) scalePrintHandler() func(http.ResponseWriter, *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodGet {
-			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
-			return
-		}
-
-		c := hr.scale.GetValidCount()
-		for i := 0; i < c; i++ {
-			m := hr.scale.GetMeasurement(i)
-			_, _ = w.Write([]byte(fmt.Sprintf("%.2f;", m.Weight)))
-		}
-	}
-}
-
 // metricsHandler returns HTTP handler for metrics endpoint
 func (hr *HandlerRepository) metricsHandler() http.Handler {
 	return promhttp.HandlerFor(
@@ -187,8 +172,6 @@ func (hr *HandlerRepository) scaleDashboardHandler() func(http.ResponseWriter, *
 			Warehouse          []warehouseItem `json:"warehouse"`
 		}
 
-		last := hr.scale.GetLastMeasurement() // it could be fake measurement
-
 		units, err := durafmt.DefaultUnitsCoder.Decode(localizationUnits)
 		if err != nil {
 			http.Error(w, "Could not decode units", http.StatusInternalServerError)
@@ -206,10 +189,10 @@ func (hr *HandlerRepository) scaleDashboardHandler() func(http.ResponseWriter, *
 		data := output{
 			IsOk:               hr.scale.IsOk(),
 			BeersLeft:          hr.scale.BeersLeft,
-			LastWeight:         last.Weight,
-			LastWeightFormated: fmt.Sprintf("%.2f", last.Weight/1000),
-			LastAt:             formatDate(last.At),
-			LastAtDuration:     durafmt.Parse(time.Since(last.At).Round(time.Second)).LimitFirstN(2).Format(units),
+			LastWeight:         hr.scale.Weight,
+			LastWeightFormated: fmt.Sprintf("%.2f", hr.scale.Weight/1000),
+			LastAt:             formatDate(hr.scale.WeightAt),
+			LastAtDuration:     durafmt.Parse(time.Since(hr.scale.WeightAt).Round(time.Second)).LimitFirstN(2).Format(units),
 			Rssi:               hr.scale.Rssi,
 			LastUpdate:         formatDate(hr.scale.LastOk),
 			LastUpdateDuration: durafmt.Parse(time.Since(hr.scale.LastOk).Round(time.Second)).LimitFirstN(2).Format(units),
@@ -221,13 +204,6 @@ func (hr *HandlerRepository) scaleDashboardHandler() func(http.ResponseWriter, *
 			ActiveKeg: hr.scale.ActiveKeg,
 			IsLow:     hr.scale.IsLow,
 			Warehouse: warehouse,
-		}
-
-		// fake some result when we don't have anything
-		if !hr.scale.HasLastN(1) {
-			data.LastWeight = 0
-			data.LastWeightFormated = ""
-			data.LastAt = ""
 		}
 
 		res, err := json.Marshal(data)

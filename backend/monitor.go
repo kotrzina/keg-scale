@@ -7,11 +7,11 @@ import "github.com/prometheus/client_golang/prometheus"
 type Monitor struct {
 	Registry *prometheus.Registry
 
-	kegWeight     *prometheus.GaugeVec
+	weight        *prometheus.GaugeVec
 	activeKeg     *prometheus.GaugeVec
 	beersLeft     *prometheus.GaugeVec
 	scaleWifiRssi *prometheus.GaugeVec
-	lastUpdate    *prometheus.GaugeVec
+	lastPing      *prometheus.GaugeVec
 	pubIsOpen     *prometheus.GaugeVec
 }
 
@@ -21,8 +21,8 @@ func NewMonitor() *Monitor {
 	monitor := &Monitor{
 		Registry: reg,
 
-		kegWeight: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Name: "scale_keg_weight",
+		weight: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Name: "scale_weight",
 			Help: "Current weight of the keg in grams",
 		}, []string{}),
 
@@ -41,8 +41,8 @@ func NewMonitor() *Monitor {
 			Help: "Current WiFi RSSI",
 		}, []string{}),
 
-		lastUpdate: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Name: "scale_last_update",
+		lastPing: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Name: "scale_last_ping",
 			Help: "Last update time",
 		}, []string{}),
 
@@ -52,11 +52,11 @@ func NewMonitor() *Monitor {
 		}, []string{}),
 	}
 
-	reg.MustRegister(monitor.lastUpdate)
-	reg.MustRegister(monitor.kegWeight)
+	reg.MustRegister(monitor.weight)
 	reg.MustRegister(monitor.activeKeg)
 	reg.MustRegister(monitor.beersLeft)
 	reg.MustRegister(monitor.scaleWifiRssi)
+	reg.MustRegister(monitor.lastPing)
 	reg.MustRegister(monitor.pubIsOpen)
 
 	return monitor

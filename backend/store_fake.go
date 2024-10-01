@@ -1,9 +1,27 @@
 package main
 
+import "time"
+
 // FakeStore is primarily used for testing purposes
 type FakeStore struct {
 	beersLeft int
 	isLow     bool
+}
+
+func (s *FakeStore) SetWeight(weight float64) error {
+	return nil
+}
+
+func (s *FakeStore) GetWeight() (float64, error) {
+	return 12, nil
+}
+
+func (s *FakeStore) SetWeightAt(weightAt time.Time) error {
+	return nil
+}
+
+func (s *FakeStore) GetWeightAt() (time.Time, error) {
+	return time.Now(), nil
 }
 
 func (s *FakeStore) SetActiveKeg(weight int) error {
@@ -12,15 +30,6 @@ func (s *FakeStore) SetActiveKeg(weight int) error {
 
 func (s *FakeStore) GetActiveKeg() (int, error) {
 	return 0, nil
-}
-
-func (s *FakeStore) AddMeasurement(m Measurement) error {
-	return nil
-}
-
-func (s *FakeStore) GetMeasurements() ([]Measurement, error) {
-	var measurements []Measurement
-	return measurements, nil
 }
 
 func (s *FakeStore) SetBeersLeft(beersLeft int) error {

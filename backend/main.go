@@ -3,9 +3,7 @@ package main
 import (
 	"context"
 	"github.com/joho/godotenv"
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
-	"log"
 	"os"
 )
 
@@ -19,24 +17,11 @@ func main() {
 	ctx, cancel := context.WithCancel(c)
 
 	logger := createLogger()
-
-	promector := NewPromector(config.PrometheusUrl, config.PrometheusUser, config.PrometheusPassword)
-	scaleCurrentValue, err := promector.GetLastValue("scale_keg_weight")
-	if err != nil {
-		log.Fatalf("Error getting last value: %v", err)
-	}
-	scaleLastUpdate, err := promector.GetLastValue("scale_last_update")
-	if err != nil {
-		log.Fatalf("Error getting last value: %v", err)
-	}
-
 	monitor := NewMonitor()
-	monitor.kegWeight.With(prometheus.Labels{}).Set(scaleCurrentValue)
-	monitor.lastUpdate.With(prometheus.Labels{}).Set(scaleLastUpdate)
 
 	store := NewRedisStore(config)
 
-	scale := NewScale(config.BufferSize, monitor, store, logger, ctx)
+	scale := NewScale(monitor, store, logger, ctx)
 	StartServer(NewRouter(&HandlerRepository{
 		scale:   scale,
 		config:  config,
