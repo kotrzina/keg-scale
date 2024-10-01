@@ -45,7 +45,7 @@ func CalcBeersLeft(keg int, weight float64) int {
 
 func IsKegLow(keg int, weight float64) bool {
 	if keg == 0 {
-		return true // no keg is set - islow for a new one
+		return true // no keg is set - is low for a new one
 	}
 
 	kegWeight, found := GetEmptyWeights()[keg]

@@ -36,7 +36,7 @@ type Scale struct {
 	IsLow     bool `json:"is_low"`     // is the keg low and needs to be replaced soon
 
 	Pub       Pub `json:"pub"`
-	ActiveKeg int `json:"active_keg"`
+	ActiveKeg int `json:"active_keg"` // int value of the active keg in liters
 
 	LastOk time.Time `json:"last_ok"`
 	Rssi   float64   `json:"rssi"`

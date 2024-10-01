@@ -87,19 +87,19 @@ function Dashboard() {
 
                 <Field
                     title={"Zbývá piv"}
-                    info={"před " + scale.last_at_duration}
-                    variant={scale.is_low ? "orange" : "green"}
+                    info={scale.last_at !== "" ? ("před " + scale.last_at_duration) : ""}
+                    variant={!scale.pub.is_open ? "red" : scale.is_low ? "orange" : "green"}
                     loading={showSpinner}
-                    hidden={!scale.is_ok || scale.last_at <= 0}
+                    hidden={false}
                 >
                     <Pivo amount={scale.beers_left}/>
                 </Field>
 
                 <Field
-                    title={"Naraženo"}
-                    variant={"green"}
+                    title={"Bečka"}
+                    variant={!scale.pub.is_open ? "red" : "green"}
                     loading={showSpinner}
-                    hidden={!scale.pub.is_open || scale.active_keg < 10}
+                    hidden={false}
                 >
                     {scale.active_keg}&nbsp;l
                 </Field>
