@@ -137,6 +137,16 @@ function Dashboard() {
                 </Field>
 
                 <Field
+                    title={"Sklad"}
+                    info={""}
+                    variant={scale.pub.is_open ? "green" : "red"}
+                    loading={showSpinner}
+                    hidden={false}
+                >
+                    {scale.warehouse.reduce((acc, keg) => acc + keg.amount + " ", "")}
+                </Field>
+
+                <Field
                     title={"Status"}
                     info={"před " + scale.last_update_duration}
                     variant={scale.pub.is_open ? "green" : "red"}
