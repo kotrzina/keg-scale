@@ -2,6 +2,19 @@ import {Toast} from "react-bootstrap";
 
 function Field(props) {
 
+    function getBodyClass() {
+        switch (props.variant) {
+            case "green":
+                return "cell cell-green";
+            case "orange":
+                return "cell cell-orange";
+            case "red":
+                return "cell cell-red";
+            default:
+                return
+        }
+    }
+
     return (
         <Toast style={{margin: "5px"}} hidden={props.hidden}>
             <Toast.Header closeButton={false}>
@@ -19,7 +32,7 @@ function Field(props) {
                 <small>{props.info}</small>
             </Toast.Header>
             <Toast.Body>
-                <div className={props.variant === "green" ? "cell cell-green" : "cell cell-red"}>
+                <div className={getBodyClass()}>
                     {props.children}
                 </div>
             </Toast.Body>

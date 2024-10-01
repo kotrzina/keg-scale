@@ -26,6 +26,7 @@ function Dashboard() {
             closed_at: 0,
         },
         active_keg: 0,
+        is_low: false,
     }
 
     const [scale, setScale] = useState(defaultScale);
@@ -87,7 +88,7 @@ function Dashboard() {
                 <Field
                     title={"Zbývá piv"}
                     info={"před " + scale.last_at_duration}
-                    variant={"green"}
+                    variant={scale.is_low ? "orange" : "green"}
                     loading={showSpinner}
                     hidden={!scale.is_ok || scale.last_at <= 0}
                 >

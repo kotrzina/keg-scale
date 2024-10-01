@@ -32,6 +32,8 @@ type Scale struct {
 	size         int
 	valid        int // number of valid measurements
 
+	IsLow bool // is the keg low and needs to be replaced soon
+
 	Pub       Pub `json:"pub"`
 	ActiveKeg int `json:"active_keg"`
 
@@ -53,6 +55,8 @@ func NewScale(bufferSize int, monitor *Monitor, store Storage, logger *logrus.Lo
 		size:         bufferSize,
 		valid:        0,
 
+		IsLow: false,
+
 		Pub: Pub{
 			IsOpen:   false,
 			OpenedAt: time.Now().Add(-9999 * time.Hour),
@@ -71,7 +75,7 @@ func NewScale(bufferSize int, monitor *Monitor, store Storage, logger *logrus.Lo
 
 	// periodically call recheck
 	go func(s *Scale) {
-		tick := time.NewTicker(2 * time.Second)
+		tick := time.NewTicker(15 * time.Second)
 		defer tick.Stop()
 		for {
 			select {
@@ -100,6 +104,11 @@ func (s *Scale) loadDataFromStore() {
 	activeKeg, err := s.store.GetActiveKeg()
 	if err == nil {
 		s.ActiveKeg = activeKeg
+	}
+
+	isLow, err := s.store.GetIsLow()
+	if err == nil {
+		s.IsLow = isLow
 	}
 }
 
@@ -133,6 +142,32 @@ func (s *Scale) AddMeasurement(weight float64) error {
 
 	if s.valid < s.size {
 		s.valid++
+	}
+
+	// check if keg is low
+	if !s.IsLow {
+		s.IsLow = IsKegLow(s.ActiveKeg, weight)
+		if serr := s.store.SetIsLow(s.IsLow); serr != nil {
+			return fmt.Errorf("could not store is_low: %w", serr)
+		}
+	}
+
+	// we expect a new keg
+	if s.ActiveKeg == 0 || s.IsLow {
+		keg, err := GuessNewKegSize(weight)
+		if err == nil {
+			s.ActiveKeg = keg
+			if serr := s.store.SetActiveKeg(keg); serr != nil {
+				return fmt.Errorf("could not store active_keg: %w", serr)
+			}
+
+			s.IsLow = false
+			if serr := s.store.SetIsLow(false); serr != nil {
+				return fmt.Errorf("could not store is_low: %w", serr)
+			}
+
+			// @todo: remove keg from warehouse
+		}
 	}
 
 	return nil
@@ -180,20 +215,18 @@ func (s *Scale) Ping() {
 	s.LastOk = time.Now()
 }
 
-// Recheck sets the scale to not open
+// Recheck checks various conditions and states
+// - sets the scale to not open after [OkLimit] minutes
 // it should be called everytime we want to get some calculations
 // to recalculate the state of the scale
 func (s *Scale) Recheck() {
 	ok := s.IsOk() // mutex
 
-	if ok {
-		return
-	}
-
 	s.mux.Lock()
 	defer s.mux.Unlock()
 
-	if s.Pub.IsOpen { // we haven't received any data for [OkLimit] minutes and pub is open
+	// we haven't received any data for [OkLimit] minutes and pub is open
+	if !ok && s.Pub.IsOpen {
 		s.monitor.pubIsOpen.WithLabelValues().Set(0)
 		s.Pub.IsOpen = false
 		s.Pub.ClosedAt = time.Now().Add(-1 * OkLimit)

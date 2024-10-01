@@ -10,6 +10,7 @@ import (
 const (
 	ActiveKegKey       = "active_keg"
 	MeasurementListKey = "measurements"
+	IsLowKey           = "is_low"
 )
 
 type RedisStore struct {
@@ -68,4 +69,12 @@ func (s *RedisStore) GetMeasurements() ([]Measurement, error) {
 	}
 
 	return measurements, nil
+}
+
+func (s *RedisStore) SetIsLow(isLow bool) error {
+	return s.Client.Set(context.Background(), IsLowKey, isLow, 0).Err()
+}
+
+func (s *RedisStore) GetIsLow() (bool, error) {
+	return s.Client.Get(context.Background(), IsLowKey).Bool()
 }

@@ -1,25 +1,69 @@
 package main
 
-import "math"
+import (
+	"fmt"
+	"math"
+)
 
-func calcBeersLeft(keg int, weight float64) int {
-	var kegWeight float64 = 0 // ignore keg if not found
-	switch keg {
-	case 10:
-		kegWeight = 6
-	case 15:
-		kegWeight = 7
-	case 20:
-		kegWeight = 7.25 // guess
-	case 30:
-		kegWeight = 7.5
-	case 50:
-		kegWeight = 10.1 // guess
+type KegWeights map[int]float64
+
+// GetEmptyWeights returns a map of keg sizes and their empty weights in grams
+func GetEmptyWeights() KegWeights {
+	return KegWeights{
+		10: 6000,
+		15: 7000,
+		20: 7250,
+		30: 7500,
+		50: 10100,
+	}
+}
+
+// GetFullWeights returns a map of keg sizes and their full weights in grams
+func GetFullWeights() KegWeights {
+	w := make(map[int]float64)
+	empty := GetEmptyWeights()
+	for keg, weight := range empty {
+		w[keg] = float64(keg)*1000 + weight
 	}
 
-	if kegWeight > weight/1000 {
+	return w
+}
+
+// CalcBeersLeft calculates the number of beers left in a keg based on its size and current weight
+func CalcBeersLeft(keg int, weight float64) int {
+	kegWeight, found := GetEmptyWeights()[keg]
+	if !found {
+		kegWeight = 0
+	}
+
+	if kegWeight/1000 > weight/1000 {
 		return 0
 	}
 
-	return int(math.Floor((weight/1000 - kegWeight) * 2))
+	return int(math.Floor((weight/1000 - kegWeight/1000) * 2))
+}
+
+func IsKegLow(keg int, weight float64) bool {
+	if keg == 0 {
+		return true // no keg is set - islow for a new one
+	}
+
+	kegWeight, found := GetEmptyWeights()[keg]
+	if !found {
+		return true // unknown keg - islow for a new one
+	}
+
+	return math.Abs(weight-kegWeight) < 2500 // we are 2500 grams close to the empty keg
+}
+
+func GuessNewKegSize(weight float64) (int, error) {
+	kegs := GetFullWeights()
+	delta := 2000.0
+	for keg, fullWeight := range kegs {
+		if math.Abs(weight-fullWeight) < delta {
+			return keg, nil
+		}
+	}
+
+	return 0, fmt.Errorf("could not guess keg size based on weight: %f", weight)
 }

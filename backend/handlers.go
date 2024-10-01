@@ -177,6 +177,7 @@ func (hr *HandlerRepository) scaleDashboardHandler() func(http.ResponseWriter, *
 			LastUpdateDuration string    `json:"last_update_duration"`
 			Pub                pubOutput `json:"pub"`
 			ActiveKeg          int       `json:"active_keg"`
+			IsLow              bool      `json:"is_low"`
 		}
 
 		last := hr.scale.GetLastMeasurement() // it could be fake measurement
@@ -189,7 +190,7 @@ func (hr *HandlerRepository) scaleDashboardHandler() func(http.ResponseWriter, *
 
 		data := output{
 			IsOk:               hr.scale.IsOk(),
-			BeersLeft:          calcBeersLeft(hr.scale.ActiveKeg, last.Weight),
+			BeersLeft:          CalcBeersLeft(hr.scale.ActiveKeg, last.Weight),
 			LastWeight:         last.Weight,
 			LastWeightFormated: fmt.Sprintf("%.2f", last.Weight/1000),
 			LastAt:             formatDate(last.At),
@@ -203,6 +204,7 @@ func (hr *HandlerRepository) scaleDashboardHandler() func(http.ResponseWriter, *
 				ClosedAt: formatTime(hr.scale.Pub.ClosedAt),
 			},
 			ActiveKeg: hr.scale.ActiveKeg,
+			IsLow:     hr.scale.IsLow,
 		}
 
 		// fake some result when we don't have anything
