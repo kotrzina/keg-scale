@@ -12,9 +12,9 @@ func GetEmptyWeights() KegWeights {
 	return KegWeights{
 		10: 6000,
 		15: 7000,
-		20: 7250,
-		30: 7500,
-		50: 10100,
+		20: 7500,
+		30: 10000,
+		50: 11000,
 	}
 }
 
