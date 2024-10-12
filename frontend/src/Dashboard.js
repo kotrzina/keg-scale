@@ -48,7 +48,8 @@ function Dashboard() {
                 "keg": 50,
                 "amount": 0
             }
-        ]
+        ],
+        warehouse_beer_left: 0,
     }
 
     const [scale, setScale] = useState(defaultScale);
@@ -139,11 +140,21 @@ function Dashboard() {
                 <Field
                     title={"Sklad"}
                     info={""}
-                    variant={scale.pub.is_open ? "green" : "red"}
+                    variant={"green"}
                     loading={showSpinner}
                     hidden={false}
                 >
                     {scale.warehouse.reduce((acc, keg) => acc + keg.amount + " ", "")}
+                </Field>
+
+                <Field
+                    title={"Sklad"}
+                    info={""}
+                    variant={scale.warehouse_beer_left > 100 ? "green" : "orange"}
+                    loading={showSpinner}
+                    hidden={scale.warehouse_beer_left <= 0}
+                >
+                    {scale.warehouse_beer_left}&nbsp;piv
                 </Field>
 
                 <Field

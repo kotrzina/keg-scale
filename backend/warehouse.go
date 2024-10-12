@@ -19,3 +19,13 @@ func GetWarehouseIndex(keg int) (int, error) {
 
 	return 0, fmt.Errorf("invalid keg") // should never happen
 }
+
+func GetWarehouseBeersLeft(warehouse [5]int) int {
+	left := warehouse[0] * 10
+	left += warehouse[1] * 15
+	left += warehouse[2] * 20
+	left += warehouse[3] * 30
+	left += warehouse[4] * 50
+
+	return left * 2
+}

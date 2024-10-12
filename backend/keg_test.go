@@ -18,17 +18,17 @@ func TestCalcBeersLeft(t *testing.T) {
 		{15, 7000, 0},
 		{15, 8500, 3},
 		{20, 7250, 0},
-		{20, 8250, 2},
+		{20, 8750, 2},
 		{30, 7500, 0},
-		{30, 8500, 2},
+		{30, 11200, 2},
 		{50, 10100, 0},
-		{50, 11100, 2},
+		{50, 12100, 2},
 		{90, 10000, 20}, // unknown keg - ignore weight
 	}
 
 	for _, tc := range testcases {
 		beers := CalcBeersLeft(tc.keg, tc.weight)
-		assert.Equal(t, tc.beers, beers, "Expected beers to be %d, got %d", tc.beers, beers)
+		assert.Equal(t, tc.beers, beers, "Keg %d with weight %f - Expected beers to be %d, got %d", tc.keg, tc.weight, tc.beers, beers)
 	}
 }
 

@@ -170,6 +170,7 @@ func (hr *HandlerRepository) scaleDashboardHandler() func(http.ResponseWriter, *
 			ActiveKeg          int             `json:"active_keg"`
 			IsLow              bool            `json:"is_low"`
 			Warehouse          []warehouseItem `json:"warehouse"`
+			WarehouseBeerLeft  int             `json:"warehouse_beer_left"`
 		}
 
 		units, err := durafmt.DefaultUnitsCoder.Decode(localizationUnits)
@@ -201,9 +202,10 @@ func (hr *HandlerRepository) scaleDashboardHandler() func(http.ResponseWriter, *
 				OpenedAt: formatTime(hr.scale.Pub.OpenedAt),
 				ClosedAt: formatTime(hr.scale.Pub.ClosedAt),
 			},
-			ActiveKeg: hr.scale.ActiveKeg,
-			IsLow:     hr.scale.IsLow,
-			Warehouse: warehouse,
+			ActiveKeg:         hr.scale.ActiveKeg,
+			IsLow:             hr.scale.IsLow,
+			Warehouse:         warehouse,
+			WarehouseBeerLeft: GetWarehouseBeersLeft(hr.scale.Warehouse),
 		}
 
 		res, err := json.Marshal(data)
