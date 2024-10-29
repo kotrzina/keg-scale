@@ -58,7 +58,7 @@ func IsKegLow(keg int, weight float64) bool {
 
 func GuessNewKegSize(weight float64) (int, error) {
 	kegs := GetFullWeights()
-	delta := 2000.0
+	delta := 2500.0
 	for keg, fullWeight := range kegs {
 		if math.Abs(weight-fullWeight) < delta {
 			return keg, nil

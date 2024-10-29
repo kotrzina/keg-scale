@@ -21,12 +21,13 @@ type Scale struct {
 	mux     sync.Mutex
 	monitor *Monitor
 
-	Weight    float64   `json:"weight"` // current scale value
-	WeightAt  time.Time `json:"last_weight_at"`
-	ActiveKeg int       `json:"active_keg"` // int value of the active keg in liters
-	BeersLeft int       `json:"beers_left"` // how many beers are left in the keg
-	IsLow     bool      `json:"is_low"`     // is the keg low and needs to be replaced soon
-	Warehouse [5]int    `json:"warehouse"`  // warehouse of kegs [10l, 15l, 20l, 30l, 50l]
+	Weight       float64   `json:"weight"` // current scale value
+	WeightAt     time.Time `json:"last_weight_at"`
+	CandidateKeg int       `json:"candidate_keg"` // candidate keg size
+	ActiveKeg    int       `json:"active_keg"`    // int value of the active keg in liters
+	BeersLeft    int       `json:"beers_left"`    // how many beers are left in the keg
+	IsLow        bool      `json:"is_low"`        // is the keg low and needs to be replaced soon
+	Warehouse    [5]int    `json:"warehouse"`     // warehouse of kegs [10l, 15l, 20l, 30l, 50l]
 
 	Pub Pub `json:"pub"`
 
@@ -43,12 +44,13 @@ func NewScale(monitor *Monitor, store Storage, logger *logrus.Logger, ctx contex
 		mux:     sync.Mutex{},
 		monitor: monitor,
 
-		Weight:    0,
-		WeightAt:  time.Unix(0, 0), // time of last weight measurement
-		ActiveKeg: 0,
-		BeersLeft: 0,
-		IsLow:     false,
-		Warehouse: [5]int{0, 0, 0, 0, 0},
+		Weight:       0,
+		WeightAt:     time.Unix(0, 0), // time of last weight measurement
+		CandidateKeg: 0,
+		ActiveKeg:    0,
+		BeersLeft:    0,
+		IsLow:        false,
+		Warehouse:    [5]int{0, 0, 0, 0, 0},
 
 		Pub: Pub{
 			IsOpen:   false,
@@ -120,7 +122,7 @@ func (s *Scale) loadDataFromStore() {
 
 func (s *Scale) AddMeasurement(weight float64) error {
 	if weight < 6000 || weight > 65000 {
-		s.logger.Infof("Invalid weight: %f", weight)
+		s.logger.Infof("Invalid weight: %.0f", weight)
 		return nil
 	}
 
@@ -145,43 +147,63 @@ func (s *Scale) AddMeasurement(weight float64) error {
 	}
 
 	// we expect a new keg
+	// we need at least two measurements to be sure
+	// first measurement sets the candidate keg
+	// second measurement sets the active keg
 	if s.ActiveKeg == 0 || s.IsLow {
 		keg, err := GuessNewKegSize(weight)
 		if err == nil {
-			s.ActiveKeg = keg
-			if serr := s.store.SetActiveKeg(keg); serr != nil {
-				return fmt.Errorf("could not store active_keg: %w", serr)
-			}
+			// we found a good candidate
 
-			s.IsLow = false
-			if serr := s.store.SetIsLow(false); serr != nil {
-				return fmt.Errorf("could not store is_low: %w", serr)
-			}
-
-			// remove keg from warehouse
-			index, err := GetWarehouseIndex(keg)
-			if err != nil {
-				return err
-			}
-			if s.Warehouse[index] > 0 {
-				s.Warehouse[index]--
-				if serr := s.store.SetWarehouse(s.Warehouse); serr != nil {
-					return fmt.Errorf("could not update store warehouse: %w", serr)
+			if s.CandidateKeg > 0 && s.CandidateKeg == keg {
+				// we have two measurements with the same keg
+				s.CandidateKeg = 0
+				s.ActiveKeg = keg
+				if serr := s.store.SetActiveKeg(keg); serr != nil {
+					return fmt.Errorf("could not store active_keg: %w", serr)
 				}
+
+				s.IsLow = false
+				if serr := s.store.SetIsLow(false); serr != nil {
+					return fmt.Errorf("could not store is_low: %w", serr)
+				}
+
+				// remove keg from warehouse
+				index, err := GetWarehouseIndex(keg)
+				if err != nil {
+					return err
+				}
+				if s.Warehouse[index] > 0 {
+					s.Warehouse[index]--
+					if serr := s.store.SetWarehouse(s.Warehouse); serr != nil {
+						return fmt.Errorf("could not update store warehouse: %w", serr)
+					}
+				} else {
+					s.logger.Warnf("Keg %d is not available in the warehouse", keg)
+				}
+
+				s.logger.Infof("New keg (%d l) CONFIRMED with current value %.0f", keg, weight)
 			} else {
-				s.logger.Warnf("Keg %d is not available in the warehouse", keg)
+				// new candidate keg
+				// we already know that the new keg is there, but we need to confirm it
+				s.logger.Infof("New keg candidate (%d l) REGISTERED with current value %.0f", keg, weight)
+				s.CandidateKeg = keg
+				s.ActiveKeg = 0
 			}
 		}
 	}
 
-	s.BeersLeft = CalcBeersLeft(s.ActiveKeg, weight)
-	if serr := s.store.SetBeersLeft(s.BeersLeft); serr != nil {
-		return fmt.Errorf("could not store beers_left: %w", serr)
-	}
+	// calculate values only if we know active keg
+	if s.ActiveKeg > 0 {
+		s.BeersLeft = CalcBeersLeft(s.ActiveKeg, weight)
+		if serr := s.store.SetBeersLeft(s.BeersLeft); serr != nil {
+			return fmt.Errorf("could not store beers_left: %w", serr)
+		}
 
-	s.monitor.weight.WithLabelValues().Set(s.Weight)
-	s.monitor.beersLeft.WithLabelValues().Set(float64(s.BeersLeft))
-	s.monitor.activeKeg.WithLabelValues().Set(float64(s.ActiveKeg))
+		s.monitor.weight.WithLabelValues().Set(s.Weight)
+		s.monitor.beersLeft.WithLabelValues().Set(float64(s.BeersLeft))
+		s.monitor.activeKeg.WithLabelValues().Set(float64(s.ActiveKeg))
+	}
 
 	return nil
 }
