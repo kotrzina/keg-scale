@@ -1,7 +1,11 @@
+.toast-col {
+    margin-bottom: 10px;
+}
+
 .cell {
     width: 100%;
     text-align: center;
-    font-size: 2.8em;
+    font-size: 2.4em;
     padding: 12px;
     font-weight: bold;
     border-radius: 10px;
