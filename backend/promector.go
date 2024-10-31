@@ -8,12 +8,14 @@ import (
 	"github.com/sirupsen/logrus"
 	"io"
 	"net/http"
+	"os"
 	"strconv"
 	"sync"
 	"time"
 )
 
 // Promector represents a Prometheus collector
+// We download data periodically and store it in cache
 type Promector struct {
 	baseUrl  string
 	user     string
@@ -21,9 +23,9 @@ type Promector struct {
 
 	logger *logrus.Logger
 	ctx    context.Context
-	mtx    sync.RWMutex
 
-	data map[string][]RangeRecord
+	mtx   sync.RWMutex
+	cache Charts
 }
 
 type PrometheusResponse struct {
@@ -46,12 +48,15 @@ func NewPromector(baseUrl, user, password string, logger *logrus.Logger, ctx con
 		ctx:    ctx,
 		mtx:    sync.RWMutex{},
 
-		data: make(map[string][]RangeRecord, 4),
+		cache: Charts{
+			BeersLeft: []ChartInterval{},
+		},
 	}
 
-	// periodically call recheck
+	prom.Refresh() // first download on start
+	// periodically download data
 	go func(prom *Promector) {
-		tick := time.NewTicker(2 * time.Minute)
+		tick := time.NewTicker(90 * time.Second)
 		defer tick.Stop()
 		for {
 			select {
@@ -60,11 +65,10 @@ func NewPromector(baseUrl, user, password string, logger *logrus.Logger, ctx con
 				return
 			case <-tick.C:
 				prom.Refresh()
-				prom.logger.Debug("Promector data refreshed")
+				prom.logger.Debug("Promector cache refreshed")
 			}
 		}
 	}(prom)
-	prom.Refresh()
 
 	return prom
 }
@@ -98,36 +102,42 @@ func (p *Promector) Refresh() {
 		{"scale_beers_left_24h", "scale_beers_left", 24, "1h"},
 	}
 
-	tmp := make(map[string][]RangeRecord, 4)
+	wg := sync.WaitGroup{}
+	wg.Add(len(requests))
+	results := make(map[string][]RangeRecord, len(requests))
 
-	for _, r := range requests {
-		data, err := p.GetRangeData(r.query, r.hours, r.step)
-		if err != nil {
-			p.logger.Errorf("could not get range data for %s: %v", r.key, err)
-			continue
-		}
+	for _, req := range requests {
+		go func(r request) {
+			defer wg.Done()
+			data, err := p.GetRangeData(r.query, r.hours, r.step)
+			if err != nil {
+				p.logger.Errorf("could not get range data for %s: %v", r.query, err)
+				return
+			}
 
-		tmp[r.key] = data
+			results[r.key] = data
+		}(req)
 	}
+
+	wg.Wait()
 
 	p.mtx.Lock()
 	defer p.mtx.Unlock()
-	p.data = tmp
+	p.cache = Charts{
+		BeersLeft: []ChartInterval{
+			{"1h", results["scale_beers_left_1h"]},
+			{"3h", results["scale_beers_left_3h"]},
+			{"6h", results["scale_beers_left_6h"]},
+			{"24h", results["scale_beers_left_24h"]},
+		},
+	}
 }
 
 func (p *Promector) GetChartData() Charts {
 	p.mtx.RLock()
 	defer p.mtx.RUnlock()
 
-	return Charts{
-		BeersLeft: []ChartInterval{
-			{"1h", p.data["scale_beers_left_1h"]},
-			{"3h", p.data["scale_beers_left_3h"]},
-			{"6h", p.data["scale_beers_left_6h"]},
-			{"24h", p.data["scale_beers_left_24h"]},
-		},
-	}
-
+	return p.cache
 }
 
 func (p *Promector) GetRangeData(query string, hours int, step string) ([]RangeRecord, error) {
@@ -171,6 +181,11 @@ func (p *Promector) GetRangeData(query string, hours int, step string) ([]RangeR
 	}
 
 	if len(prometheusResponse.Data.Result) != 1 {
+		fmt.Println("ERR")
+		fmt.Println(len(prometheusResponse.Data.Result))
+		fmt.Println(string(data))
+		fmt.Println(prometheusResponse.Data.Result)
+		os.Exit(1)
 		return nil, fmt.Errorf("unexpected number of results: %d", len(prometheusResponse.Data.Result))
 	}
 
