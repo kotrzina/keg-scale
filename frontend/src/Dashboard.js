@@ -110,7 +110,8 @@ function Dashboard() {
                 setShowKeg(true)
             }}/>
 
-            <Warehouse warehouse={scale.warehouse} showCanvas={showWarehouse} setShowCanvas={setShowWarehouse} refresh={refresh}/>
+            <Warehouse warehouse={scale.warehouse} showCanvas={showWarehouse} setShowCanvas={setShowWarehouse}
+                       refresh={refresh}/>
             <Keg keg={scale.active_keg} showCanvas={showKeg} setShowCanvas={setShowKeg} refresh={refresh}/>
 
             <Row md={12} style={{textAlign: "center", marginTop: "30px"}}>
@@ -196,6 +197,8 @@ function Dashboard() {
 
             <FieldChart title={"Zbýva piva"} chart={scale.charts.beers_left} loading={showSpinner}/>
 
+
+            <Row className={"mt-4"}></Row>
         </Container>
     )
 }

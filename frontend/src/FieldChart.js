@@ -47,8 +47,8 @@ function FieldChart(props) {
                     label: 'Pivo',
                     data: interval.values.map((item) => item.value),
                     fill: true,
-                    backgroundColor: 'rgba(75,192,192,0.2)',
-                    borderColor: 'rgba(75,192,192,1)'
+                    backgroundColor: 'rgba(69, 57, 32,0.2)',
+                    borderColor: 'rgba(219, 166, 55,1)',
                 },
             ]
         })
