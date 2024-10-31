@@ -14,6 +14,10 @@ type Config struct {
 	Password  string // shared admin password
 
 	FrontendPath string
+
+	PrometheusUrl      string
+	PrometheusUser     string
+	PrometheusPassword string
 }
 
 func NewConfig() *Config {
@@ -25,6 +29,10 @@ func NewConfig() *Config {
 		Password:  getStringEnvDefault("PASSWORD", "test"),
 
 		FrontendPath: getStringEnvDefault("FRONTEND_PATH", "./../frontend/build/"),
+
+		PrometheusUrl:      getStringEnvDefault("PROMETHEUS_URL", "http://localhost:9090"),
+		PrometheusUser:     getStringEnvDefault("PROMETHEUS_USER", "test"),
+		PrometheusPassword: getStringEnvDefault("PROMETHEUS_PASSWORD", "test"),
 	}
 }
 

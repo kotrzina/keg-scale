@@ -25,3 +25,11 @@
     background-color: #630e10;
     color: #FFF;
 }
+
+.interval {
+    cursor: pointer;
+}
+
+.activeInterval {
+    font-weight: bold;
+}

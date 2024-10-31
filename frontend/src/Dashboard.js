@@ -7,8 +7,19 @@ import Keg from "./Keg";
 import {buildUrl} from "./Api";
 import Pivo from "./Pivo";
 import Field from "./Field";
+import FieldChart from "./FieldChart";
 
 function Dashboard() {
+
+    const defaultEmptyChart = [{
+        interval: "1h",
+        values: [
+            {
+                label: "0",
+                value: 0
+            }
+        ]
+    }];
 
     const defaultScale = {
         is_ok: false,
@@ -50,7 +61,12 @@ function Dashboard() {
             }
         ],
         warehouse_beer_left: 0,
+
+        charts: {
+            beers_left: defaultEmptyChart,
+        }
     }
+
 
     const [scale, setScale] = useState(defaultScale);
     const [showKeg, setShowKeg] = useState(false);
@@ -176,8 +192,10 @@ function Dashboard() {
                 >
                     {scale.rssi}&nbsp;db
                 </Field>
-
             </Row>
+
+            <FieldChart title={"Zbýva piva"} chart={scale.charts.beers_left} loading={showSpinner}/>
+
         </Container>
     )
 }

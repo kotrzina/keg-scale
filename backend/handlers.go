@@ -13,10 +13,11 @@ import (
 )
 
 type HandlerRepository struct {
-	scale   *Scale
-	config  *Config
-	monitor *Monitor
-	logger  *logrus.Logger
+	scale     *Scale
+	promector *Promector
+	config    *Config
+	monitor   *Monitor
+	logger    *logrus.Logger
 }
 
 func (hr *HandlerRepository) scaleStatusHandler() func(http.ResponseWriter, *http.Request) {
@@ -171,6 +172,8 @@ func (hr *HandlerRepository) scaleDashboardHandler() func(http.ResponseWriter, *
 			IsLow              bool            `json:"is_low"`
 			Warehouse          []warehouseItem `json:"warehouse"`
 			WarehouseBeerLeft  int             `json:"warehouse_beer_left"`
+
+			Charts Charts `json:"charts"`
 		}
 
 		units, err := durafmt.DefaultUnitsCoder.Decode(localizationUnits)
@@ -206,6 +209,8 @@ func (hr *HandlerRepository) scaleDashboardHandler() func(http.ResponseWriter, *
 			IsLow:             hr.scale.IsLow,
 			Warehouse:         warehouse,
 			WarehouseBeerLeft: GetWarehouseBeersLeft(hr.scale.Warehouse),
+
+			Charts: hr.promector.GetChartData(),
 		}
 
 		res, err := json.Marshal(data)
