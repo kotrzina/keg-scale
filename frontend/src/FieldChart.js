@@ -20,6 +20,11 @@ function FieldChart(props) {
     };
 
     const options = {
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        },
         plugins: {
             legend: {
                 display: false
@@ -81,7 +86,8 @@ function FieldChart(props) {
                                         e.preventDefault()
                                         setActiveInterval(item.interval)
                                         return false
-                                    }} className={activeInterval === item.interval ? "interval activeInterval" : "interval"}>
+                                    }}
+                                          className={activeInterval === item.interval ? "interval activeInterval" : "interval"}>
                                         {item.interval}&nbsp;&nbsp;
                                     </span>
                                 )
