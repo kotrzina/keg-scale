@@ -8,8 +8,8 @@ import (
 	"github.com/sirupsen/logrus"
 	"io"
 	"net/http"
-	"os"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 )
@@ -21,6 +21,7 @@ type Promector struct {
 	user     string
 	password string
 
+	scale  *Scale
 	logger *logrus.Logger
 	ctx    context.Context
 
@@ -38,16 +39,17 @@ type PrometheusResponse struct {
 	} `json:"data"`
 }
 
-func NewPromector(baseUrl, user, password string, logger *logrus.Logger, ctx context.Context) *Promector {
+func NewPromector(baseUrl, user, password string, scale *Scale, logger *logrus.Logger, ctx context.Context) *Promector {
 	prom := &Promector{
 		baseUrl:  baseUrl,
 		user:     user,
 		password: password,
 
+		scale:  scale,
 		logger: logger,
 		ctx:    ctx,
-		mtx:    sync.RWMutex{},
 
+		mtx: sync.RWMutex{},
 		cache: Charts{
 			BeersLeft: []ChartInterval{},
 		},
@@ -91,15 +93,41 @@ func (p *Promector) Refresh() {
 	type request struct {
 		key   string
 		query string
-		hours int
-		step  string
+		start time.Time
+		end   time.Time
+		step  time.Duration
 	}
 
+	now := time.Now()
+
 	requests := []request{
-		{"scale_beers_left_1h", "scale_beers_left", 1, "5m"},
-		{"scale_beers_left_3h", "scale_beers_left", 3, "10m"},
-		{"scale_beers_left_6h", "scale_beers_left", 6, "20m"},
-		{"scale_beers_left_24h", "scale_beers_left", 24, "1h"},
+		{"scale_beers_left_1h", "scale_beers_left", now.Add(-1 * time.Hour), now, 5 * time.Minute},
+		{"scale_beers_left_3h", "scale_beers_left", now.Add(-3 * time.Hour), now, 10 * time.Minute},
+		{"scale_beers_left_6h", "scale_beers_left", now.Add(-6 * time.Hour), now, 20 * time.Minute},
+		{"scale_beers_left_24h", "scale_beers_left", now.Add(-24 * time.Hour), now, time.Hour},
+	}
+
+	if p.scale.Pub.IsOpen {
+		// chart for current session
+		// let's take 10 minutes before opening to now
+		// step is calculated based on open duration - we want to have approx 14 points in the chart
+		dataStart := p.scale.Pub.OpenedAt.Add(-10 * time.Minute)
+		openDuration := now.Sub(dataStart)
+		step := (openDuration / 14).Round(time.Minute)
+		requests = append(requests, request{"scale_beers_left_now", "scale_beers_left", dataStart, now, step})
+	} else {
+		// chart for last session
+		// let's take 10 minutes before opening to closing time plus 10 minutes
+		// step is calculated based on open duration - we want to have approx 14 points in the chart
+		timeStart := p.scale.Pub.OpenedAt.Add(-10 * time.Minute)
+		timeEnd := p.scale.Pub.ClosedAt.Add(10 * time.Minute)
+		step := (timeEnd.Sub(timeStart) / 14).Round(time.Minute)
+
+		fmt.Println("timeStart", timeStart)
+		fmt.Println("timeEnd", timeEnd)
+		fmt.Println("step", step)
+
+		requests = append(requests, request{"scale_beers_left_last", "scale_beers_left", timeStart, timeEnd, step})
 	}
 
 	wg := sync.WaitGroup{}
@@ -109,7 +137,7 @@ func (p *Promector) Refresh() {
 	for _, req := range requests {
 		go func(r request) {
 			defer wg.Done()
-			data, err := p.GetRangeData(r.query, r.hours, r.step)
+			data, err := p.GetRangeData(r.query, r.start, r.end, r.step)
 			if err != nil {
 				p.logger.Errorf("could not get range data for %s: %v", r.query, err)
 				return
@@ -129,6 +157,8 @@ func (p *Promector) Refresh() {
 			{"3h", results["scale_beers_left_3h"]},
 			{"6h", results["scale_beers_left_6h"]},
 			{"24h", results["scale_beers_left_24h"]},
+			{"now", results["scale_beers_left_now"]},
+			{"last", results["scale_beers_left_last"]},
 		},
 	}
 }
@@ -140,15 +170,15 @@ func (p *Promector) GetChartData() Charts {
 	return p.cache
 }
 
-func (p *Promector) GetRangeData(query string, hours int, step string) ([]RangeRecord, error) {
+func (p *Promector) GetRangeData(query string, start, end time.Time, step time.Duration) ([]RangeRecord, error) {
 	url := fmt.Sprintf("%s/api/v1/query_range?", p.baseUrl)
 	req, _ := http.NewRequest("GET", url, nil)
 
 	q := req.URL.Query()
 	q.Add("query", query)
-	q.Add("step", step)
-	q.Add("start", fmt.Sprintf("%d", time.Now().Unix()-(60*60*int64(hours))))
-	q.Add("end", fmt.Sprintf("%d", time.Now().Unix()))
+	q.Add("step", formatStep(step))
+	q.Add("start", fmt.Sprintf("%d", start.Unix()))
+	q.Add("end", fmt.Sprintf("%d", end.Unix()))
 	req.URL.RawQuery = q.Encode()
 
 	req.Header.Add("Authorization", getBaseAuth(p.user, p.password))
@@ -181,11 +211,6 @@ func (p *Promector) GetRangeData(query string, hours int, step string) ([]RangeR
 	}
 
 	if len(prometheusResponse.Data.Result) != 1 {
-		fmt.Println("ERR")
-		fmt.Println(len(prometheusResponse.Data.Result))
-		fmt.Println(string(data))
-		fmt.Println(prometheusResponse.Data.Result)
-		os.Exit(1)
 		return nil, fmt.Errorf("unexpected number of results: %d", len(prometheusResponse.Data.Result))
 	}
 
@@ -223,4 +248,18 @@ func (p *Promector) GetRangeData(query string, hours int, step string) ([]RangeR
 func getBaseAuth(username, password string) string {
 	auth := username + ":" + password
 	return "Basic " + base64.StdEncoding.EncodeToString([]byte(auth))
+}
+
+func formatStep(step time.Duration) string {
+	f := step.String()
+
+	if strings.Contains(f, "m0s") {
+		f = strings.TrimSuffix(f, "0s")
+	}
+
+	if strings.Contains(f, "h0m") {
+		f = strings.TrimSuffix(f, "0m")
+	}
+
+	return f
 }

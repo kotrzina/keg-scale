@@ -19,17 +19,18 @@ func main() {
 	logger := createLogger()
 	monitor := NewMonitor()
 
+	store := NewRedisStore(config)
+	scale := NewScale(monitor, store, logger, ctx)
+
 	promector := NewPromector(
 		config.PrometheusUrl,
 		config.PrometheusUser,
 		config.PrometheusPassword,
+		scale,
 		logger,
 		ctx,
 	)
 
-	store := NewRedisStore(config)
-
-	scale := NewScale(monitor, store, logger, ctx)
 	StartServer(NewRouter(&HandlerRepository{
 		scale:     scale,
 		promector: promector,

@@ -40,6 +40,10 @@ function FieldChart(props) {
             return
         }
 
+        if (interval.values === null) {
+            return
+        }
+
         setData({
             labels: interval.values.map((item) => item.label),
             datasets: [
@@ -73,7 +77,7 @@ function FieldChart(props) {
                         <small>
                             {props.chart.map((item) => {
                                 return (
-                                    <span key={item.interval} onClick={(e) => {
+                                    <span hidden={item.values === null} key={item.interval} onClick={(e) => {
                                         e.preventDefault()
                                         setActiveInterval(item.interval)
                                         return false
