@@ -33,7 +33,7 @@ func TestScale_ParseScaleMessage(t *testing.T) {
 			}
 
 			if test.parsed.Rssi != parsed.Rssi {
-				t.Errorf("Expected Rssi to be %f, got %f", test.parsed.Rssi, parsed.Rssi)
+				t.Errorf("Expected rssi to be %f, got %f", test.parsed.Rssi, parsed.Rssi)
 			}
 
 			if test.parsed.Value != parsed.Value {

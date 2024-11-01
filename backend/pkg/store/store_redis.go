@@ -1,4 +1,4 @@
-package main
+package store
 
 import (
 	"context"
@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/kotrzina/keg-scale/pkg/config"
 )
 
 const (
@@ -26,7 +28,7 @@ type RedisStore struct {
 	Client *redis.Client
 }
 
-func NewRedisStore(config *Config) *RedisStore {
+func NewRedisStore(config *config.Config) *RedisStore {
 	return &RedisStore{
 		Client: redis.NewClient(&redis.Options{
 			Addr: config.RedisAddr,

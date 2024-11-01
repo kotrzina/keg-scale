@@ -22,45 +22,47 @@ function Dashboard() {
     }];
 
     const defaultScale = {
-        is_ok: false,
-        beers_left: 0,
-        last_weight: 0.0,
-        last_weight_formated: "0.0",
-        last_at: "0",
-        last_at_duration: "0",
-        rssi: 0,
-        last_update: 0,
-        last_update_duration: 0,
-        pub: {
-            is_open: false,
-            opened_at: 0,
-            closed_at: 0,
+        scale: {
+            is_ok: false,
+            beers_left: 0,
+            last_weight: 0.0,
+            last_weight_formated: "0.0",
+            last_at: "0",
+            last_at_duration: "0",
+            rssi: 0,
+            last_update: 0,
+            last_update_duration: 0,
+            pub: {
+                is_open: false,
+                opened_at: 0,
+                closed_at: 0,
+            },
+            active_keg: 0,
+            is_low: false,
+            warehouse: [
+                {
+                    "keg": 10,
+                    "amount": 0
+                },
+                {
+                    "keg": 15,
+                    "amount": 0
+                },
+                {
+                    "keg": 20,
+                    "amount": 0
+                },
+                {
+                    "keg": 30,
+                    "amount": 0
+                },
+                {
+                    "keg": 50,
+                    "amount": 0
+                }
+            ],
+            warehouse_beer_left: 0,
         },
-        active_keg: 0,
-        is_low: false,
-        warehouse: [
-            {
-                "keg": 10,
-                "amount": 0
-            },
-            {
-                "keg": 15,
-                "amount": 0
-            },
-            {
-                "keg": 20,
-                "amount": 0
-            },
-            {
-                "keg": 30,
-                "amount": 0
-            },
-            {
-                "keg": 50,
-                "amount": 0
-            }
-        ],
-        warehouse_beer_left: 0,
 
         charts: {
             beers_left: defaultEmptyChart,
@@ -68,7 +70,7 @@ function Dashboard() {
     }
 
 
-    const [scale, setScale] = useState(defaultScale);
+    const [data, setData] = useState(defaultScale);
     const [showKeg, setShowKeg] = useState(false);
     const [showWarehouse, setShowWarehouse] = useState(false);
     const [showSpinner, setShowSpinner] = useState(false);
@@ -95,9 +97,9 @@ function Dashboard() {
             const url = buildUrl("/api/scale/dashboard")
             const res = await fetch(url)
             const data = await res.json()
-            setScale(data)
+            setData(data)
         } catch {
-            setScale(defaultScale)
+            setData(defaultScale)
         }
         setShowSpinner(false)
     }
@@ -110,48 +112,48 @@ function Dashboard() {
                 setShowKeg(true)
             }}/>
 
-            <Warehouse warehouse={scale.warehouse} showCanvas={showWarehouse} setShowCanvas={setShowWarehouse}
+            <Warehouse warehouse={data.scale.warehouse} showCanvas={showWarehouse} setShowCanvas={setShowWarehouse}
                        refresh={refresh}/>
-            <Keg keg={scale.active_keg} showCanvas={showKeg} setShowCanvas={setShowKeg} refresh={refresh}/>
+            <Keg keg={data.scale.active_keg} showCanvas={showKeg} setShowCanvas={setShowKeg} refresh={refresh}/>
 
             <Row md={12} style={{textAlign: "center", marginTop: "30px"}}>
                 <Field
                     title={"Hospoda"}
-                    info={scale.pub.is_open ? scale.pub.opened_at : scale.pub.closed_at}
-                    variant={scale.pub.is_open ? "green" : "red"}
+                    info={data.scale.pub.is_open ? data.scale.pub.opened_at : data.scale.pub.closed_at}
+                    variant={data.scale.pub.is_open ? "green" : "red"}
                     loading={showSpinner}
                     hidden={false}
                 >
-                    {scale.pub.is_open ? "OTEVŘENO" : "ZAVŘENO"}
+                    {data.scale.pub.is_open ? "OTEVŘENO" : "ZAVŘENO"}
                 </Field>
 
                 <Field
                     title={"Zbývá piv"}
-                    info={scale.last_at !== "" ? ("před " + scale.last_at_duration) : ""}
-                    variant={!scale.pub.is_open ? "red" : scale.is_low ? "orange" : "green"}
+                    info={data.scale.last_at !== "" ? ("před " + data.scale.last_at_duration) : ""}
+                    variant={!data.scale.pub.is_open ? "red" : data.scale.is_low ? "orange" : "green"}
                     loading={showSpinner}
                     hidden={false}
                 >
-                    <Pivo amount={scale.beers_left}/>
+                    <Pivo amount={data.scale.beers_left}/>
                 </Field>
 
                 <Field
                     title={"Bečka"}
-                    variant={!scale.pub.is_open ? "red" : "green"}
+                    variant={!data.scale.pub.is_open ? "red" : "green"}
                     loading={showSpinner}
                     hidden={false}
                 >
-                    {scale.active_keg}&nbsp;l
+                    {data.scale.active_keg}&nbsp;l
                 </Field>
 
                 <Field
                     title={"Váha"}
-                    info={"před " + scale.last_at_duration}
+                    info={"před " + data.scale.last_at_duration}
                     variant={"green"}
                     loading={showSpinner}
-                    hidden={!scale.is_ok || scale.last_at <= 0}
+                    hidden={!data.scale.is_ok || data.scale.last_at <= 0}
                 >
-                    {scale.last_weight_formated}&nbsp;kg
+                    {data.scale.last_weight_formated}&nbsp;kg
                 </Field>
 
                 <Field
@@ -161,41 +163,41 @@ function Dashboard() {
                     loading={showSpinner}
                     hidden={false}
                 >
-                    {scale.warehouse.reduce((acc, keg) => acc + keg.amount + " ", "")}
+                    {data.scale.warehouse.reduce((acc, keg) => acc + keg.amount + " ", "")}
                 </Field>
 
                 <Field
                     title={"Sklad"}
                     info={""}
-                    variant={scale.warehouse_beer_left > 100 ? "green" : "orange"}
+                    variant={data.scale.warehouse_beer_left > 100 ? "green" : "orange"}
                     loading={showSpinner}
-                    hidden={scale.warehouse_beer_left <= 0}
+                    hidden={data.scale.warehouse_beer_left <= 0}
                 >
-                    {scale.warehouse_beer_left}&nbsp;piv
+                    {data.scale.warehouse_beer_left}&nbsp;piv
                 </Field>
 
                 <Field
                     title={"Status"}
-                    info={"před " + scale.last_update_duration}
-                    variant={scale.pub.is_open ? "green" : "red"}
+                    info={"před " + data.scale.last_update_duration}
+                    variant={data.scale.pub.is_open ? "green" : "red"}
                     loading={showSpinner}
                     hidden={false}
                 >
-                    {scale.is_ok ? "OK" : "OFFLINE"}
+                    {data.scale.is_ok ? "OK" : "OFFLINE"}
                 </Field>
 
                 <Field
                     title={"WiFi"}
-                    info={"před " + scale.last_update_duration}
+                    info={"před " + data.scale.last_update_duration}
                     variant={"green"}
                     loading={showSpinner}
-                    hidden={!scale.is_ok}
+                    hidden={!data.scale.is_ok}
                 >
-                    {scale.rssi}&nbsp;db
+                    {data.scale.rssi}&nbsp;db
                 </Field>
             </Row>
 
-            <FieldChart title={"Zbýva piva"} chart={scale.charts.beers_left} loading={showSpinner}/>
+            <FieldChart title={"Zbýva piva"} chart={data.charts.beers_left} loading={showSpinner}/>
 
 
             <Row className={"mt-4"}></Row>

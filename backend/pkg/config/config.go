@@ -1,4 +1,4 @@
-package main
+package config
 
 import (
 	"fmt"
@@ -41,7 +41,7 @@ func getStringEnvDefault(key string, defaultValue string) string {
 		return value
 	}
 
-	fmt.Println(fmt.Sprintf("Using default value for %s", key))
+	fmt.Printf("Using default value for %s\n", key)
 	return defaultValue
 }
 
@@ -52,6 +52,6 @@ func getIntEnvDefault(key string, defaultValue int) int {
 		}
 	}
 
-	fmt.Println(fmt.Sprintf("Using default value for %s", key))
+	fmt.Printf("Using default value for %s\n", key)
 	return defaultValue
 }

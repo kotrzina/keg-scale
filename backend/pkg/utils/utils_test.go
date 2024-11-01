@@ -1,4 +1,4 @@
-package main
+package utils
 
 import (
 	"github.com/stretchr/testify/assert"
@@ -17,13 +17,13 @@ func TestStrip(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		if got := strip(test.input); got != test.expected {
-			t.Errorf("strip(%q) = %q; want %q", test.input, got, test.expected)
+		if got := Strip(test.input); got != test.expected {
+			t.Errorf("Strip(%q) = %q; want %q", test.input, got, test.expected)
 		}
 	}
 }
 
 func TestGetOkJson(t *testing.T) {
-	got := getOkJson()
+	got := GetOkJson()
 	assert.Contains(t, string(got), "ok")
 }

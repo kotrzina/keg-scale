@@ -1,68 +1,79 @@
-package main
+package scale
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
+	"github.com/hako/durafmt"
 	"github.com/sirupsen/logrus"
 	"sync"
 	"time"
+
+	"github.com/kotrzina/keg-scale/pkg/prometheus"
+	"github.com/kotrzina/keg-scale/pkg/store"
 )
 
 const OkLimit = 5 * time.Minute
-
-type Pub struct {
-	IsOpen   bool      `json:"is_open"`
-	OpenedAt time.Time `json:"open_at"`
-	ClosedAt time.Time `json:"closed_at"`
-}
+const localizationUnits = "r:r,t:t,d:d,h:h,m:m,s:s,ms:ms,microsecond"
 
 type Scale struct {
-	mux     sync.Mutex
-	monitor *Monitor
+	mux     sync.RWMutex
+	monitor *prometheus.Monitor
 
-	Weight       float64   `json:"weight"` // current scale value
-	WeightAt     time.Time `json:"last_weight_at"`
-	CandidateKeg int       `json:"candidate_keg"` // candidate keg size
-	ActiveKeg    int       `json:"active_keg"`    // int value of the active keg in liters
-	BeersLeft    int       `json:"beers_left"`    // how many beers are left in the keg
-	IsLow        bool      `json:"is_low"`        // is the keg low and needs to be replaced soon
-	Warehouse    [5]int    `json:"warehouse"`     // warehouse of kegs [10l, 15l, 20l, 30l, 50l]
+	weight       float64 // current scale value
+	weightAt     time.Time
+	candidateKeg int    // candidate keg size
+	activeKeg    int    // int value of the active keg in liters
+	beersLeft    int    // how many beers are left in the keg
+	isLow        bool   // is the keg low and needs to be replaced soon
+	warehouse    [5]int // warehouse of kegs [10l, 15l, 20l, 30l, 50l]
 
-	Pub Pub `json:"pub"`
+	pub pub
 
-	LastOk time.Time `json:"last_ok"`
-	Rssi   float64   `json:"rssi"`
+	lastOk time.Time
+	rssi   float64
 
-	store  Storage
-	logger *logrus.Logger
-	ctx    context.Context
+	store    store.Storage
+	logger   *logrus.Logger
+	ctx      context.Context
+	fmtUnits durafmt.Units
 }
 
-func NewScale(monitor *Monitor, store Storage, logger *logrus.Logger, ctx context.Context) *Scale {
+type pub struct {
+	isOpen   bool
+	openedAt time.Time
+	closedAt time.Time
+}
+
+func NewScale(monitor *prometheus.Monitor, storage store.Storage, logger *logrus.Logger, ctx context.Context) *Scale {
+	fmtUnits, err := durafmt.DefaultUnitsCoder.Decode(localizationUnits)
+	if err != nil {
+		logger.Fatalf("could not decode units: %v", err)
+	}
+
 	s := &Scale{
-		mux:     sync.Mutex{},
+		mux:     sync.RWMutex{},
 		monitor: monitor,
 
-		Weight:       0,
-		WeightAt:     time.Unix(0, 0), // time of last weight measurement
-		CandidateKeg: 0,
-		ActiveKeg:    0,
-		BeersLeft:    0,
-		IsLow:        false,
-		Warehouse:    [5]int{0, 0, 0, 0, 0},
+		weight:       0,
+		weightAt:     time.Unix(0, 0), // time of last weight measurement
+		candidateKeg: 0,
+		activeKeg:    0,
+		beersLeft:    0,
+		isLow:        false,
+		warehouse:    [5]int{0, 0, 0, 0, 0},
 
-		Pub: Pub{
-			IsOpen:   false,
-			OpenedAt: time.Now().Add(-9999 * time.Hour),
-			ClosedAt: time.Now().Add(-9999 * time.Hour),
+		pub: pub{
+			isOpen:   false,
+			openedAt: time.Now().Add(-9999 * time.Hour),
+			closedAt: time.Now().Add(-9999 * time.Hour),
 		},
 
-		LastOk: time.Now().Add(-9999 * time.Hour),
+		lastOk: time.Now().Add(-9999 * time.Hour),
 
-		store:  store,
-		logger: logger,
-		ctx:    ctx,
+		store:    storage,
+		logger:   logger,
+		ctx:      ctx,
+		fmtUnits: fmtUnits,
 	}
 
 	s.loadDataFromStore()
@@ -88,55 +99,55 @@ func NewScale(monitor *Monitor, store Storage, logger *logrus.Logger, ctx contex
 func (s *Scale) loadDataFromStore() {
 	weight, err := s.store.GetWeight()
 	if err == nil {
-		s.Weight = weight
-		s.monitor.weight.WithLabelValues().Set(weight)
+		s.weight = weight
+		s.monitor.Weight.WithLabelValues().Set(weight)
 	}
 
 	weightAt, err := s.store.GetWeightAt()
 	if err == nil {
-		s.WeightAt = weightAt
+		s.weightAt = weightAt
 	}
 
 	activeKeg, err := s.store.GetActiveKeg()
 	if err == nil {
-		s.ActiveKeg = activeKeg
-		s.monitor.activeKeg.WithLabelValues().Set(float64(activeKeg))
+		s.activeKeg = activeKeg
+		s.monitor.ActiveKeg.WithLabelValues().Set(float64(activeKeg))
 	}
 
 	beersLeft, err := s.store.GetBeersLeft()
 	if err == nil {
-		s.BeersLeft = beersLeft
-		s.monitor.beersLeft.WithLabelValues().Set(float64(beersLeft))
+		s.beersLeft = beersLeft
+		s.monitor.BeersLeft.WithLabelValues().Set(float64(beersLeft))
 	}
 
 	isLow, err := s.store.GetIsLow()
 	if err == nil {
-		s.IsLow = isLow
+		s.isLow = isLow
 	}
 
 	warehouse, err := s.store.GetWarehouse()
 	if err == nil {
-		s.Warehouse = warehouse
+		s.warehouse = warehouse
 	}
 
 	lastOk, err := s.store.GetLastOk()
 	if err == nil {
-		s.LastOk = lastOk
+		s.lastOk = lastOk
 	}
 
 	isOpen, err := s.store.GetIsOpen()
 	if err == nil {
-		s.Pub.IsOpen = isOpen
+		s.pub.isOpen = isOpen
 	}
 
 	openAt, err := s.store.GetOpenAt()
 	if err == nil {
-		s.Pub.OpenedAt = openAt
+		s.pub.openedAt = openAt
 	}
 
 	closeAt, err := s.store.GetCloseAt()
 	if err == nil {
-		s.Pub.ClosedAt = closeAt
+		s.pub.closedAt = closeAt
 	}
 }
 
@@ -149,19 +160,19 @@ func (s *Scale) AddMeasurement(weight float64) error {
 	s.mux.Lock()
 	defer s.mux.Unlock()
 
-	s.Weight = weight
-	s.WeightAt = time.Now()
+	s.weight = weight
+	s.weightAt = time.Now()
 	if serr := s.store.SetWeight(weight); serr != nil {
 		return fmt.Errorf("could not store weight: %w", serr)
 	}
-	if serr := s.store.SetWeightAt(s.WeightAt); serr != nil {
+	if serr := s.store.SetWeightAt(s.weightAt); serr != nil {
 		return fmt.Errorf("could not store weight_at: %w", serr)
 	}
 
 	// check if keg is low
-	if !s.IsLow {
-		s.IsLow = IsKegLow(s.ActiveKeg, weight)
-		if serr := s.store.SetIsLow(s.IsLow); serr != nil {
+	if !s.isLow {
+		s.isLow = IsKegLow(s.activeKeg, weight)
+		if serr := s.store.SetIsLow(s.isLow); serr != nil {
 			return fmt.Errorf("could not store is_low: %w", serr)
 		}
 	}
@@ -170,20 +181,20 @@ func (s *Scale) AddMeasurement(weight float64) error {
 	// we need at least two measurements to be sure
 	// first measurement sets the candidate keg
 	// second measurement sets the active keg
-	if s.ActiveKeg == 0 || s.IsLow {
+	if s.activeKeg == 0 || s.isLow {
 		keg, err := GuessNewKegSize(weight)
 		if err == nil {
 			// we found a good candidate
 
-			if s.CandidateKeg > 0 && s.CandidateKeg == keg {
+			if s.candidateKeg > 0 && s.candidateKeg == keg {
 				// we have two measurements with the same keg
-				s.CandidateKeg = 0
-				s.ActiveKeg = keg
+				s.candidateKeg = 0
+				s.activeKeg = keg
 				if serr := s.store.SetActiveKeg(keg); serr != nil {
 					return fmt.Errorf("could not store active_keg: %w", serr)
 				}
 
-				s.IsLow = false
+				s.isLow = false
 				if serr := s.store.SetIsLow(false); serr != nil {
 					return fmt.Errorf("could not store is_low: %w", serr)
 				}
@@ -193,9 +204,9 @@ func (s *Scale) AddMeasurement(weight float64) error {
 				if err != nil {
 					return err
 				}
-				if s.Warehouse[index] > 0 {
-					s.Warehouse[index]--
-					if serr := s.store.SetWarehouse(s.Warehouse); serr != nil {
+				if s.warehouse[index] > 0 {
+					s.warehouse[index]--
+					if serr := s.store.SetWarehouse(s.warehouse); serr != nil {
 						return fmt.Errorf("could not update store warehouse: %w", serr)
 					}
 				} else {
@@ -207,38 +218,31 @@ func (s *Scale) AddMeasurement(weight float64) error {
 				// new candidate keg
 				// we already know that the new keg is there, but we need to confirm it
 				s.logger.Infof("New keg candidate (%d l) REGISTERED with current value %.0f", keg, weight)
-				s.CandidateKeg = keg
-				s.ActiveKeg = 0
+				s.candidateKeg = keg
+				s.activeKeg = 0
 			}
 		}
 	}
 
 	// calculate values only if we know active keg
-	if s.ActiveKeg > 0 {
-		s.BeersLeft = CalcBeersLeft(s.ActiveKeg, weight)
-		if serr := s.store.SetBeersLeft(s.BeersLeft); serr != nil {
+	if s.activeKeg > 0 {
+		s.beersLeft = CalcBeersLeft(s.activeKeg, weight)
+		if serr := s.store.SetBeersLeft(s.beersLeft); serr != nil {
 			return fmt.Errorf("could not store beers_left: %w", serr)
 		}
 
-		s.monitor.weight.WithLabelValues().Set(s.Weight)
-		s.monitor.beersLeft.WithLabelValues().Set(float64(s.BeersLeft))
-		s.monitor.activeKeg.WithLabelValues().Set(float64(s.ActiveKeg))
+		s.monitor.Weight.WithLabelValues().Set(s.weight)
+		s.monitor.BeersLeft.WithLabelValues().Set(float64(s.beersLeft))
+		s.monitor.ActiveKeg.WithLabelValues().Set(float64(s.activeKeg))
 	}
 
 	return nil
 }
 
-func (s *Scale) JsonState() ([]byte, error) {
-	s.mux.Lock()
-	defer s.mux.Unlock()
-
-	return json.Marshal(s)
-}
-
 func (s *Scale) Ping() {
-	s.monitor.lastPing.WithLabelValues().SetToCurrentTime()
+	s.monitor.LastPing.WithLabelValues().SetToCurrentTime()
 	now := time.Now()
-	err := s.store.SetLastOk(s.LastOk)
+	err := s.store.SetLastOk(s.lastOk)
 	if err != nil {
 		s.logger.Errorf("Could not set last_ok time: %v", err)
 	}
@@ -246,11 +250,11 @@ func (s *Scale) Ping() {
 	s.mux.Lock()
 	defer s.mux.Unlock()
 
-	if !s.Pub.IsOpen {
+	if !s.pub.isOpen {
 		s.updatePub(true)
 	}
 
-	s.LastOk = now
+	s.lastOk = now
 }
 
 // Recheck checks various conditions and states
@@ -258,33 +262,23 @@ func (s *Scale) Ping() {
 // it should be called everytime we want to get some calculations
 // to recalculate the state of the scale
 func (s *Scale) Recheck() {
-	ok := s.IsOk() // mutex
-
 	s.mux.Lock()
 	defer s.mux.Unlock()
 
 	// we haven't received any data for [OkLimit] minutes and pub is open
-	if !ok && s.Pub.IsOpen {
+	if !s.isOk() && s.pub.isOpen {
 		s.updatePub(false)
 	}
 }
 
-// IsOk returns true if the scale is ok based on the last update time
-func (s *Scale) IsOk() bool {
-	s.mux.Lock()
-	defer s.mux.Unlock()
-
-	return time.Since(s.LastOk) < OkLimit
-}
-
 // SetRssi sets the RSSI value of the WiFi signal
 func (s *Scale) SetRssi(rssi float64) {
-	s.monitor.scaleWifiRssi.WithLabelValues().Set(rssi)
+	s.monitor.ScaleWifiRssi.WithLabelValues().Set(rssi)
 
 	s.mux.Lock()
 	defer s.mux.Unlock()
 
-	s.Rssi = rssi
+	s.rssi = rssi
 }
 
 // SetActiveKeg sets the current active keg
@@ -292,12 +286,12 @@ func (s *Scale) SetActiveKeg(keg int) error {
 	s.mux.Lock()
 	defer s.mux.Unlock()
 
-	s.IsLow = false
+	s.isLow = false
 	if err := s.store.SetIsLow(false); err != nil {
 		return err
 	}
 
-	s.ActiveKeg = keg
+	s.activeKeg = keg
 	return s.store.SetActiveKeg(keg)
 }
 
@@ -310,8 +304,8 @@ func (s *Scale) IncreaseWarehouse(keg int) error {
 		return err
 	}
 
-	s.Warehouse[index]++
-	return s.store.SetWarehouse(s.Warehouse)
+	s.warehouse[index]++
+	return s.store.SetWarehouse(s.warehouse)
 }
 
 func (s *Scale) DecreaseWarehouse(keg int) error {
@@ -323,31 +317,36 @@ func (s *Scale) DecreaseWarehouse(keg int) error {
 		return err
 	}
 
-	if s.Warehouse[index] > 0 {
-		s.Warehouse[index]--
-		return s.store.SetWarehouse(s.Warehouse)
+	if s.warehouse[index] > 0 {
+		s.warehouse[index]--
+		return s.store.SetWarehouse(s.warehouse)
 	}
 
 	return nil
+}
+
+// isOk returns true if the scale is ok based on the last update time
+func (s *Scale) isOk() bool {
+	return time.Since(s.lastOk) < OkLimit
 }
 
 // updatePub updates the pub state
 // opening or closing the pub
 // function is not thread safe
 func (s *Scale) updatePub(isOpen bool) {
-	s.Pub.IsOpen = isOpen
+	s.pub.isOpen = isOpen
 	if err := s.store.SetIsOpen(true); err != nil {
 		s.logger.Errorf("Could not set is_open flag: %v", err)
 	}
 
 	if isOpen {
-		s.Pub.OpenedAt = time.Now()
-		if err := s.store.SetOpenAt(s.Pub.OpenedAt); err != nil {
+		s.pub.openedAt = time.Now()
+		if err := s.store.SetOpenAt(s.pub.openedAt); err != nil {
 			s.logger.Errorf("Could not set open_at time: %v", err)
 		}
 	} else {
-		s.Pub.ClosedAt = time.Now().Add(-1 * OkLimit)
-		if err := s.store.SetCloseAt(s.Pub.ClosedAt); err != nil {
+		s.pub.closedAt = time.Now().Add(-1 * OkLimit)
+		if err := s.store.SetCloseAt(s.pub.closedAt); err != nil {
 			s.logger.Errorf("Could not set close_at time: %v", err)
 		}
 	}
@@ -357,5 +356,5 @@ func (s *Scale) updatePub(isOpen bool) {
 		fIsOpen = 1.
 	}
 
-	s.monitor.pubIsOpen.WithLabelValues().Set(fIsOpen)
+	s.monitor.PubIsOpen.WithLabelValues().Set(fIsOpen)
 }

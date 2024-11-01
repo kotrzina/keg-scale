@@ -1,4 +1,4 @@
-module backend
+module github.com/kotrzina/keg-scale
 
 go 1.22.5
 

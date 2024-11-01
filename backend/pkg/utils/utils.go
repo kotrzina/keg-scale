@@ -1,11 +1,11 @@
-package main
+package utils
 
 import (
 	"strings"
 	"time"
 )
 
-func strip(s string) string {
+func Strip(s string) string {
 	var result strings.Builder
 	for i := 0; i < len(s); i++ {
 		b := s[i]
@@ -17,7 +17,7 @@ func strip(s string) string {
 	return result.String()
 }
 
-func formatDate(t time.Time) string {
+func FormatDate(t time.Time) string {
 	if t.Unix() <= 0 {
 		return ""
 	}
@@ -25,7 +25,7 @@ func formatDate(t time.Time) string {
 	return t.In(getTz()).Format("2006-01-02 15:04:05")
 }
 
-func formatTime(t time.Time) string {
+func FormatTime(t time.Time) string {
 	if t.Unix() <= 0 {
 		return ""
 	}
@@ -38,6 +38,6 @@ func getTz() *time.Location {
 	return tz
 }
 
-func getOkJson() []byte {
+func GetOkJson() []byte {
 	return []byte(`{"is_ok":true}`)
 }

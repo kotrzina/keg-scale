@@ -52,7 +52,6 @@ func NewRouter(hr *HandlerRepository) *mux.Router {
 
 	router.Handle("/metrics", hr.metricsHandler())
 	router.HandleFunc("/api/scale/push", hr.scaleMessageHandler())
-	router.HandleFunc("/api/scale/status", hr.scaleStatusHandler())
 	router.HandleFunc("/api/scale/dashboard", hr.scaleDashboardHandler())
 	router.HandleFunc("/api/scale/warehouse", hr.scaleWarehouseHandler())
 
@@ -121,16 +120,16 @@ func StartServer(router *mux.Router, port int, mainCancel context.CancelFunc) {
 	log.Printf("Server Exited Properly")
 }
 
-type loggingResponseWriter struct {
+type LoggingResponseWriter struct {
 	http.ResponseWriter
 	statusCode int
 }
 
-func NewLoggingResponseWriter(w http.ResponseWriter) *loggingResponseWriter {
-	return &loggingResponseWriter{w, http.StatusOK}
+func NewLoggingResponseWriter(w http.ResponseWriter) *LoggingResponseWriter {
+	return &LoggingResponseWriter{w, http.StatusOK}
 }
 
-func (lrw *loggingResponseWriter) WriteHeader(code int) {
+func (lrw *LoggingResponseWriter) WriteHeader(code int) {
 	lrw.statusCode = code
 	lrw.ResponseWriter.WriteHeader(code)
 }

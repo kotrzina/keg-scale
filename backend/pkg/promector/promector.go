@@ -1,4 +1,4 @@
-package main
+package promector
 
 import (
 	"context"
@@ -12,6 +12,9 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/kotrzina/keg-scale/pkg/scale"
+	"github.com/kotrzina/keg-scale/pkg/utils"
 )
 
 // Promector represents a Prometheus collector
@@ -21,7 +24,7 @@ type Promector struct {
 	user     string
 	password string
 
-	scale  *Scale
+	scale  *scale.Scale
 	logger *logrus.Logger
 	ctx    context.Context
 
@@ -29,7 +32,7 @@ type Promector struct {
 	cache Charts
 }
 
-type PrometheusResponse struct {
+type Response struct {
 	Status string `json:"status"`
 	Data   struct {
 		ResultType string `json:"resultType"`
@@ -39,7 +42,7 @@ type PrometheusResponse struct {
 	} `json:"data"`
 }
 
-func NewPromector(baseUrl, user, password string, scale *Scale, logger *logrus.Logger, ctx context.Context) *Promector {
+func NewPromector(baseUrl, user, password string, scale *scale.Scale, logger *logrus.Logger, ctx context.Context) *Promector {
 	prom := &Promector{
 		baseUrl:  baseUrl,
 		user:     user,
@@ -107,11 +110,13 @@ func (p *Promector) Refresh() {
 		{"scale_beers_left_24h", "scale_beers_left", now.Add(-24 * time.Hour), now, time.Hour},
 	}
 
-	if p.scale.Pub.IsOpen {
+	opening := p.scale.GetOpeningOutput()
+
+	if opening.IsOpen {
 		// chart for current session
 		// let's take 10 minutes before opening to now
 		// step is calculated based on open duration - we want to have approx 14 points in the chart
-		dataStart := p.scale.Pub.OpenedAt.Add(-10 * time.Minute)
+		dataStart := opening.OpenedAt.Add(-10 * time.Minute)
 		openDuration := now.Sub(dataStart)
 		step := (openDuration / 14).Round(time.Minute)
 		requests = append(requests, request{"scale_beers_left_now", "scale_beers_left", dataStart, now, step})
@@ -119,8 +124,8 @@ func (p *Promector) Refresh() {
 		// chart for last session
 		// let's take 10 minutes before opening to closing time plus 10 minutes
 		// step is calculated based on open duration - we want to have approx 14 points in the chart
-		timeStart := p.scale.Pub.OpenedAt.Add(-10 * time.Minute)
-		timeEnd := p.scale.Pub.ClosedAt.Add(10 * time.Minute)
+		timeStart := opening.OpenedAt.Add(-10 * time.Minute)
+		timeEnd := opening.ClosedAt.Add(10 * time.Minute)
 		step := (timeEnd.Sub(timeStart) / 14).Round(time.Minute)
 
 		fmt.Println("timeStart", timeStart)
@@ -200,7 +205,7 @@ func (p *Promector) GetRangeData(query string, start, end time.Time, step time.D
 		return nil, fmt.Errorf("could not read response body: %w", err)
 	}
 
-	var prometheusResponse PrometheusResponse
+	var prometheusResponse Response
 	err = json.Unmarshal(data, &prometheusResponse)
 	if err != nil {
 		return nil, fmt.Errorf("could not unmarshal response body: %w", err)
@@ -234,7 +239,7 @@ func (p *Promector) GetRangeData(query string, start, end time.Time, step time.D
 		}
 
 		records[i] = RangeRecord{
-			Label: formatTime(t),
+			Label: utils.FormatTime(t),
 			Value: v,
 		}
 
