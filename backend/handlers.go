@@ -142,6 +142,9 @@ func (hr *HandlerRepository) activeKegHandler() func(http.ResponseWriter, *http.
 
 const localizationUnits = "r:r,t:t,d:d,h:h,m:m,s:s,ms:ms,microsecond"
 
+// @todo: refactor this to make it thread safe
+// probably by moving whole logic to scale and use read mutex
+// promector might be a problem
 func (hr *HandlerRepository) scaleDashboardHandler() func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		hr.scale.Recheck()

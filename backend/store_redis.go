@@ -10,13 +10,16 @@ import (
 )
 
 const (
-	WeightKey          = "weight"
-	WeightAtKey        = "weight_at"
-	ActiveKegKey       = "active_keg"
-	MeasurementListKey = "measurements"
-	IsLowKey           = "is_low"
-	BeersLeftKey       = "beers_left"
-	WarehouseKey       = "warehouse"
+	WeightKey    = "weight"
+	WeightAtKey  = "weight_at"
+	ActiveKegKey = "active_keg"
+	IsLowKey     = "is_low"
+	BeersLeftKey = "beers_left"
+	WarehouseKey = "warehouse"
+	LastOkKey    = "last_ok"
+	OpenAtKey    = "open_at"
+	CloseAtKey   = "close_at"
+	IsOpenKey    = "is_open"
 )
 
 type RedisStore struct {
@@ -106,4 +109,28 @@ func (s *RedisStore) GetWarehouse() ([5]int, error) {
 	}
 
 	return warehouse, nil
+}
+func (s *RedisStore) SetLastOk(lastOk time.Time) error {
+	return s.Client.Set(context.Background(), LastOkKey, lastOk, 0).Err()
+}
+func (s *RedisStore) GetLastOk() (time.Time, error) {
+	return s.Client.Get(context.Background(), LastOkKey).Time()
+}
+func (s *RedisStore) SetOpenAt(openAt time.Time) error {
+	return s.Client.Set(context.Background(), OpenAtKey, openAt, 0).Err()
+}
+func (s *RedisStore) GetOpenAt() (time.Time, error) {
+	return s.Client.Get(context.Background(), OpenAtKey).Time()
+}
+func (s *RedisStore) SetCloseAt(closeAt time.Time) error {
+	return s.Client.Set(context.Background(), CloseAtKey, closeAt, 0).Err()
+}
+func (s *RedisStore) GetCloseAt() (time.Time, error) {
+	return s.Client.Get(context.Background(), CloseAtKey).Time()
+}
+func (s *RedisStore) SetIsOpen(isOpen bool) error {
+	return s.Client.Set(context.Background(), IsOpenKey, isOpen, 0).Err()
+}
+func (s *RedisStore) GetIsOpen() (bool, error) {
+	return s.Client.Get(context.Background(), IsOpenKey).Bool()
 }

@@ -118,6 +118,26 @@ func (s *Scale) loadDataFromStore() {
 	if err == nil {
 		s.Warehouse = warehouse
 	}
+
+	lastOk, err := s.store.GetLastOk()
+	if err == nil {
+		s.LastOk = lastOk
+	}
+
+	isOpen, err := s.store.GetIsOpen()
+	if err == nil {
+		s.Pub.IsOpen = isOpen
+	}
+
+	openAt, err := s.store.GetOpenAt()
+	if err == nil {
+		s.Pub.OpenedAt = openAt
+	}
+
+	closeAt, err := s.store.GetCloseAt()
+	if err == nil {
+		s.Pub.ClosedAt = closeAt
+	}
 }
 
 func (s *Scale) AddMeasurement(weight float64) error {
@@ -217,17 +237,20 @@ func (s *Scale) JsonState() ([]byte, error) {
 
 func (s *Scale) Ping() {
 	s.monitor.lastPing.WithLabelValues().SetToCurrentTime()
+	now := time.Now()
+	err := s.store.SetLastOk(s.LastOk)
+	if err != nil {
+		s.logger.Errorf("Could not set last_ok time: %v", err)
+	}
 
 	s.mux.Lock()
 	defer s.mux.Unlock()
 
 	if !s.Pub.IsOpen {
-		s.monitor.pubIsOpen.WithLabelValues().Set(1)
-		s.Pub.IsOpen = true
-		s.Pub.OpenedAt = time.Now()
+		s.updatePub(true)
 	}
 
-	s.LastOk = time.Now()
+	s.LastOk = now
 }
 
 // Recheck checks various conditions and states
@@ -242,9 +265,7 @@ func (s *Scale) Recheck() {
 
 	// we haven't received any data for [OkLimit] minutes and pub is open
 	if !ok && s.Pub.IsOpen {
-		s.monitor.pubIsOpen.WithLabelValues().Set(0)
-		s.Pub.IsOpen = false
-		s.Pub.ClosedAt = time.Now().Add(-1 * OkLimit)
+		s.updatePub(false)
 	}
 }
 
@@ -308,4 +329,33 @@ func (s *Scale) DecreaseWarehouse(keg int) error {
 	}
 
 	return nil
+}
+
+// updatePub updates the pub state
+// opening or closing the pub
+// function is not thread safe
+func (s *Scale) updatePub(isOpen bool) {
+	s.Pub.IsOpen = isOpen
+	if err := s.store.SetIsOpen(true); err != nil {
+		s.logger.Errorf("Could not set is_open flag: %v", err)
+	}
+
+	if isOpen {
+		s.Pub.OpenedAt = time.Now()
+		if err := s.store.SetOpenAt(s.Pub.OpenedAt); err != nil {
+			s.logger.Errorf("Could not set open_at time: %v", err)
+		}
+	} else {
+		s.Pub.ClosedAt = time.Now().Add(-1 * OkLimit)
+		if err := s.store.SetCloseAt(s.Pub.ClosedAt); err != nil {
+			s.logger.Errorf("Could not set close_at time: %v", err)
+		}
+	}
+
+	fIsOpen := 0.
+	if isOpen {
+		fIsOpen = 1.
+	}
+
+	s.monitor.pubIsOpen.WithLabelValues().Set(fIsOpen)
 }

@@ -20,4 +20,16 @@ type Storage interface {
 
 	SetWarehouse(warehouse [5]int) error // set warehouse
 	GetWarehouse() ([5]int, error)       // get warehouse
+
+	SetLastOk(lastOk time.Time) error // set last ok
+	GetLastOk() (time.Time, error)    // get last ok
+
+	SetOpenAt(openAt time.Time) error // set open at
+	GetOpenAt() (time.Time, error)    // get open at
+
+	SetCloseAt(closeAt time.Time) error // set close at
+	GetCloseAt() (time.Time, error)     // get close at
+
+	SetIsOpen(isOpen bool) error // set is open flag
+	GetIsOpen() (bool, error)    // get is open flag
 }
