@@ -4,6 +4,9 @@
 !!! The project is in the early development stage !!!
 ```
 
+![workflow](https://github.com/kotrzina/keg-scale/actions/workflows/go.yaml/badge.svg)
+![workflow](https://github.com/kotrzina/keg-scale/actions/workflows/docker-publish.yml/badge.svg)
+
 ## Equipment:
 
 - Scale - LESAK PS-B, 150kg/50g, 350x350mm
