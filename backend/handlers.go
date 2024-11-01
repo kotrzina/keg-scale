@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"github.com/kotrzina/keg-scale/pkg/promector"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
 	"io"
@@ -10,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/kotrzina/keg-scale/pkg/config"
+	"github.com/kotrzina/keg-scale/pkg/promector"
 	"github.com/kotrzina/keg-scale/pkg/prometheus"
 	"github.com/kotrzina/keg-scale/pkg/scale"
 	"github.com/kotrzina/keg-scale/pkg/utils"

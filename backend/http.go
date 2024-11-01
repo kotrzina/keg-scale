@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
 	"log"
 	"net/http"
@@ -12,8 +13,6 @@ import (
 	"strings"
 	"syscall"
 	"time"
-
-	"github.com/gorilla/mux"
 )
 
 // NewRouter creates a new HTTP router
