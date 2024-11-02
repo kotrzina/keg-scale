@@ -66,7 +66,7 @@ func (hr *HandlerRepository) scaleMessageHandler() func(http.ResponseWriter, *ht
 			}).Infof("Scale new value: %0.2f", message.Value)
 		}
 
-		_, _ = w.Write([]byte("OK"))
+		_, _ = w.Write([]byte(hr.scale.GetPushResponse()))
 	}
 }
 
