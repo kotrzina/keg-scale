@@ -139,6 +139,8 @@ func (p *Promector) Refresh() {
 	wg.Add(len(requests))
 	results := make(map[string][]RangeRecord, len(requests))
 
+	mapMux := sync.Mutex{}
+
 	for _, req := range requests {
 		go func(r request) {
 			defer wg.Done()
@@ -148,6 +150,9 @@ func (p *Promector) Refresh() {
 				return
 			}
 
+			// safely write result to the map
+			mapMux.Lock()
+			defer mapMux.Unlock()
 			results[r.key] = data
 		}(req)
 	}
