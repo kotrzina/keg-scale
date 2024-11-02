@@ -52,12 +52,14 @@ func NewMonitor() *Monitor {
 		}, []string{}),
 	}
 
-	reg.MustRegister(monitor.Weight)
-	reg.MustRegister(monitor.ActiveKeg)
-	reg.MustRegister(monitor.BeersLeft)
-	reg.MustRegister(monitor.ScaleWifiRssi)
-	reg.MustRegister(monitor.LastPing)
-	reg.MustRegister(monitor.PubIsOpen)
+	reg.MustRegister(
+		monitor.Weight,
+		monitor.ActiveKeg,
+		monitor.BeersLeft,
+		monitor.ScaleWifiRssi,
+		monitor.LastPing,
+		monitor.PubIsOpen,
+	)
 
 	return monitor
 }
