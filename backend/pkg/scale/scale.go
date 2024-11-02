@@ -172,8 +172,10 @@ func (s *Scale) AddMeasurement(weight float64) error {
 	// check if keg is low
 	if !s.isLow {
 		s.isLow = IsKegLow(s.activeKeg, weight)
-		if serr := s.store.SetIsLow(s.isLow); serr != nil {
-			return fmt.Errorf("could not store is_low: %w", serr)
+		if s.isLow {
+			if serr := s.store.SetIsLow(s.isLow); serr != nil {
+				return fmt.Errorf("could not store is_low: %w", serr)
+			}
 		}
 	}
 
