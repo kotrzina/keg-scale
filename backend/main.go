@@ -3,11 +3,11 @@ package main
 import (
 	"context"
 	"github.com/joho/godotenv"
-	"github.com/kotrzina/keg-scale/pkg/promector"
 	"github.com/sirupsen/logrus"
 	"os"
 
 	"github.com/kotrzina/keg-scale/pkg/config"
+	"github.com/kotrzina/keg-scale/pkg/promector"
 	"github.com/kotrzina/keg-scale/pkg/prometheus"
 	"github.com/kotrzina/keg-scale/pkg/scale"
 	"github.com/kotrzina/keg-scale/pkg/store"
@@ -19,16 +19,17 @@ func main() {
 	_ = godotenv.Load(".env")
 	conf := config.NewConfig()
 
+	logger := createLogger()
+
 	c := context.Background()
 	ctx, cancel := context.WithCancel(c)
 
-	logger := createLogger()
-	mon := prometheus.NewMonitor()
+	monitor := prometheus.NewMonitor()
 
 	storage := store.NewRedisStore(conf)
-	kegScale := scale.NewScale(mon, storage, logger, ctx)
+	kegScale := scale.NewScale(monitor, storage, logger, ctx)
 
-	promector := promector.NewPromector(
+	prometheusCollector := promector.NewPromector(
 		conf.PrometheusUrl,
 		conf.PrometheusUser,
 		conf.PrometheusPassword,
@@ -39,9 +40,9 @@ func main() {
 
 	StartServer(NewRouter(&HandlerRepository{
 		scale:     kegScale,
-		promector: promector,
+		promector: prometheusCollector,
 		config:    conf,
-		monitor:   mon,
+		monitor:   monitor,
 		logger:    logger,
 	}), 8080, cancel)
 }

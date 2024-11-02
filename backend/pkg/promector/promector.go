@@ -127,18 +127,12 @@ func (p *Promector) Refresh() {
 		timeStart := opening.OpenedAt.Add(-10 * time.Minute)
 		timeEnd := opening.ClosedAt.Add(10 * time.Minute)
 		step := (timeEnd.Sub(timeStart) / 14).Round(time.Minute)
-
-		fmt.Println("timeStart", timeStart)
-		fmt.Println("timeEnd", timeEnd)
-		fmt.Println("step", step)
-
 		requests = append(requests, request{"scale_beers_left_last", "scale_beers_left", timeStart, timeEnd, step})
 	}
 
 	wg := sync.WaitGroup{}
 	wg.Add(len(requests))
 	results := make(map[string][]RangeRecord, len(requests))
-
 	mapMux := sync.Mutex{}
 
 	for _, req := range requests {
