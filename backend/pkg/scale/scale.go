@@ -337,7 +337,7 @@ func (s *Scale) isOk() bool {
 // function is not thread safe
 func (s *Scale) updatePub(isOpen bool) {
 	s.pub.isOpen = isOpen
-	if err := s.store.SetIsOpen(true); err != nil {
+	if err := s.store.SetIsOpen(isOpen); err != nil {
 		s.logger.Errorf("Could not set is_open flag: %v", err)
 	}
 
