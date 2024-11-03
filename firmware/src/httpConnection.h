@@ -16,6 +16,7 @@ public:
     
     bool success();
     int getCode();
+    int getBeersLeft();
 
 private:
     int status = WL_IDLE_STATUS; // wifi status
@@ -24,6 +25,7 @@ private:
     HttpClient *backend;
 
     int lastCode = 0;
+    int lastResponse = 0;
 };
 
 #endif // http_connection_h

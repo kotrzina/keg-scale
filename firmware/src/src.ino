@@ -1,9 +1,16 @@
 #include "httpConnection.h"
 #include <SoftwareSerial.h>
+#include <TM1637Display.h>
 
 
 SoftwareSerial scale(2, 3); // RX, TX are not switched
+TM1637Display display(7, 6); // CLK, DIO
 HttpConnection conn;
+
+const uint8_t LOADING[] = {
+  SEG_G, SEG_G, SEG_G, SEG_G
+};
+
 
 void setup()
 {
@@ -14,29 +21,37 @@ void setup()
     pinMode(8, OUTPUT); // error - red light
     pinMode(9, OUTPUT); // success - green light
 
+    display.setBrightness(13);
+    display.setSegments(LOADING);
+
+    int blinkDelay = 300;
+
     digitalWrite(8, HIGH);
     digitalWrite(9, HIGH);
-    delay(150);
+    delay(blinkDelay);
     digitalWrite(8, LOW);
     digitalWrite(9, LOW);
-    delay(150);
+    delay(blinkDelay);
     digitalWrite(8, HIGH);
     digitalWrite(9, HIGH);
-    delay(150);
-    digitalWrite(8, LOW);
+    delay(blinkDelay);
     digitalWrite(9, LOW);
 
     conn.setup();
     conn.push("ping", "");
     if (conn.success()) {
+        digitalWrite(8, LOW);
         digitalWrite(9, HIGH);
-        delay(150);
+        display.showNumberDec(conn.getBeersLeft(), false);
+        delay(blinkDelay);
         digitalWrite(9, LOW);
-        delay(150);
+        delay(blinkDelay);
         digitalWrite(9, HIGH);
-        delay(150);
+        delay(blinkDelay);
         digitalWrite(9, LOW);
-        delay(150);
+        delay(blinkDelay);
+        delay(5000);
+        digitalWrite(9, HIGH);
     }
 }
 
@@ -51,7 +66,12 @@ void loop()
     // send ping every minute
     if (lastPing + 60 < ts) {
         conn.push("ping", "");
-        signal(conn.success());
+        if (conn.success()) {
+            display.showNumberDec(conn.getBeersLeft(), false);
+            signalSuccess();
+        } else {
+            signalError();
+        }
         lastPing = ts;
     }
 
@@ -117,6 +137,7 @@ void readScale() {
                     conn.push("push", String(n)); // send value to backend
                     if (conn.success()) {
                         value = n; // update global value
+                        display.showNumberDec(conn.getBeersLeft(), false);
                         signalSuccess();
                     } else {
                         signalError();
@@ -141,14 +162,6 @@ long calcValue(long c) {
     }
 
     return c - 48;
-}
-
-void signal(bool success) {
-    if (success) {
-        signalSuccess();
-    } else {
-        signalError();
-    }
 }
 
 void signalError() {

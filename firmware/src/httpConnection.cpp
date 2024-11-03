@@ -53,9 +53,11 @@ void HttpConnection::push(String message, String value)
     backend->sendHeader("Host", BACKEND_HOST);
     backend->write((const byte*)message.c_str(), message.length());
     int statusCode = backend->responseStatusCode();
+    String response = backend->responseBody();
     backend->endRequest();
-    
+
     lastCode = statusCode;
+    lastResponse = response.toInt(); 
 }
 
 bool HttpConnection::success()
@@ -66,4 +68,9 @@ bool HttpConnection::success()
 int HttpConnection::getCode()
 {
     return lastCode;
+}
+
+int HttpConnection::getBeersLeft()
+{
+    return lastResponse;
 }
