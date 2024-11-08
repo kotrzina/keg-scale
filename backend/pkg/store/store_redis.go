@@ -3,12 +3,12 @@ package store
 import (
 	"context"
 	"fmt"
-	"github.com/redis/go-redis/v9"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/kotrzina/keg-scale/pkg/config"
+	"github.com/redis/go-redis/v9"
 )
 
 const (
@@ -29,11 +29,11 @@ type RedisStore struct {
 	Client *redis.Client
 }
 
-func NewRedisStore(config *config.Config) *RedisStore {
+func NewRedisStore(c *config.Config) *RedisStore {
 	return &RedisStore{
 		Client: redis.NewClient(&redis.Options{
-			Addr: config.RedisAddr,
-			DB:   config.RedisDB,
+			Addr: c.RedisAddr,
+			DB:   c.RedisDB,
 		}),
 	}
 }
@@ -121,27 +121,35 @@ func (s *RedisStore) GetWarehouse() ([5]int, error) {
 
 	return warehouse, nil
 }
+
 func (s *RedisStore) SetLastOk(lastOk time.Time) error {
 	return s.Client.Set(context.Background(), LastOkKey, lastOk, 0).Err()
 }
+
 func (s *RedisStore) GetLastOk() (time.Time, error) {
 	return s.Client.Get(context.Background(), LastOkKey).Time()
 }
+
 func (s *RedisStore) SetOpenAt(openAt time.Time) error {
 	return s.Client.Set(context.Background(), OpenAtKey, openAt, 0).Err()
 }
+
 func (s *RedisStore) GetOpenAt() (time.Time, error) {
 	return s.Client.Get(context.Background(), OpenAtKey).Time()
 }
+
 func (s *RedisStore) SetCloseAt(closeAt time.Time) error {
 	return s.Client.Set(context.Background(), CloseAtKey, closeAt, 0).Err()
 }
+
 func (s *RedisStore) GetCloseAt() (time.Time, error) {
 	return s.Client.Get(context.Background(), CloseAtKey).Time()
 }
+
 func (s *RedisStore) SetIsOpen(isOpen bool) error {
 	return s.Client.Set(context.Background(), IsOpenKey, isOpen, 0).Err()
 }
+
 func (s *RedisStore) GetIsOpen() (bool, error) {
 	return s.Client.Get(context.Background(), IsOpenKey).Bool()
 }

@@ -2,8 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/sirupsen/logrus"
 	"io"
 	"net/http"
 	"strings"
@@ -13,6 +11,8 @@ import (
 	"github.com/kotrzina/keg-scale/pkg/prometheus"
 	"github.com/kotrzina/keg-scale/pkg/scale"
 	"github.com/kotrzina/keg-scale/pkg/utils"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/sirupsen/logrus"
 )
 
 type HandlerRepository struct {
@@ -25,7 +25,6 @@ type HandlerRepository struct {
 
 func (hr *HandlerRepository) scaleMessageHandler() func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-
 		if r.Method != http.MethodPost {
 			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 			return
@@ -62,11 +61,14 @@ func (hr *HandlerRepository) scaleMessageHandler() func(http.ResponseWriter, *ht
 			}
 
 			hr.logger.WithFields(logrus.Fields{
-				"message_id": message.MessageId,
+				"message_id": message.MessageID,
 			}).Infof("Scale new value: %0.2f", message.Value)
 		}
 
-		_, _ = w.Write([]byte(hr.scale.GetPushResponse()))
+		_, err = w.Write([]byte(hr.scale.GetPushResponse()))
+		if err != nil {
+			hr.logger.Errorf("Could not write response: %v", err)
+		}
 	}
 }
 
@@ -119,12 +121,15 @@ func (hr *HandlerRepository) activeKegHandler() func(http.ResponseWriter, *http.
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write(utils.GetOkJson())
+		_, err = w.Write(utils.GetOkJSON())
+		if err != nil {
+			hr.logger.Errorf("Could not write response: %v", err)
+		}
 	}
 }
 
 func (hr *HandlerRepository) scaleDashboardHandler() func(http.ResponseWriter, *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, _ *http.Request) {
 		hr.scale.Recheck()
 
 		type output struct {
@@ -138,14 +143,16 @@ func (hr *HandlerRepository) scaleDashboardHandler() func(http.ResponseWriter, *
 		}
 
 		res, err := json.Marshal(data)
-
 		if err != nil {
 			http.Error(w, "Could not marshal data to JSON", http.StatusInternalServerError)
 			return
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write(res)
+		_, err = w.Write(res)
+		if err != nil {
+			hr.logger.Errorf("Could not write response: %v", err)
+		}
 	}
 }
 
@@ -174,14 +181,14 @@ func (hr *HandlerRepository) scaleWarehouseHandler() func(http.ResponseWriter, *
 			return
 		}
 
-		if strings.ToLower(data.Way) == "up" {
+		if strings.EqualFold(data.Way, "up") {
 			if err := hr.scale.IncreaseWarehouse(data.Keg); err != nil {
 				http.Error(w, "Could not increase warehouse", http.StatusInternalServerError)
 				return
 			}
 		}
 
-		if strings.ToLower(data.Way) == "down" {
+		if strings.EqualFold(data.Way, "down") {
 			if err := hr.scale.DecreaseWarehouse(data.Keg); err != nil {
 				http.Error(w, "Could not increase warehouse", http.StatusInternalServerError)
 				return
@@ -189,6 +196,9 @@ func (hr *HandlerRepository) scaleWarehouseHandler() func(http.ResponseWriter, *
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write(utils.GetOkJson())
+		_, err = w.Write(utils.GetOkJSON())
+		if err != nil {
+			hr.logger.Errorf("Could not write response: %v", err)
+		}
 	}
 }

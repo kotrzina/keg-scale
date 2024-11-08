@@ -3,17 +3,14 @@ package scale
 import (
 	"context"
 	"fmt"
-	"github.com/hako/durafmt"
-	"github.com/sirupsen/logrus"
 	"sync"
 	"time"
 
+	"github.com/hako/durafmt"
 	"github.com/kotrzina/keg-scale/pkg/prometheus"
 	"github.com/kotrzina/keg-scale/pkg/store"
+	"github.com/sirupsen/logrus"
 )
-
-const OkLimit = 5 * time.Minute
-const localizationUnits = "r:r,t:t,d:d,h:h,m:m,s:s,ms:ms,microsecond"
 
 type Scale struct {
 	mux     sync.RWMutex
@@ -45,7 +42,11 @@ type pub struct {
 	closedAt time.Time
 }
 
-func NewScale(monitor *prometheus.Monitor, storage store.Storage, logger *logrus.Logger, ctx context.Context) *Scale {
+const okLimit = 5 * time.Minute
+
+const localizationUnits = "r:r,t:t,d:d,h:h,m:m,s:s,ms:ms,microsecond"
+
+func NewScale(ctx context.Context, monitor *prometheus.Monitor, storage store.Storage, logger *logrus.Logger) *Scale {
 	fmtUnits, err := durafmt.DefaultUnitsCoder.Decode(localizationUnits)
 	if err != nil {
 		logger.Fatalf("could not decode units: %v", err)
@@ -268,14 +269,14 @@ func (s *Scale) Ping() {
 }
 
 // Recheck checks various conditions and states
-// - sets the scale to not open after [OkLimit] minutes
+// - sets the scale to not open after [okLimit] minutes
 // it should be called everytime we want to get some calculations
 // to recalculate the state of the scale
 func (s *Scale) Recheck() {
 	s.mux.Lock()
 	defer s.mux.Unlock()
 
-	// we haven't received any data for [OkLimit] minutes and pub is open
+	// we haven't received any data for [okLimit] minutes and pub is open
 	if !s.isOk() && s.pub.isOpen {
 		s.updatePub(false)
 	}
@@ -337,7 +338,7 @@ func (s *Scale) DecreaseWarehouse(keg int) error {
 
 // isOk returns true if the scale is ok based on the last update time
 func (s *Scale) isOk() bool {
-	return time.Since(s.lastOk) < OkLimit
+	return time.Since(s.lastOk) < okLimit
 }
 
 // updatePub updates the pub state
@@ -355,7 +356,7 @@ func (s *Scale) updatePub(isOpen bool) {
 			s.logger.Errorf("Could not set open_at time: %v", err)
 		}
 	} else {
-		s.pub.closedAt = time.Now().Add(-1 * OkLimit)
+		s.pub.closedAt = time.Now().Add(-1 * okLimit)
 		if err := s.store.SetCloseAt(s.pub.closedAt); err != nil {
 			s.logger.Errorf("Could not set close_at time: %v", err)
 		}

@@ -13,7 +13,7 @@ const (
 
 type ScaleMessage struct {
 	MessageType string
-	MessageId   uint64 // arduino counter
+	MessageID   uint64 // arduino counter
 	Rssi        float64
 	Value       float64
 }
@@ -31,7 +31,7 @@ func ParseScaleMessage(message string) (ScaleMessage, error) {
 		return ScaleMessage{}, fmt.Errorf("invalid request type")
 	}
 
-	requestId, err := strconv.ParseUint(chunks[1], 10, 64)
+	requestID, err := strconv.ParseUint(chunks[1], 10, 64)
 	if err != nil {
 		return ScaleMessage{}, fmt.Errorf("could not parse request id")
 	}
@@ -52,7 +52,7 @@ func ParseScaleMessage(message string) (ScaleMessage, error) {
 	}
 
 	return ScaleMessage{
-		MessageId:   requestId,
+		MessageID:   requestID,
 		MessageType: messageType,
 		Rssi:        rssi,
 		Value:       value,

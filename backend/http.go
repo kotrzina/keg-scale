@@ -3,8 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/gorilla/mux"
-	"github.com/sirupsen/logrus"
 	"log"
 	"net/http"
 	"os"
@@ -13,11 +11,13 @@ import (
 	"strings"
 	"syscall"
 	"time"
+
+	"github.com/gorilla/mux"
+	"github.com/sirupsen/logrus"
 )
 
 // NewRouter creates a new HTTP router
 func NewRouter(hr *HandlerRepository) *mux.Router {
-
 	router := mux.NewRouter()
 
 	router.Use(func(handler http.Handler) http.Handler {
@@ -29,8 +29,8 @@ func NewRouter(hr *HandlerRepository) *mux.Router {
 			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
 			w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT, DELETE")
 
-			if r.Method == "OPTIONS" {
-				w.WriteHeader(204)
+			if r.Method == http.MethodOptions {
+				w.WriteHeader(http.StatusNoContent)
 				return
 			}
 
@@ -107,13 +107,10 @@ func StartServer(router *mux.Router, port int, mainCancel context.CancelFunc) {
 	log.Printf("Server Stopped")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer func() {
-		// extra handling here
-		cancel()
-	}()
+	defer cancel()
 
 	if err := srv.Shutdown(ctx); err != nil {
-		log.Fatalf("Server Shutdown Failed:%+v", err)
+		log.Printf("Server Shutdown Failed:%+v", err)
 	}
 
 	log.Printf("Server Exited Properly")

@@ -14,7 +14,7 @@ func (s *Scale) GetPushResponse() string {
 	return leftPad(fmt.Sprintf("%d", s.beersLeft), " ", 4)
 }
 
-func leftPad(input string, padChar string, length int) string {
+func leftPad(input, padChar string, length int) string {
 	if len(input) >= length {
 		return input
 	}

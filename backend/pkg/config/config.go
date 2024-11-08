@@ -15,7 +15,7 @@ type Config struct {
 
 	FrontendPath string
 
-	PrometheusUrl      string
+	PrometheusURL      string
 	PrometheusUser     string
 	PrometheusPassword string
 }
@@ -30,13 +30,13 @@ func NewConfig() *Config {
 
 		FrontendPath: getStringEnvDefault("FRONTEND_PATH", "./../frontend/build/"),
 
-		PrometheusUrl:      getStringEnvDefault("PROMETHEUS_URL", "http://localhost:9090"),
+		PrometheusURL:      getStringEnvDefault("PROMETHEUS_URL", "http://localhost:9090"),
 		PrometheusUser:     getStringEnvDefault("PROMETHEUS_USER", "test"),
 		PrometheusPassword: getStringEnvDefault("PROMETHEUS_PASSWORD", "test"),
 	}
 }
 
-func getStringEnvDefault(key string, defaultValue string) string {
+func getStringEnvDefault(key, defaultValue string) string {
 	if value, ok := os.LookupEnv(key); ok {
 		return value
 	}

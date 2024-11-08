@@ -3,26 +3,26 @@ package scale
 import (
 	"bytes"
 	"context"
-	"github.com/sirupsen/logrus"
-	"github.com/stretchr/testify/assert"
 	"testing"
 
 	"github.com/kotrzina/keg-scale/pkg/prometheus"
 	"github.com/kotrzina/keg-scale/pkg/store"
+	"github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestScale_AddMeasurement(t *testing.T) {
-	s := CreateScaleWithMeasurements([]float64{10, 3, 20, 30, 40, 81, 50, 60}...)
+	s := createScaleWithMeasurements(t, []float64{10, 3, 20, 30, 40, 81, 50, 60}...)
 	assert.Equal(t, 60000.0, s.weight)
 }
 
-func CreateScaleWithMeasurements(weights ...float64) *Scale {
+func createScaleWithMeasurements(t *testing.T, weights ...float64) *Scale {
 	logger := logrus.New()
 	var buf bytes.Buffer
 	logger.SetOutput(&buf)
-	s := NewScale(prometheus.NewMonitor(), &store.FakeStore{}, logger, context.Background())
+	s := NewScale(context.Background(), prometheus.NewMonitor(), &store.FakeStore{}, logger)
 	for _, weight := range weights {
-		_ = s.AddMeasurement(weight * 1000)
+		assert.Nil(t, s.AddMeasurement(weight*1000))
 	}
 	return s
 }

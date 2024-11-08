@@ -1,6 +1,10 @@
 package main
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
 
 func TestScale_ParseScaleMessage(t *testing.T) {
 	type testcases struct {
@@ -19,13 +23,10 @@ func TestScale_ParseScaleMessage(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.raw, func(t *testing.T) {
 			parsed, err := ParseScaleMessage(test.raw)
+			assert.Nil(t, err)
 
-			if err != nil {
-				t.Errorf("Expected no error, got %v", err)
-			}
-
-			if test.parsed.MessageId != parsed.MessageId {
-				t.Errorf("Expected MessageId to be %d, got %d", test.parsed.MessageId, parsed.MessageId)
+			if test.parsed.MessageID != parsed.MessageID {
+				t.Errorf("Expected MessageID to be %d, got %d", test.parsed.MessageID, parsed.MessageID)
 			}
 
 			if test.parsed.MessageType != parsed.MessageType {

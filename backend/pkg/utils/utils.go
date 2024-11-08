@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"os"
 	"strings"
 	"time"
 )
@@ -34,10 +35,14 @@ func FormatTime(t time.Time) string {
 }
 
 func getTz() *time.Location {
-	tz, _ := time.LoadLocation("Europe/Prague")
+	tz, err := time.LoadLocation("Europe/Prague")
+	if err != nil {
+		os.Stderr.WriteString("Failed to load timezone: " + err.Error())
+		os.Exit(1)
+	}
 	return tz
 }
 
-func GetOkJson() []byte {
+func GetOkJSON() []byte {
 	return []byte(`{"is_ok":true}`)
 }

@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"io"
 	"net/http"
 	"strconv"
@@ -15,12 +14,13 @@ import (
 
 	"github.com/kotrzina/keg-scale/pkg/scale"
 	"github.com/kotrzina/keg-scale/pkg/utils"
+	"github.com/sirupsen/logrus"
 )
 
 // Promector represents a Prometheus collector
 // We download data periodically and store it in cache
 type Promector struct {
-	baseUrl  string
+	baseURL  string
 	user     string
 	password string
 
@@ -42,13 +42,13 @@ type Response struct {
 	} `json:"data"`
 }
 
-func NewPromector(baseUrl, user, password string, scale *scale.Scale, logger *logrus.Logger, ctx context.Context) *Promector {
+func NewPromector(ctx context.Context, baseURL, user, password string, s *scale.Scale, logger *logrus.Logger) *Promector {
 	prom := &Promector{
-		baseUrl:  baseUrl,
+		baseURL:  baseURL,
 		user:     user,
 		password: password,
 
-		scale:  scale,
+		scale:  s,
 		logger: logger,
 		ctx:    ctx,
 
@@ -175,8 +175,11 @@ func (p *Promector) GetChartData() Charts {
 }
 
 func (p *Promector) GetRangeData(query string, start, end time.Time, step time.Duration) ([]RangeRecord, error) {
-	url := fmt.Sprintf("%s/api/v1/query_range?", p.baseUrl)
-	req, _ := http.NewRequest("GET", url, nil)
+	url := fmt.Sprintf("%s/api/v1/query_range?", p.baseURL)
+	req, err := http.NewRequest(http.MethodGet, url, http.NoBody)
+	if err != nil {
+		return nil, fmt.Errorf("could not create request: %w", err)
+	}
 
 	q := req.URL.Query()
 	q.Add("query", query)

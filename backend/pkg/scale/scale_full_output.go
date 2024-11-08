@@ -2,9 +2,9 @@ package scale
 
 import (
 	"fmt"
-	"github.com/hako/durafmt"
 	"time"
 
+	"github.com/hako/durafmt"
 	"github.com/kotrzina/keg-scale/pkg/utils"
 )
 

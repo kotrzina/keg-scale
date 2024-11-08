@@ -1,8 +1,6 @@
 package store
 
-import (
-	"time"
-)
+import "time"
 
 // FakeStore is primarily used for testing purposes
 type FakeStore struct {
@@ -10,7 +8,7 @@ type FakeStore struct {
 	isLow     bool
 }
 
-func (s *FakeStore) SetWeight(weight float64) error {
+func (s *FakeStore) SetWeight(_ float64) error {
 	return nil
 }
 
@@ -18,7 +16,7 @@ func (s *FakeStore) GetWeight() (float64, error) {
 	return 12, nil
 }
 
-func (s *FakeStore) SetWeightAt(weightAt time.Time) error {
+func (s *FakeStore) SetWeightAt(_ time.Time) error {
 	return nil
 }
 
@@ -26,7 +24,7 @@ func (s *FakeStore) GetWeightAt() (time.Time, error) {
 	return time.Now(), nil
 }
 
-func (s *FakeStore) SetActiveKeg(weight int) error {
+func (s *FakeStore) SetActiveKeg(_ int) error {
 	return nil
 }
 
@@ -43,7 +41,7 @@ func (s *FakeStore) GetBeersLeft() (int, error) {
 	return s.beersLeft, nil
 }
 
-func (s *FakeStore) SetBeersTotal(beersTotal int) error {
+func (s *FakeStore) SetBeersTotal(_ int) error {
 	return nil
 }
 
@@ -60,35 +58,43 @@ func (s *FakeStore) GetIsLow() (bool, error) {
 	return s.isLow, nil
 }
 
-func (s *FakeStore) SetWarehouse(warehouse [5]int) error {
+func (s *FakeStore) SetWarehouse(_ [5]int) error {
 	return nil
 }
 
 func (s *FakeStore) GetWarehouse() ([5]int, error) {
-	var warehouse = [5]int{1, 2, 3, 4, 5}
+	warehouse := [5]int{1, 2, 3, 4, 5}
 	return warehouse, nil
 }
-func (s *FakeStore) SetLastOk(lastOk time.Time) error {
+
+func (s *FakeStore) SetLastOk(_ time.Time) error {
 	return nil
 }
+
 func (s *FakeStore) GetLastOk() (time.Time, error) {
 	return time.Now(), nil
 }
-func (s *FakeStore) SetOpenAt(openAt time.Time) error {
+
+func (s *FakeStore) SetOpenAt(_ time.Time) error {
 	return nil
 }
+
 func (s *FakeStore) GetOpenAt() (time.Time, error) {
 	return time.Now(), nil
 }
-func (s *FakeStore) SetCloseAt(closeAt time.Time) error {
+
+func (s *FakeStore) SetCloseAt(_ time.Time) error {
 	return nil
 }
+
 func (s *FakeStore) GetCloseAt() (time.Time, error) {
 	return time.Now(), nil
 }
-func (s *FakeStore) SetIsOpen(isOpen bool) error {
+
+func (s *FakeStore) SetIsOpen(_ bool) error {
 	return nil
 }
+
 func (s *FakeStore) GetIsOpen() (bool, error) {
 	return false, nil
 }
