@@ -10,6 +10,7 @@ type Monitor struct {
 	Weight        *prometheus.GaugeVec
 	ActiveKeg     *prometheus.GaugeVec
 	BeersLeft     *prometheus.GaugeVec
+	BeersTotal    *prometheus.CounterVec
 	ScaleWifiRssi *prometheus.GaugeVec
 	LastPing      *prometheus.GaugeVec
 	PubIsOpen     *prometheus.GaugeVec
@@ -36,6 +37,11 @@ func NewMonitor() *Monitor {
 			Help: "How to beers are left in the current keg",
 		}, []string{}),
 
+		BeersTotal: prometheus.NewCounterVec(prometheus.CounterOpts{
+			Name: "scale_beers_total",
+			Help: "Total number of beers consumed",
+		}, []string{}),
+
 		ScaleWifiRssi: prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Name: "scale_wifi_rssi",
 			Help: "Current WiFi RSSI",
@@ -56,6 +62,7 @@ func NewMonitor() *Monitor {
 		monitor.Weight,
 		monitor.ActiveKeg,
 		monitor.BeersLeft,
+		monitor.BeersTotal,
 		monitor.ScaleWifiRssi,
 		monitor.LastPing,
 		monitor.PubIsOpen,

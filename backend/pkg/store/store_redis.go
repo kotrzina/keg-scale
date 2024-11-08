@@ -17,6 +17,7 @@ const (
 	ActiveKegKey = "active_keg"
 	IsLowKey     = "is_low"
 	BeersLeftKey = "beers_left"
+	BeersTotal   = "beers_total"
 	WarehouseKey = "warehouse"
 	LastOkKey    = "last_ok"
 	OpenAtKey    = "open_at"
@@ -80,6 +81,14 @@ func (s *RedisStore) SetBeersLeft(beersLeft int) error {
 
 func (s *RedisStore) GetBeersLeft() (int, error) {
 	return s.Client.Get(context.Background(), BeersLeftKey).Int()
+}
+
+func (s *RedisStore) SetBeersTotal(beersTotal int) error {
+	return s.Client.Set(context.Background(), BeersTotal, beersTotal, 0).Err()
+}
+
+func (s *RedisStore) GetBeersTotal() (int, error) {
+	return s.Client.Get(context.Background(), BeersTotal).Int()
 }
 
 func (s *RedisStore) SetWarehouse(warehouse [5]int) error {

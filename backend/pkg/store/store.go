@@ -15,6 +15,9 @@ type Storage interface {
 	SetBeersLeft(beersLeft int) error // set beers left
 	GetBeersLeft() (int, error)       // get beers left
 
+	SetBeersTotal(beersTotal int) error // set beers total
+	GetBeersTotal() (int, error)        // get beers total
+
 	SetIsLow(isLow bool) error // set is low flag
 	GetIsLow() (bool, error)   // get is low flag
 

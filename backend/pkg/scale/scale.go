@@ -24,6 +24,7 @@ type Scale struct {
 	candidateKeg int    // candidate keg size
 	activeKeg    int    // int value of the active keg in liters
 	beersLeft    int    // how many beers are left in the keg
+	beersTotal   int    // how many beers were consumed ever
 	isLow        bool   // is the keg low and needs to be replaced soon
 	warehouse    [5]int // warehouse of kegs [10l, 15l, 20l, 30l, 50l]
 
@@ -59,6 +60,7 @@ func NewScale(monitor *prometheus.Monitor, storage store.Storage, logger *logrus
 		candidateKeg: 0,
 		activeKeg:    0,
 		beersLeft:    0,
+		beersTotal:   0,
 		isLow:        false,
 		warehouse:    [5]int{0, 0, 0, 0, 0},
 
@@ -118,6 +120,12 @@ func (s *Scale) loadDataFromStore() {
 	if err == nil {
 		s.beersLeft = beersLeft
 		s.monitor.BeersLeft.WithLabelValues().Set(float64(beersLeft))
+	}
+
+	beersTotal, err := s.store.GetBeersTotal()
+	if err == nil {
+		s.beersTotal = beersTotal
+		s.monitor.BeersTotal.WithLabelValues().Add(float64(beersTotal))
 	}
 
 	isLow, err := s.store.GetIsLow()
