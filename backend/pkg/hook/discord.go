@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+
+	"github.com/sirupsen/logrus"
 )
 
 type Discord struct {
@@ -12,9 +14,11 @@ type Discord struct {
 		open string
 		keg  string
 	}
+
+	logger *logrus.Logger
 }
 
-func New(openHook, kegHook string) *Discord {
+func New(openHook, kegHook string, logger *logrus.Logger) *Discord {
 	return &Discord{
 		hookURLs: struct {
 			open string
@@ -23,17 +27,28 @@ func New(openHook, kegHook string) *Discord {
 			open: openHook,
 			keg:  kegHook,
 		},
+		logger: logger,
 	}
 }
 
-func (d *Discord) SendOpen() error {
-	message := "🍻	**Hospoda otevřena!**"
-	return d.sendWebhook(d.hookURLs.open, message)
+func (d *Discord) SendOpen() {
+	go func() {
+		message := "🍻	**Hospoda otevřena!**"
+		err := d.sendWebhook(d.hookURLs.open, message)
+		if err != nil {
+			d.logger.Errorf("could not send Discord webhook: %v", err)
+		}
+	}()
 }
 
-func (d *Discord) SendKeg(keg int) error {
-	message := fmt.Sprintf("🛢	**Naražena nová bečka:** %d l", keg)
-	return d.sendWebhook(d.hookURLs.keg, message)
+func (d *Discord) SendKeg(keg int) {
+	go func() {
+		message := fmt.Sprintf("🛢	**Naražena nová bečka:** %d l", keg)
+		err := d.sendWebhook(d.hookURLs.keg, message)
+		if err != nil {
+			d.logger.Errorf("could not send Discord webhook: %v", err)
+		}
+	}()
 }
 
 func (d *Discord) sendWebhook(url, message string) error {

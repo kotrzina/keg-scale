@@ -234,10 +234,7 @@ func (s *Scale) AddMeasurement(weight float64) error {
 				}
 
 				s.logger.Infof("New keg (%d l) CONFIRMED with current value %.0f", keg, weight)
-
-				if err := s.discord.SendKeg(keg); err != nil {
-					s.logger.Errorf("Could not send Discord message: %v", err)
-				}
+				s.discord.SendKeg(keg) // async
 			} else {
 				// new candidate keg
 				// we already know that the new keg is there, but we need to confirm it
@@ -368,9 +365,7 @@ func (s *Scale) updatePub(isOpen bool) {
 		if err := s.store.SetOpenAt(s.pub.openedAt); err != nil {
 			s.logger.Errorf("Could not set open_at time: %v", err)
 		}
-		if err := s.discord.SendOpen(); err != nil {
-			s.logger.Errorf("Could not send Discord message: %v", err)
-		}
+		s.discord.SendOpen() // async
 	} else {
 		s.pub.closedAt = time.Now().Add(-1 * okLimit)
 		if err := s.store.SetCloseAt(s.pub.closedAt); err != nil {
