@@ -6,6 +6,7 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/kotrzina/keg-scale/pkg/config"
+	"github.com/kotrzina/keg-scale/pkg/hook"
 	"github.com/kotrzina/keg-scale/pkg/promector"
 	"github.com/kotrzina/keg-scale/pkg/prometheus"
 	"github.com/kotrzina/keg-scale/pkg/scale"
@@ -27,10 +28,10 @@ func main() {
 	c := context.Background()
 	ctx, cancel := context.WithCancel(c)
 
+	discord := hook.New(conf.DiscordOpenHook, conf.DiscordKegHook)
 	monitor := prometheus.NewMonitor()
-
 	storage := store.NewRedisStore(conf)
-	kegScale := scale.NewScale(ctx, monitor, storage, logger)
+	kegScale := scale.NewScale(ctx, monitor, storage, discord, logger)
 
 	prometheusCollector := promector.NewPromector(
 		ctx,

@@ -5,6 +5,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/kotrzina/keg-scale/pkg/hook"
 	"github.com/kotrzina/keg-scale/pkg/prometheus"
 	"github.com/kotrzina/keg-scale/pkg/store"
 	"github.com/sirupsen/logrus"
@@ -20,7 +21,7 @@ func createScaleWithMeasurements(t *testing.T, weights ...float64) *Scale {
 	logger := logrus.New()
 	var buf bytes.Buffer
 	logger.SetOutput(&buf)
-	s := NewScale(context.Background(), prometheus.NewMonitor(), &store.FakeStore{}, logger)
+	s := NewScale(context.Background(), prometheus.NewMonitor(), &store.FakeStore{}, &hook.Discord{}, logger)
 	for _, weight := range weights {
 		assert.Nil(t, s.AddMeasurement(weight*1000))
 	}

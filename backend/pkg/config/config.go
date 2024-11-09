@@ -18,6 +18,9 @@ type Config struct {
 	PrometheusURL      string
 	PrometheusUser     string
 	PrometheusPassword string
+
+	DiscordOpenHook string
+	DiscordKegHook  string
 }
 
 func NewConfig() *Config {
@@ -33,6 +36,9 @@ func NewConfig() *Config {
 		PrometheusURL:      getStringEnvDefault("PROMETHEUS_URL", "http://localhost:9090"),
 		PrometheusUser:     getStringEnvDefault("PROMETHEUS_USER", "test"),
 		PrometheusPassword: getStringEnvDefault("PROMETHEUS_PASSWORD", "test"),
+
+		DiscordOpenHook: getStringEnvDefault("DISCORD_OPEN_HOOK", ""),
+		DiscordKegHook:  getStringEnvDefault("DISCORD_KEG_HOOK", ""),
 	}
 }
 

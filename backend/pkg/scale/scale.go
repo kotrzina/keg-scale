@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/hako/durafmt"
+	"github.com/kotrzina/keg-scale/pkg/hook"
 	"github.com/kotrzina/keg-scale/pkg/prometheus"
 	"github.com/kotrzina/keg-scale/pkg/store"
 	"github.com/sirupsen/logrus"
@@ -31,6 +32,7 @@ type Scale struct {
 	rssi   float64
 
 	store    store.Storage
+	discord  *hook.Discord
 	logger   *logrus.Logger
 	ctx      context.Context
 	fmtUnits durafmt.Units
@@ -46,7 +48,13 @@ const okLimit = 5 * time.Minute
 
 const localizationUnits = "r:r,t:t,d:d,h:h,m:m,s:s,ms:ms,microsecond"
 
-func NewScale(ctx context.Context, monitor *prometheus.Monitor, storage store.Storage, logger *logrus.Logger) *Scale {
+func NewScale(
+	ctx context.Context,
+	monitor *prometheus.Monitor,
+	storage store.Storage,
+	discord *hook.Discord,
+	logger *logrus.Logger,
+) *Scale {
 	fmtUnits, err := durafmt.DefaultUnitsCoder.Decode(localizationUnits)
 	if err != nil {
 		logger.Fatalf("could not decode units: %v", err)
@@ -74,6 +82,7 @@ func NewScale(ctx context.Context, monitor *prometheus.Monitor, storage store.St
 		lastOk: time.Now().Add(-9999 * time.Hour),
 
 		store:    storage,
+		discord:  discord,
 		logger:   logger,
 		ctx:      ctx,
 		fmtUnits: fmtUnits,
@@ -224,6 +233,10 @@ func (s *Scale) AddMeasurement(weight float64) error {
 					s.logger.Warnf("Keg %d is not available in the warehouse", keg)
 				}
 
+				if err := s.discord.SendKeg(keg); err != nil {
+					s.logger.Errorf("Could not send Discord message: %v", err)
+				}
+
 				s.logger.Infof("New keg (%d l) CONFIRMED with current value %.0f", keg, weight)
 			} else {
 				// new candidate keg
@@ -354,6 +367,9 @@ func (s *Scale) updatePub(isOpen bool) {
 		s.pub.openedAt = time.Now()
 		if err := s.store.SetOpenAt(s.pub.openedAt); err != nil {
 			s.logger.Errorf("Could not set open_at time: %v", err)
+		}
+		if err := s.discord.SendOpen(); err != nil {
+			s.logger.Errorf("Could not send Discord message: %v", err)
 		}
 	} else {
 		s.pub.closedAt = time.Now().Add(-1 * okLimit)
