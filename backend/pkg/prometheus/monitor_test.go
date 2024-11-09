@@ -5,7 +5,7 @@ import (
 )
 
 func TestNewMonitor(t *testing.T) {
-	monitor := NewMonitor()
+	monitor := New()
 
 	if monitor.Registry == nil {
 		t.Error("Registry should not be nil")

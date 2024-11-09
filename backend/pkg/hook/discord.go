@@ -5,9 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"time"
-
-	"github.com/kotrzina/keg-scale/pkg/utils"
 )
 
 type Discord struct {
@@ -30,8 +27,6 @@ func New(openHook, kegHook string) *Discord {
 }
 
 func (d *Discord) SendOpen() error {
-	now := time.Now()
-	utils.FormatDate(now)
 	message := "🍻	**Hospoda otevřena!**"
 	return d.sendWebhook(d.hookURLs.open, message)
 }
@@ -42,6 +37,10 @@ func (d *Discord) SendKeg(keg int) error {
 }
 
 func (d *Discord) sendWebhook(url, message string) error {
+	if url == "" {
+		return fmt.Errorf("Discord webhook URL is not set")
+	}
+
 	body := struct {
 		Content string `json:"content"`
 	}{

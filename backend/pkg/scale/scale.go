@@ -48,7 +48,7 @@ const okLimit = 5 * time.Minute
 
 const localizationUnits = "r:r,t:t,d:d,h:h,m:m,s:s,ms:ms,microsecond"
 
-func NewScale(
+func New(
 	ctx context.Context,
 	monitor *prometheus.Monitor,
 	storage store.Storage,
@@ -233,11 +233,11 @@ func (s *Scale) AddMeasurement(weight float64) error {
 					s.logger.Warnf("Keg %d is not available in the warehouse", keg)
 				}
 
+				s.logger.Infof("New keg (%d l) CONFIRMED with current value %.0f", keg, weight)
+
 				if err := s.discord.SendKeg(keg); err != nil {
 					s.logger.Errorf("Could not send Discord message: %v", err)
 				}
-
-				s.logger.Infof("New keg (%d l) CONFIRMED with current value %.0f", keg, weight)
 			} else {
 				// new candidate keg
 				// we already know that the new keg is there, but we need to confirm it

@@ -29,9 +29,9 @@ func main() {
 	ctx, cancel := context.WithCancel(c)
 
 	discord := hook.New(conf.DiscordOpenHook, conf.DiscordKegHook)
-	monitor := prometheus.NewMonitor()
+	monitor := prometheus.New()
 	storage := store.NewRedisStore(conf)
-	kegScale := scale.NewScale(ctx, monitor, storage, discord, logger)
+	kegScale := scale.New(ctx, monitor, storage, discord, logger)
 
 	prometheusCollector := promector.NewPromector(
 		ctx,

@@ -16,8 +16,8 @@ type Monitor struct {
 	PubIsOpen     *prometheus.GaugeVec
 }
 
-// NewMonitor creates a new Monitor
-func NewMonitor() *Monitor {
+// New creates a new Monitor
+func New() *Monitor {
 	reg := prometheus.NewRegistry()
 	monitor := &Monitor{
 		Registry: reg,
