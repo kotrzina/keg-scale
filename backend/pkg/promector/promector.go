@@ -55,6 +55,7 @@ func NewPromector(ctx context.Context, baseURL, user, password string, s *scale.
 		mtx: sync.RWMutex{},
 		cache: Charts{
 			BeersLeft: []ChartInterval{},
+			ActiveKeg: []ChartInterval{},
 		},
 	}
 
@@ -90,6 +91,7 @@ type ChartInterval struct {
 
 type Charts struct {
 	BeersLeft []ChartInterval `json:"beers_left"`
+	ActiveKeg []ChartInterval `json:"active_keg"`
 }
 
 func (p *Promector) Refresh() {
@@ -102,12 +104,14 @@ func (p *Promector) Refresh() {
 	}
 
 	now := time.Now()
-
+	step := 5 * time.Minute
 	requests := []request{
-		{"scale_beers_left_1h", "scale_beers_left", now.Add(-1 * time.Hour), now, 5 * time.Minute},
-		{"scale_beers_left_3h", "scale_beers_left", now.Add(-3 * time.Hour), now, 10 * time.Minute},
-		{"scale_beers_left_6h", "scale_beers_left", now.Add(-6 * time.Hour), now, 20 * time.Minute},
-		{"scale_beers_left_24h", "scale_beers_left", now.Add(-24 * time.Hour), now, time.Hour},
+		{"scale_active_keg_7d", "scale_active_keg", now.Add(-7 * 24 * time.Hour), now, step},
+		{"scale_active_keg_14d", "scale_active_keg", now.Add(-14 * 24 * time.Hour), now, step},
+		{"scale_beers_left_1h", "scale_beers_left", now.Add(-1 * time.Hour), now, step},
+		{"scale_beers_left_3h", "scale_beers_left", now.Add(-3 * time.Hour), now, step},
+		{"scale_beers_left_6h", "scale_beers_left", now.Add(-6 * time.Hour), now, step},
+		{"scale_beers_left_24h", "scale_beers_left", now.Add(-24 * time.Hour), now, step},
 	}
 
 	opening := p.scale.GetOpeningOutput()
@@ -115,10 +119,8 @@ func (p *Promector) Refresh() {
 	if opening.IsOpen {
 		// chart for current session
 		// let's take 10 minutes before opening to now
-		// step is calculated based on open duration - we want to have approx 14 points in the chart
+		// step is calculated based on open duration - we want to have approx 30 points in the chart
 		dataStart := opening.OpenedAt.Add(-10 * time.Minute)
-		openDuration := now.Sub(dataStart)
-		step := (openDuration / 14).Round(time.Minute)
 		requests = append(requests, request{"scale_beers_left_now", "scale_beers_left", dataStart, now, step})
 	} else {
 		// chart for last session
@@ -126,7 +128,6 @@ func (p *Promector) Refresh() {
 		// step is calculated based on open duration - we want to have approx 14 points in the chart
 		timeStart := opening.OpenedAt.Add(-10 * time.Minute)
 		timeEnd := opening.ClosedAt.Add(10 * time.Minute)
-		step := (timeEnd.Sub(timeStart) / 14).Round(time.Minute)
 		requests = append(requests, request{"scale_beers_left_last", "scale_beers_left", timeStart, timeEnd, step})
 	}
 
@@ -164,6 +165,10 @@ func (p *Promector) Refresh() {
 			{"now", results["scale_beers_left_now"]},
 			{"last", results["scale_beers_left_last"]},
 		},
+		ActiveKeg: []ChartInterval{
+			{"7d", results["scale_active_keg_7d"]},
+			{"14d", results["scale_active_keg_14d"]},
+		},
 	}
 }
 
@@ -187,6 +192,8 @@ func (p *Promector) GetRangeData(query string, start, end time.Time, step time.D
 	q.Add("start", fmt.Sprintf("%d", start.Unix()))
 	q.Add("end", fmt.Sprintf("%d", end.Unix()))
 	req.URL.RawQuery = q.Encode()
+
+	fmt.Println(q.Encode())
 
 	req.Header.Add("Authorization", getBaseAuth(p.user, p.password))
 	client := &http.Client{

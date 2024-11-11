@@ -12,7 +12,7 @@ import FieldChart from "./FieldChart";
 function Dashboard() {
 
     const defaultEmptyChart = [{
-        interval: "1h",
+        interval: "NO_DATA",
         values: [
             {
                 label: "0",
@@ -66,6 +66,7 @@ function Dashboard() {
 
         charts: {
             beers_left: defaultEmptyChart,
+            active_keg: defaultEmptyChart,
         }
     }
 
@@ -197,7 +198,8 @@ function Dashboard() {
                 </Field>
             </Row>
 
-            <FieldChart title={"Zbýva piva"} chart={data.charts.beers_left} loading={showSpinner}/>
+            <FieldChart title={"Zbýva piva"} chart={data.charts.beers_left} loading={showSpinner} stepped={false}/>
+            <FieldChart title={"Aktivní bečka"} chart={data.charts.active_keg} loading={showSpinner} stepped={true}/>
 
 
             <Row className={"mt-4"}></Row>

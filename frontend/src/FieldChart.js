@@ -12,7 +12,6 @@ function FieldChart(props) {
         labels: [],
         datasets: [
             {
-                label: 'Pivo',
                 data: [],
                 fill: true,
             },
@@ -32,15 +31,28 @@ function FieldChart(props) {
         }
     };
 
-    const [activeInterval, setActiveInterval] = useState("1h");
+    const DEFAULT_INTERVAL = "NO_DATA";
+
+    const [activeInterval, setActiveInterval] = useState(DEFAULT_INTERVAL);
     const [data, setData] = useState(defaultData);
 
     useEffect(() => {
-        if (props.chart.length === 0) {
+        if (props.chart === undefined) {
             return
         }
 
-        const interval = props.chart.find((item) => item.interval === activeInterval);
+        if (props.chart.length <= 0) {
+            return
+        }
+
+        let i = activeInterval
+        if (i === DEFAULT_INTERVAL) {
+            i = props.chart[0].interval
+            setActiveInterval(i)
+            return
+        }
+
+        const interval = props.chart.find((item) => item.interval === i);
         if (interval === undefined) {
             return
         }
@@ -53,18 +65,19 @@ function FieldChart(props) {
             labels: interval.values.map((item) => item.label),
             datasets: [
                 {
-                    label: 'Pivo',
                     data: interval.values.map((item) => item.value),
                     fill: true,
                     backgroundColor: 'rgba(69, 57, 32,0.2)',
                     borderColor: 'rgba(219, 166, 55,1)',
+                    stepped: props.stepped,
+                    pointRadius: 0,
                 },
             ]
         })
-    }, [activeInterval, props.chart]);
+    }, [activeInterval, props.chart, props.stepped]);
 
     return (
-        <Row>
+        <Row className={"mt-3"}>
             <Col xs={12} sm={12} md={12} lg={12} xl={12} xxl={12}>
                 <Toast style={{width: "100%"}}>
                     <Toast.Header closeButton={false}>
