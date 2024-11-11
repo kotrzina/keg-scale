@@ -181,7 +181,7 @@ func (p *Promector) GetChartData() Charts {
 
 func (p *Promector) GetRangeData(query string, start, end time.Time, step time.Duration) ([]RangeRecord, error) {
 	url := fmt.Sprintf("%s/api/v1/query_range?", p.baseURL)
-	req, err := http.NewRequest(http.MethodGet, url, http.NoBody)
+	req, err := http.NewRequestWithContext(p.ctx, http.MethodGet, url, http.NoBody)
 	if err != nil {
 		return nil, fmt.Errorf("could not create request: %w", err)
 	}

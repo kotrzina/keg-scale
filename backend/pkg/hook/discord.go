@@ -2,6 +2,7 @@ package hook
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -15,10 +16,11 @@ type Discord struct {
 		keg  string
 	}
 
+	ctx    context.Context
 	logger *logrus.Logger
 }
 
-func New(openHook, kegHook string, logger *logrus.Logger) *Discord {
+func New(ctx context.Context, openHook, kegHook string, logger *logrus.Logger) *Discord {
 	return &Discord{
 		hookURLs: struct {
 			open string
@@ -27,6 +29,7 @@ func New(openHook, kegHook string, logger *logrus.Logger) *Discord {
 			open: openHook,
 			keg:  kegHook,
 		},
+		ctx:    ctx,
 		logger: logger,
 	}
 }
@@ -68,7 +71,13 @@ func (d *Discord) sendWebhook(url, message string) error {
 	}
 	data := bytes.NewBuffer(jsonData)
 
-	resp, err := http.Post(url, "application/json", data)
+	req, err := http.NewRequestWithContext(d.ctx, http.MethodPost, url, data)
+	if err != nil {
+		return fmt.Errorf("could not create request for Discord webhook: %w", err)
+	}
+	req.Header.Add("Content-Type", "application/json")
+
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("could not send Discord webhook: %w", err)
 	}

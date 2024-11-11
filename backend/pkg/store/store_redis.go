@@ -27,31 +27,33 @@ const (
 
 type RedisStore struct {
 	Client *redis.Client
+	ctx    context.Context
 }
 
-func NewRedisStore(c *config.Config) *RedisStore {
+func NewRedisStore(ctx context.Context, c *config.Config) *RedisStore {
 	return &RedisStore{
 		Client: redis.NewClient(&redis.Options{
 			Addr: c.RedisAddr,
 			DB:   c.RedisDB,
 		}),
+		ctx: ctx,
 	}
 }
 
 func (s *RedisStore) SetWeight(weight float64) error {
-	return s.Client.Set(context.Background(), WeightKey, weight, 0).Err()
+	return s.Client.Set(s.ctx, WeightKey, weight, 0).Err()
 }
 
 func (s *RedisStore) GetWeight() (float64, error) {
-	return s.Client.Get(context.Background(), WeightKey).Float64()
+	return s.Client.Get(s.ctx, WeightKey).Float64()
 }
 
 func (s *RedisStore) SetWeightAt(weightAt time.Time) error {
-	return s.Client.Set(context.Background(), WeightAtKey, weightAt.Format(time.RFC3339), 0).Err()
+	return s.Client.Set(s.ctx, WeightAtKey, weightAt.Format(time.RFC3339), 0).Err()
 }
 
 func (s *RedisStore) GetWeightAt() (time.Time, error) {
-	res, err := s.Client.Get(context.Background(), WeightAtKey).Result()
+	res, err := s.Client.Get(s.ctx, WeightAtKey).Result()
 	if err != nil {
 		return time.Time{}, err
 	}
@@ -60,44 +62,44 @@ func (s *RedisStore) GetWeightAt() (time.Time, error) {
 }
 
 func (s *RedisStore) SetActiveKeg(keg int) error {
-	return s.Client.Set(context.Background(), ActiveKegKey, keg, 0).Err()
+	return s.Client.Set(s.ctx, ActiveKegKey, keg, 0).Err()
 }
 
 func (s *RedisStore) GetActiveKeg() (int, error) {
-	return s.Client.Get(context.Background(), ActiveKegKey).Int()
+	return s.Client.Get(s.ctx, ActiveKegKey).Int()
 }
 
 func (s *RedisStore) SetIsLow(isLow bool) error {
-	return s.Client.Set(context.Background(), IsLowKey, isLow, 0).Err()
+	return s.Client.Set(s.ctx, IsLowKey, isLow, 0).Err()
 }
 
 func (s *RedisStore) GetIsLow() (bool, error) {
-	return s.Client.Get(context.Background(), IsLowKey).Bool()
+	return s.Client.Get(s.ctx, IsLowKey).Bool()
 }
 
 func (s *RedisStore) SetBeersLeft(beersLeft int) error {
-	return s.Client.Set(context.Background(), BeersLeftKey, beersLeft, 0).Err()
+	return s.Client.Set(s.ctx, BeersLeftKey, beersLeft, 0).Err()
 }
 
 func (s *RedisStore) GetBeersLeft() (int, error) {
-	return s.Client.Get(context.Background(), BeersLeftKey).Int()
+	return s.Client.Get(s.ctx, BeersLeftKey).Int()
 }
 
 func (s *RedisStore) SetBeersTotal(beersTotal int) error {
-	return s.Client.Set(context.Background(), BeersTotal, beersTotal, 0).Err()
+	return s.Client.Set(s.ctx, BeersTotal, beersTotal, 0).Err()
 }
 
 func (s *RedisStore) GetBeersTotal() (int, error) {
-	return s.Client.Get(context.Background(), BeersTotal).Int()
+	return s.Client.Get(s.ctx, BeersTotal).Int()
 }
 
 func (s *RedisStore) SetWarehouse(warehouse [5]int) error {
 	val := fmt.Sprintf("%d,%d,%d,%d,%d", warehouse[0], warehouse[1], warehouse[2], warehouse[3], warehouse[4])
-	return s.Client.Set(context.Background(), WarehouseKey, val, 0).Err()
+	return s.Client.Set(s.ctx, WarehouseKey, val, 0).Err()
 }
 
 func (s *RedisStore) GetWarehouse() ([5]int, error) {
-	res, err := s.Client.Get(context.Background(), "warehouse").Result()
+	res, err := s.Client.Get(s.ctx, "warehouse").Result()
 	if err != nil {
 		return [5]int{0, 0, 0, 0, 0}, err
 	}
@@ -123,33 +125,33 @@ func (s *RedisStore) GetWarehouse() ([5]int, error) {
 }
 
 func (s *RedisStore) SetLastOk(lastOk time.Time) error {
-	return s.Client.Set(context.Background(), LastOkKey, lastOk, 0).Err()
+	return s.Client.Set(s.ctx, LastOkKey, lastOk, 0).Err()
 }
 
 func (s *RedisStore) GetLastOk() (time.Time, error) {
-	return s.Client.Get(context.Background(), LastOkKey).Time()
+	return s.Client.Get(s.ctx, LastOkKey).Time()
 }
 
 func (s *RedisStore) SetOpenAt(openAt time.Time) error {
-	return s.Client.Set(context.Background(), OpenAtKey, openAt, 0).Err()
+	return s.Client.Set(s.ctx, OpenAtKey, openAt, 0).Err()
 }
 
 func (s *RedisStore) GetOpenAt() (time.Time, error) {
-	return s.Client.Get(context.Background(), OpenAtKey).Time()
+	return s.Client.Get(s.ctx, OpenAtKey).Time()
 }
 
 func (s *RedisStore) SetCloseAt(closeAt time.Time) error {
-	return s.Client.Set(context.Background(), CloseAtKey, closeAt, 0).Err()
+	return s.Client.Set(s.ctx, CloseAtKey, closeAt, 0).Err()
 }
 
 func (s *RedisStore) GetCloseAt() (time.Time, error) {
-	return s.Client.Get(context.Background(), CloseAtKey).Time()
+	return s.Client.Get(s.ctx, CloseAtKey).Time()
 }
 
 func (s *RedisStore) SetIsOpen(isOpen bool) error {
-	return s.Client.Set(context.Background(), IsOpenKey, isOpen, 0).Err()
+	return s.Client.Set(s.ctx, IsOpenKey, isOpen, 0).Err()
 }
 
 func (s *RedisStore) GetIsOpen() (bool, error) {
-	return s.Client.Get(context.Background(), IsOpenKey).Bool()
+	return s.Client.Get(s.ctx, IsOpenKey).Bool()
 }

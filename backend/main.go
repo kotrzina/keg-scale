@@ -28,9 +28,9 @@ func main() {
 	c := context.Background()
 	ctx, cancel := context.WithCancel(c)
 
-	discord := hook.New(conf.DiscordOpenHook, conf.DiscordKegHook, logger)
+	discord := hook.New(ctx, conf.DiscordOpenHook, conf.DiscordKegHook, logger)
 	monitor := prometheus.New()
-	storage := store.NewRedisStore(conf)
+	storage := store.NewRedisStore(ctx, conf)
 	kegScale := scale.New(ctx, monitor, storage, discord, logger)
 
 	prometheusCollector := promector.NewPromector(
@@ -42,13 +42,15 @@ func main() {
 		logger,
 	)
 
-	StartServer(NewRouter(&HandlerRepository{
+	router := NewRouter(&HandlerRepository{
 		scale:     kegScale,
 		promector: prometheusCollector,
 		config:    conf,
 		monitor:   monitor,
 		logger:    logger,
-	}), 8080, cancel)
+	})
+
+	StartServer(ctx, cancel, router, 8080)
 }
 
 func createLogger() *logrus.Logger {
