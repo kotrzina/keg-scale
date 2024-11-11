@@ -193,8 +193,6 @@ func (p *Promector) GetRangeData(query string, start, end time.Time, step time.D
 	q.Add("end", fmt.Sprintf("%d", end.Unix()))
 	req.URL.RawQuery = q.Encode()
 
-	fmt.Println(q.Encode())
-
 	req.Header.Add("Authorization", getBaseAuth(p.user, p.password))
 	client := &http.Client{
 		Timeout: 10 * time.Second, // Set the timeout duration here
