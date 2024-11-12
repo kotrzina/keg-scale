@@ -239,8 +239,17 @@ func (p *Promector) GetRangeData(query string, start, end time.Time, step time.D
 			return nil, fmt.Errorf("unexpected number of values: %d", len(record))
 		}
 
-		t := time.Unix(int64(record[0].(float64)), 0)
-		v, e := strconv.Atoi(record[1].(string))
+		tf, ok := record[0].(float64)
+		if !ok {
+			return nil, fmt.Errorf("unexpected time format: %T", record[0])
+		}
+		t := time.Unix(int64(tf), 0)
+
+		vs, ok := record[1].(string)
+		if !ok {
+			return nil, fmt.Errorf("unexpected value format: %T", record[1])
+		}
+		v, e := strconv.Atoi(vs)
 		if e != nil {
 			return nil, fmt.Errorf("could not convert value to int: %w", e)
 		}

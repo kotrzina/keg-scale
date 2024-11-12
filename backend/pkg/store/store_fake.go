@@ -98,3 +98,11 @@ func (s *FakeStore) SetIsOpen(_ bool) error {
 func (s *FakeStore) GetIsOpen() (bool, error) {
 	return false, nil
 }
+
+func (s *FakeStore) SetTotalBeers(_ int) error {
+	return nil
+}
+
+func (s *FakeStore) GetTotalBeers() (int, error) {
+	return 0, nil
+}

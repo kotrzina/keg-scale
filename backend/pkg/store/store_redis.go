@@ -12,17 +12,18 @@ import (
 )
 
 const (
-	WeightKey    = "weight"
-	WeightAtKey  = "weight_at"
-	ActiveKegKey = "active_keg"
-	IsLowKey     = "is_low"
-	BeersLeftKey = "beers_left"
-	BeersTotal   = "beers_total"
-	WarehouseKey = "warehouse"
-	LastOkKey    = "last_ok"
-	OpenAtKey    = "open_at"
-	CloseAtKey   = "close_at"
-	IsOpenKey    = "is_open"
+	WeightKey     = "weight"
+	WeightAtKey   = "weight_at"
+	ActiveKegKey  = "active_keg"
+	IsLowKey      = "is_low"
+	BeersLeftKey  = "beers_left"
+	BeersTotal    = "beers_total"
+	WarehouseKey  = "warehouse"
+	LastOkKey     = "last_ok"
+	OpenAtKey     = "open_at"
+	CloseAtKey    = "close_at"
+	IsOpenKey     = "is_open"
+	TotalBeersKey = "total_beers"
 )
 
 type RedisStore struct {
@@ -154,4 +155,12 @@ func (s *RedisStore) SetIsOpen(isOpen bool) error {
 
 func (s *RedisStore) GetIsOpen() (bool, error) {
 	return s.Client.Get(s.ctx, IsOpenKey).Bool()
+}
+
+func (s *RedisStore) SetTotalBeers(totalBeers int) error {
+	return s.Client.Set(s.ctx, TotalBeersKey, totalBeers, 0).Err()
+}
+
+func (s *RedisStore) GetTotalBeers() (int, error) {
+	return s.Client.Get(s.ctx, TotalBeersKey).Int()
 }
