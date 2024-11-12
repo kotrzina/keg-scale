@@ -25,6 +25,16 @@ function Menu(props) {
 
                     </Nav>
                 </Navbar.Collapse>
+
+                <Navbar.Collapse className="justify-content-end">
+                        <a
+                            href={"https://github.com/kotrzina/keg-scale"}
+                            target={"_blank"}
+                            rel={"noreferrer"}
+                        >
+                            <img src={"/github-mark.png"} width={"32px"} alt={"Github.com logo"}/>
+                        </a>
+                </Navbar.Collapse>
             </Container>
         </Navbar>
     );
