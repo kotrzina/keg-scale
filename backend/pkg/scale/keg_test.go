@@ -24,11 +24,36 @@ func TestCalcBeersLeft(t *testing.T) {
 		{30, 11200, 2},
 		{50, 10100, 0},
 		{50, 12100, 2},
+		{0, 6100, 0},    // no active keg - always 0
 		{90, 10000, 20}, // unknown keg - ignore weight
 	}
 
 	for _, tc := range testcases {
 		beers := CalcBeersLeft(tc.keg, tc.weight)
+		assert.Equal(t, tc.beers, beers, "Keg %d with weight %f - Expected beers to be %d, got %d", tc.keg, tc.weight, tc.beers, beers)
+	}
+}
+
+func TestCalcBeersConsumed(t *testing.T) {
+	type testcase struct {
+		keg    int
+		weight float64
+		beers  int
+	}
+
+	testcases := []testcase{
+		{10, 5900, 20},
+		{10, 7100, 17},
+		{10, 40000, 20},
+		{15, 7250, 29},
+		{15, 600, 30},
+		{15, 0, 30},
+		{50, 0, 100},
+		{90, 10000, 0}, // unknown keg - always 0
+	}
+
+	for _, tc := range testcases {
+		beers := CalcBeersConsumed(tc.keg, tc.weight)
 		assert.Equal(t, tc.beers, beers, "Keg %d with weight %f - Expected beers to be %d, got %d", tc.keg, tc.weight, tc.beers, beers)
 	}
 }

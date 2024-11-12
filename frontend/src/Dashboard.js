@@ -25,6 +25,7 @@ function Dashboard() {
         scale: {
             is_ok: false,
             beers_left: 0,
+            beers_total: 0,
             last_weight: 0.0,
             last_weight_formated: "0.0",
             last_at: "0",
@@ -155,6 +156,16 @@ function Dashboard() {
                     hidden={!data.scale.is_ok || data.scale.last_at <= 0}
                 >
                     {data.scale.last_weight_formated}&nbsp;kg
+                </Field>
+
+                <Field
+                    title={"Celkem piv"}
+                    info={"od 12.11.2024"}
+                    variant={"green"}
+                    loading={showSpinner}
+                    hidden={false}
+                >
+                    {data.scale.beers_total}&nbsp;piv
                 </Field>
 
                 <Field

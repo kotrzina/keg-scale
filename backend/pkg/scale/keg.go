@@ -31,6 +31,9 @@ func GetFullWeights() KegWeights {
 
 // CalcBeersLeft calculates the number of beers left in a keg based on its size and current weight
 func CalcBeersLeft(keg int, weight float64) int {
+	if keg == 0 {
+		return 0
+	}
 	kegWeight, found := GetEmptyWeights()[keg]
 	if !found {
 		kegWeight = 0
@@ -41,6 +44,27 @@ func CalcBeersLeft(keg int, weight float64) int {
 	}
 
 	return int(math.Floor((weight/1000 - kegWeight/1000) * 2))
+}
+
+// CalcBeersConsumed calculates the number of beers consumed from a keg based on its size and current weight
+func CalcBeersConsumed(keg int, weight float64) int {
+	kegWeight, found := GetEmptyWeights()[keg]
+	if !found {
+		return 0
+	}
+	fullKeg := float64(keg) * 2 // how many beers do we have in full keg
+
+	w := weight - kegWeight
+
+	if w <= 0 {
+		return keg * 2
+	}
+
+	if w >= float64(keg)*1000 {
+		return int(fullKeg)
+	}
+
+	return int(math.Floor(fullKeg - (w / 500)))
 }
 
 func IsKegLow(keg int, weight float64) bool {

@@ -35,7 +35,4 @@ type Storage interface {
 
 	SetIsOpen(isOpen bool) error // set is open flag
 	GetIsOpen() (bool, error)    // get is open flag
-
-	SetTotalBeers(totalBeers int) error // set total beers
-	GetTotalBeers() (int, error)        // get total beers
 }

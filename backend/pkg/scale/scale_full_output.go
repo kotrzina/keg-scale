@@ -22,6 +22,7 @@ type PubOutput struct {
 type FullOutput struct {
 	IsOk               bool            `json:"is_ok"`
 	BeersLeft          int             `json:"beers_left"`
+	BeersTotal         int             `json:"beers_total"`
 	LastWeight         float64         `json:"last_weight"`
 	LastWeightFormated string          `json:"last_weight_formated"`
 	LastAt             string          `json:"last_at"`
@@ -51,6 +52,7 @@ func (s *Scale) GetScale() FullOutput {
 	output := FullOutput{
 		IsOk:               s.isOk(),
 		BeersLeft:          s.beersLeft,
+		BeersTotal:         s.getBeersTotal(),
 		LastWeight:         s.weight,
 		LastWeightFormated: fmt.Sprintf("%.2f", s.weight/1000),
 		LastAt:             utils.FormatDate(s.weightAt),
