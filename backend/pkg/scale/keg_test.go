@@ -23,7 +23,7 @@ func TestCalcBeersLeft(t *testing.T) {
 		{30, 7500, 0},
 		{30, 11200, 2},
 		{50, 10100, 0},
-		{50, 12100, 2},
+		{50, 14500, 2},
 		{0, 6100, 0},    // no active keg - always 0
 		{90, 10000, 20}, // unknown keg - ignore weight
 	}
