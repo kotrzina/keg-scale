@@ -46,7 +46,7 @@ type pub struct {
 	closedAt time.Time
 }
 
-const okLimit = 5 * time.Minute
+const okLimit = 30 * time.Minute
 
 const localizationUnits = "r:r,t:t,d:d,h:h,m:m,s:s,ms:ms,microsecond"
 
