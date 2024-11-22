@@ -11,6 +11,8 @@ import (
 	"github.com/kotrzina/keg-scale/pkg/prometheus"
 	"github.com/kotrzina/keg-scale/pkg/scale"
 	"github.com/kotrzina/keg-scale/pkg/store"
+	"github.com/kotrzina/keg-scale/pkg/wa"
+	_ "github.com/lib/pq"
 	"github.com/sirupsen/logrus"
 )
 
@@ -28,10 +30,11 @@ func main() {
 	c := context.Background()
 	ctx, cancel := context.WithCancel(c)
 
+	whatsapp := wa.New(ctx, conf, logger)
 	discord := hook.New(ctx, conf.DiscordOpenHook, conf.DiscordKegHook, logger)
 	monitor := prometheus.New()
 	storage := store.NewRedisStore(ctx, conf)
-	kegScale := scale.New(ctx, monitor, storage, discord, logger)
+	kegScale := scale.New(ctx, monitor, storage, discord, whatsapp, logger)
 
 	prometheusCollector := promector.NewPromector(
 		ctx,

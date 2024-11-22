@@ -21,6 +21,10 @@ type Config struct {
 
 	DiscordOpenHook string
 	DiscordKegHook  string
+
+	DBString string
+
+	WhatsAppOpenJid string
 }
 
 func NewConfig() *Config {
@@ -39,6 +43,10 @@ func NewConfig() *Config {
 
 		DiscordOpenHook: getStringEnvDefault("DISCORD_OPEN_HOOK", ""),
 		DiscordKegHook:  getStringEnvDefault("DISCORD_KEG_HOOK", ""),
+
+		DBString: getStringEnvDefault("DB_STRING", "host=localhost port=5432 user=postgres password=admin dbname=pub sslmode=disable"),
+
+		WhatsAppOpenJid: getStringEnvDefault("WHATSAPP_OPEN_JID", ""),
 	}
 }
 

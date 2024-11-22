@@ -67,4 +67,4 @@ linters-settings:
 
 issues:
   exclude:
-    - "so far so good"
+    - "singleCaseSwitch"

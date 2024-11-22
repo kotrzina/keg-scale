@@ -10,6 +10,7 @@ import (
 	"github.com/kotrzina/keg-scale/pkg/hook"
 	"github.com/kotrzina/keg-scale/pkg/prometheus"
 	"github.com/kotrzina/keg-scale/pkg/store"
+	"github.com/kotrzina/keg-scale/pkg/wa"
 	"github.com/sirupsen/logrus"
 )
 
@@ -33,6 +34,7 @@ type Scale struct {
 
 	store    store.Storage
 	discord  *hook.Discord
+	whatsapp *wa.WhatsApp
 	logger   *logrus.Logger
 	ctx      context.Context
 	fmtUnits durafmt.Units
@@ -53,6 +55,7 @@ func New(
 	monitor *prometheus.Monitor,
 	storage store.Storage,
 	discord *hook.Discord,
+	whatsapp *wa.WhatsApp,
 	logger *logrus.Logger,
 ) *Scale {
 	fmtUnits, err := durafmt.DefaultUnitsCoder.Decode(localizationUnits)
@@ -83,6 +86,7 @@ func New(
 
 		store:    storage,
 		discord:  discord,
+		whatsapp: whatsapp,
 		logger:   logger,
 		ctx:      ctx,
 		fmtUnits: fmtUnits,
@@ -339,7 +343,8 @@ func (s *Scale) updatePub(isOpen bool) {
 		if err := s.store.SetOpenAt(s.pub.openedAt); err != nil {
 			s.logger.Errorf("Could not set open_at time: %v", err)
 		}
-		s.discord.SendOpen() // async
+		s.discord.SendOpen()  // async
+		s.whatsapp.SendOpen() // async
 	} else {
 		s.pub.closedAt = time.Now().Add(-1 * okLimit)
 		if err := s.store.SetCloseAt(s.pub.closedAt); err != nil {
