@@ -108,7 +108,7 @@ func (b *Botka) helpHandler() wa.EventHandler {
 				strings.HasPrefix(sanitized, "napoveda") ||
 				strings.HasPrefix(sanitized, "pomoc")
 		},
-		Handler: func(from, _ string) error {
+		HandleFunc: func(from, _ string) error {
 			reply := "Příkazy: \n" +
 				"/help - zobrazí nápovědu \n" +
 				"/pub /hospoda - informace o hospodě \n" +
@@ -133,7 +133,7 @@ func (b *Botka) helloHandler() wa.EventHandler {
 				strings.HasPrefix(sanitized, "cau") ||
 				strings.HasPrefix(sanitized, "cus")
 		},
-		Handler: func(from, _ string) error {
+		HandleFunc: func(from, _ string) error {
 			reply := "Ahoj! Já jsem pan Botka. Napiš /help pro nápovědu."
 			err := b.whatsapp.SendText(from, reply)
 			return err
@@ -148,7 +148,7 @@ func (b *Botka) pubHandler() wa.EventHandler {
 			return strings.HasPrefix(sanitized, "pub") ||
 				strings.HasPrefix(sanitized, "hospoda")
 		},
-		Handler: func(from, _ string) error {
+		HandleFunc: func(from, _ string) error {
 			b.mtx.RLock()
 			defer b.mtx.RUnlock()
 			var reply string
@@ -170,7 +170,7 @@ func (b *Botka) kegHandler() wa.EventHandler {
 			return strings.HasPrefix(sanitized, "becka") ||
 				strings.HasPrefix(sanitized, "keg")
 		},
-		Handler: func(from, _ string) error {
+		HandleFunc: func(from, _ string) error {
 			b.mtx.RLock()
 			defer b.mtx.RUnlock()
 
@@ -193,7 +193,7 @@ func (b *Botka) pricesHandler() wa.EventHandler {
 		MatchFunc: func(msg string) bool {
 			return strings.HasPrefix(sanitizeCommand(msg), "cenik")
 		},
-		Handler: func(from, _ string) error {
+		HandleFunc: func(from, _ string) error {
 			reply := "Ceník: \n" +
 				"- Vše 25 Kč \n" +
 				"- Víno 130 Kč"
@@ -208,7 +208,7 @@ func (b *Botka) warehouseHandler() wa.EventHandler {
 		MatchFunc: func(msg string) bool {
 			return strings.HasPrefix(sanitizeCommand(msg), "sklad")
 		},
-		Handler: func(from, _ string) error {
+		HandleFunc: func(from, _ string) error {
 			b.mtx.RLock()
 			defer b.mtx.RUnlock()
 

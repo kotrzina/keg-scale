@@ -28,8 +28,8 @@ type WhatsAppClient struct {
 }
 
 type EventHandler struct {
-	MatchFunc func(msg string) bool
-	Handler   func(from, msg string) error // from is id of the sender
+	MatchFunc  func(msg string) bool
+	HandleFunc func(from, msg string) error // from = sender ID
 }
 
 func New(ctx context.Context, conf *config.Config, logger *logrus.Logger) *WhatsAppClient {
@@ -124,7 +124,7 @@ func (wa *WhatsAppClient) handleIncomingMessage(msg *events.Message) {
 
 	for _, handler := range wa.handlers {
 		if handler.MatchFunc(text) {
-			if err := handler.Handler(from, text); err != nil {
+			if err := handler.HandleFunc(from, text); err != nil {
 				wa.logger.Errorf("Failed from handle message: %v", err)
 			}
 		}
