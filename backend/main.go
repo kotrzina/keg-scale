@@ -3,6 +3,9 @@ package main
 import (
 	"context"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/joho/godotenv"
 	"github.com/kotrzina/keg-scale/pkg/config"
@@ -17,6 +20,12 @@ import (
 )
 
 func main() {
+	c := context.Background()
+	ctx, cancel := context.WithCancel(c)
+
+	done := make(chan os.Signal, 1)
+	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+
 	logger := createLogger()
 
 	// for development purposes
@@ -27,10 +36,8 @@ func main() {
 	}
 	conf := config.NewConfig()
 
-	c := context.Background()
-	ctx, cancel := context.WithCancel(c)
-
 	whatsapp := wa.New(ctx, conf, logger)
+	defer whatsapp.Close()
 	botka := hook.NewBotka(whatsapp, conf, logger)
 	discord := hook.New(ctx, conf.DiscordOpenHook, conf.DiscordKegHook, logger)
 	monitor := prometheus.New()
@@ -54,7 +61,19 @@ func main() {
 		logger:    logger,
 	})
 
-	StartServer(ctx, cancel, router, 8080)
+	srv := StartServer(router, 8080, logger)
+
+	<-done
+	logger.Infof("Terminate signal received")
+	cancel() // cancel application context
+
+	shutdownContext, shutdownContextCancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer shutdownContextCancel()
+	if err := srv.Shutdown(shutdownContext); err != nil {
+		logger.Errorf("Server Shutdown Failed:%+v", err)
+	}
+
+	logger.Infof("Server Exited")
 }
 
 func createLogger() *logrus.Logger {

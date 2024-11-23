@@ -1,15 +1,12 @@
 package main
 
 import (
-	"context"
+	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
-	"os/signal"
 	"path"
 	"strings"
-	"syscall"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -85,32 +82,20 @@ func reactRedirect(server http.Handler, dir string) http.Handler {
 }
 
 // StartServer starts HTTP server
-// It listens for SIGINT and SIGTERM signals and gracefully stops the server
-func StartServer(ctx context.Context, cancel context.CancelFunc, router *mux.Router, port int) {
+func StartServer(router *mux.Router, port int, logger *logrus.Logger) *http.Server {
 	srv := &http.Server{
 		Addr:    fmt.Sprintf(":%d", port),
 		Handler: router,
 	}
 
-	done := make(chan os.Signal, 1)
-	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
-
 	go func() {
-		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Printf("listen: %s\n", err)
+		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			logger.Infof("listen: %s", err)
 		}
 	}()
-	log.Printf("Server Started on port %d", port)
+	logger.Infof("Server Started on port %d", port)
 
-	<-done
-	log.Printf("Server Stopped")
-	defer cancel()
-
-	if err := srv.Shutdown(ctx); err != nil {
-		log.Printf("Server Shutdown Failed:%+v", err)
-	}
-
-	log.Printf("Server Exited Properly")
+	return srv
 }
 
 type LoggingResponseWriter struct {
