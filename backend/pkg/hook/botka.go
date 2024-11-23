@@ -214,19 +214,19 @@ func (b *Botka) warehouseHandler() wa.EventHandler {
 
 			reply := fmt.Sprintf("Ve skladu máme celkem %d piv.", b.brain.WarehouseTotal)
 			if b.brain.Warehouse[10] > 0 {
-				reply += fmt.Sprintf("\n%d x 10l", b.brain.Warehouse[10])
+				reply += fmt.Sprintf("\n%d × 10l", b.brain.Warehouse[10])
 			}
 			if b.brain.Warehouse[15] > 0 {
-				reply += fmt.Sprintf("\n%d x 15l", b.brain.Warehouse[15])
+				reply += fmt.Sprintf("\n%d × 15l", b.brain.Warehouse[15])
 			}
 			if b.brain.Warehouse[20] > 0 {
-				reply += fmt.Sprintf("\n%d x 20l", b.brain.Warehouse[20])
+				reply += fmt.Sprintf("\n%d × 20l", b.brain.Warehouse[20])
 			}
 			if b.brain.Warehouse[30] > 0 {
-				reply += fmt.Sprintf("\n%d x 30l", b.brain.Warehouse[30])
+				reply += fmt.Sprintf("\n%d × 30l", b.brain.Warehouse[30])
 			}
 			if b.brain.Warehouse[50] > 0 {
-				reply += fmt.Sprintf("\n%d x 50l", b.brain.Warehouse[50])
+				reply += fmt.Sprintf("\n%d × 50l", b.brain.Warehouse[50])
 			}
 
 			err := b.whatsapp.SendText(from, reply)
