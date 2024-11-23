@@ -121,7 +121,7 @@ func (b *Botka) kegHandler() wa.EventHandler {
 		},
 		Handler: func(from, _ string) error {
 			msg := fmt.Sprintf(
-				"\nMáme naraženou %dl bečku a zbývá v ní %d %s. Naražena byla %s v %s.",
+				"Máme naraženou %dl bečku a zbývá v ní %d %s. Naražena byla %s v %s.",
 				b.brain.ActiveKeg,
 				b.brain.BeerLeft,
 				utils.FormatBeer(b.brain.BeerLeft),
