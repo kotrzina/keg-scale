@@ -458,6 +458,10 @@ func (s *Scale) updateBotka() {
 		BeerLeft:    s.beersLeft,
 		ActiveKeg:   s.activeKeg,
 		ActiveKegAt: s.activeKegAt,
+
+		IsOpen:   s.pub.isOpen,
+		OpenedAt: s.pub.openedAt,
+
 		Warehouse: map[int]int{
 			10: s.warehouse[0],
 			15: s.warehouse[1],

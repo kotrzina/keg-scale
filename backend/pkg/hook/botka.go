@@ -30,6 +30,9 @@ type BotkaBrain struct {
 	ActiveKeg   int
 	ActiveKegAt time.Time
 
+	IsOpen   bool
+	OpenedAt time.Time
+
 	Warehouse      map[int]int // keys 10, 15, 20, 30, 50
 	WarehouseTotal int
 }
@@ -47,6 +50,8 @@ func NewBotka(client *wa.WhatsAppClient, conf *config.Config, logger *logrus.Log
 	if !conf.Debug {
 		// replies only on production
 		client.RegisterEventHandler(w.helpHandler())
+		client.RegisterEventHandler(w.helloHandler())
+		client.RegisterEventHandler(w.pubHandler())
 		client.RegisterEventHandler(w.kegHandler())
 		client.RegisterEventHandler(w.pricesHandler())
 		client.RegisterEventHandler(w.warehouseHandler())
@@ -98,13 +103,15 @@ func (b *Botka) SendOpen() {
 func (b *Botka) helpHandler() wa.EventHandler {
 	return wa.EventHandler{
 		MatchFunc: func(msg string) bool {
-			return strings.HasPrefix(sanitizeCommand(msg), "help") ||
-				strings.HasPrefix(sanitizeCommand(msg), "napoveda") ||
-				strings.HasPrefix(sanitizeCommand(msg), "pomoc")
+			sanitized := sanitizeCommand(msg)
+			return strings.HasPrefix(sanitized, "help") ||
+				strings.HasPrefix(sanitized, "napoveda") ||
+				strings.HasPrefix(sanitized, "pomoc")
 		},
 		Handler: func(from, _ string) error {
 			reply := "Příkazy: \n" +
 				"/help - zobrazí nápovědu \n" +
+				"/pub /hospoda - informace o hospodě \n" +
 				"/becka - informace o aktuální bečce \n" +
 				"/cenik - ceník \n" +
 				"/sklad - stav skladu"
@@ -114,12 +121,59 @@ func (b *Botka) helpHandler() wa.EventHandler {
 	}
 }
 
+func (b *Botka) helloHandler() wa.EventHandler {
+	return wa.EventHandler{
+		MatchFunc: func(msg string) bool {
+			sanitized := sanitizeCommand(msg)
+			return strings.HasPrefix(sanitized, "hello") ||
+				strings.HasPrefix(sanitized, "hi") ||
+				strings.HasPrefix(sanitized, "ahoj") ||
+				strings.HasPrefix(sanitized, "zdar") ||
+				strings.HasPrefix(sanitized, "dorby") ||
+				strings.HasPrefix(sanitized, "cau") ||
+				strings.HasPrefix(sanitized, "cus")
+		},
+		Handler: func(from, _ string) error {
+			reply := "Ahoj! Já jsem pan Botka. Napiš /help pro nápovědu."
+			err := b.whatsapp.SendText(from, reply)
+			return err
+		},
+	}
+}
+
+func (b *Botka) pubHandler() wa.EventHandler {
+	return wa.EventHandler{
+		MatchFunc: func(msg string) bool {
+			sanitized := sanitizeCommand(msg)
+			return strings.HasPrefix(sanitized, "pub") ||
+				strings.HasPrefix(sanitized, "hospoda")
+		},
+		Handler: func(from, _ string) error {
+			b.mtx.RLock()
+			defer b.mtx.RUnlock()
+			var reply string
+			if b.brain.IsOpen {
+				reply = fmt.Sprintf("🍺 Hospoda je otevřená od %s.", utils.FormatTime(b.brain.OpenedAt))
+			} else {
+				reply = "😥 Hospoda je bohužel zavřená! Půjdeš otevřít?"
+			}
+			err := b.whatsapp.SendText(from, reply)
+			return err
+		},
+	}
+}
+
 func (b *Botka) kegHandler() wa.EventHandler {
 	return wa.EventHandler{
 		MatchFunc: func(msg string) bool {
-			return strings.HasPrefix(sanitizeCommand(msg), "becka")
+			sanitized := sanitizeCommand(msg)
+			return strings.HasPrefix(sanitized, "becka") ||
+				strings.HasPrefix(sanitized, "keg")
 		},
 		Handler: func(from, _ string) error {
+			b.mtx.RLock()
+			defer b.mtx.RUnlock()
+
 			msg := fmt.Sprintf(
 				"Máme naraženou %dl bečku a zbývá v ní %d %s. Naražena byla %s v %s.",
 				b.brain.ActiveKeg,

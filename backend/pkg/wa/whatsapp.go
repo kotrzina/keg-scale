@@ -118,6 +118,10 @@ func (wa *WhatsAppClient) handleIncomingMessage(msg *events.Message) {
 		text,
 	)
 
+	if len(text) > 20 {
+		return // do not process long messages
+	}
+
 	for _, handler := range wa.handlers {
 		if handler.MatchFunc(text) {
 			if err := handler.Handler(from, text); err != nil {
