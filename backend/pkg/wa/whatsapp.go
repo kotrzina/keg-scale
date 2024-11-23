@@ -131,19 +131,6 @@ func (wa *WhatsAppClient) handleIncomingMessage(msg *events.Message) {
 	}
 }
 
-// SendOpen sends a message to the WhatsAppClient channel
-func (wa *WhatsAppClient) SendOpen() {
-	go func() {
-		msg := &waE2E.Message{
-			Conversation: proto.String("Pivo."),
-		}
-		err := wa.send(wa.config.WhatsAppOpenJid, msg)
-		if err != nil {
-			wa.logger.Errorf("Failed to send open WhatsAppClient message: %v", err)
-		}
-	}()
-}
-
 func (wa *WhatsAppClient) SendText(to, text string) error {
 	msg := &waE2E.Message{
 		Conversation: proto.String(text),
