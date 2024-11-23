@@ -32,6 +32,14 @@ func (s *FakeStore) GetActiveKeg() (int, error) {
 	return 0, nil
 }
 
+func (s *FakeStore) SetActiveKegAt(_ time.Time) error {
+	return nil
+}
+
+func (s *FakeStore) GetActiveKegAt() (time.Time, error) {
+	return time.Now(), nil
+}
+
 func (s *FakeStore) SetBeersLeft(beersLeft int) error {
 	s.beersLeft = beersLeft
 	return nil

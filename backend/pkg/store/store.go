@@ -12,6 +12,9 @@ type Storage interface {
 	SetActiveKeg(weight int) error // set active keg
 	GetActiveKeg() (int, error)    // get active keg
 
+	SetActiveKegAt(at time.Time) error  // set active keg at
+	GetActiveKegAt() (time.Time, error) // get active keg at
+
 	SetBeersLeft(beersLeft int) error // set beers left
 	GetBeersLeft() (int, error)       // get beers left
 

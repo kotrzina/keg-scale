@@ -19,12 +19,13 @@ type Scale struct {
 
 	weight       float64 // current scale value
 	weightAt     time.Time
-	candidateKeg int    // candidate keg size
-	activeKeg    int    // int value of the active keg in liters
-	beersLeft    int    // how many beers are left in the keg
-	beersTotal   int    // how many beers were consumed ever
-	isLow        bool   // is the keg low and needs to be replaced soon
-	warehouse    [5]int // warehouse of kegs [10l, 15l, 20l, 30l, 50l]
+	candidateKeg int       // candidate keg size
+	activeKeg    int       // int value of the active keg in liters
+	activeKegAt  time.Time // time when the active keg was set
+	beersLeft    int       // how many beers are left in the keg
+	beersTotal   int       // how many beers were consumed ever
+	isLow        bool      // is the keg low and needs to be replaced soon
+	warehouse    [5]int    // warehouse of kegs [10l, 15l, 20l, 30l, 50l]
 
 	pub pub
 
@@ -70,6 +71,7 @@ func New(
 		weightAt:     time.Unix(0, 0), // time of last weight measurement
 		candidateKeg: 0,
 		activeKeg:    0,
+		activeKegAt:  time.Unix(0, 0),
 		beersLeft:    0,
 		beersTotal:   0,
 		isLow:        false,
@@ -128,6 +130,11 @@ func (s *Scale) loadDataFromStore() {
 	if err == nil {
 		s.activeKeg = activeKeg
 		s.monitor.ActiveKeg.WithLabelValues().Set(float64(activeKeg))
+	}
+
+	activeKegAt, err := s.store.GetActiveKegAt()
+	if err == nil {
+		s.activeKegAt = activeKegAt
 	}
 
 	beersLeft, err := s.store.GetBeersLeft()
@@ -381,6 +388,10 @@ func (s *Scale) tryNewKeg() error {
 			s.activeKeg = keg
 			if serr := s.store.SetActiveKeg(keg); serr != nil {
 				return fmt.Errorf("could not store active_keg: %w", serr)
+			}
+			s.activeKegAt = time.Now()
+			if serr := s.store.SetActiveKegAt(s.activeKegAt); serr != nil {
+				return fmt.Errorf("could not store active_keg_at: %w", serr)
 			}
 
 			s.isLow = false

@@ -12,17 +12,18 @@ import (
 )
 
 const (
-	WeightKey    = "weight"
-	WeightAtKey  = "weight_at"
-	ActiveKegKey = "active_keg"
-	IsLowKey     = "is_low"
-	BeersLeftKey = "beers_left"
-	BeersTotal   = "beers_total"
-	WarehouseKey = "warehouse"
-	LastOkKey    = "last_ok"
-	OpenAtKey    = "open_at"
-	CloseAtKey   = "close_at"
-	IsOpenKey    = "is_open"
+	WeightKey      = "weight"
+	WeightAtKey    = "weight_at"
+	ActiveKegKey   = "active_keg"
+	ActiveKegAtKey = "active_keg_at"
+	IsLowKey       = "is_low"
+	BeersLeftKey   = "beers_left"
+	BeersTotal     = "beers_total"
+	WarehouseKey   = "warehouse"
+	LastOkKey      = "last_ok"
+	OpenAtKey      = "open_at"
+	CloseAtKey     = "close_at"
+	IsOpenKey      = "is_open"
 )
 
 type RedisStore struct {
@@ -67,6 +68,14 @@ func (s *RedisStore) SetActiveKeg(keg int) error {
 
 func (s *RedisStore) GetActiveKeg() (int, error) {
 	return s.Client.Get(s.ctx, ActiveKegKey).Int()
+}
+
+func (s *RedisStore) SetActiveKegAt(openAt time.Time) error {
+	return s.Client.Set(s.ctx, ActiveKegAtKey, openAt, 0).Err()
+}
+
+func (s *RedisStore) GetActiveKegAt() (time.Time, error) {
+	return s.Client.Get(s.ctx, ActiveKegAtKey).Time()
 }
 
 func (s *RedisStore) SetIsLow(isLow bool) error {
