@@ -26,6 +26,14 @@ func FormatDate(t time.Time) string {
 	return t.In(getTz()).Format("2006-01-02 15:04:05")
 }
 
+func FormatDateShort(t time.Time) string {
+	if t.Unix() <= 0 {
+		return ""
+	}
+
+	return t.In(getTz()).Format("02. 01.")
+}
+
 func FormatTime(t time.Time) string {
 	if t.Unix() <= 0 {
 		return ""

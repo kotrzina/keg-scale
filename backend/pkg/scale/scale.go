@@ -454,9 +454,10 @@ func (s *Scale) addCurrentKegToTotal() error {
 
 func (s *Scale) updateBotka() {
 	bb := &hook.BotkaBrain{
-		Weight:    s.weight,
-		BeerLeft:  s.beersLeft,
-		ActiveKeg: s.activeKeg,
+		Weight:      s.weight,
+		BeerLeft:    s.beersLeft,
+		ActiveKeg:   s.activeKeg,
+		ActiveKegAt: s.activeKegAt,
 		Warehouse: map[int]int{
 			10: s.warehouse[0],
 			15: s.warehouse[1],
