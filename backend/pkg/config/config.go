@@ -7,6 +7,8 @@ import (
 )
 
 type Config struct {
+	Debug bool
+
 	RedisAddr string
 	RedisDB   int
 
@@ -29,6 +31,8 @@ type Config struct {
 
 func NewConfig() *Config {
 	return &Config{
+		Debug: getBoolEnvDefault("DEBUG", false),
+
 		RedisAddr: getStringEnvDefault("REDIS_ADDR", "localhost:6379"),
 		RedisDB:   getIntEnvDefault("REDIS_DB", 0),
 
@@ -48,6 +52,17 @@ func NewConfig() *Config {
 
 		WhatsAppOpenJid: getStringEnvDefault("WHATSAPP_OPEN_JID", ""),
 	}
+}
+
+func getBoolEnvDefault(key string, defaultValue bool) bool {
+	if value, ok := os.LookupEnv(key); ok {
+		if boolValue, err := strconv.ParseBool(value); err == nil {
+			return boolValue
+		}
+	}
+
+	fmt.Printf("Using default value for %s\n", key)
+	return defaultValue
 }
 
 func getStringEnvDefault(key, defaultValue string) string {

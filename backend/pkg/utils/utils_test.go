@@ -28,3 +28,27 @@ func TestGetOkJson(t *testing.T) {
 	got := GetOkJSON()
 	assert.Contains(t, string(got), "ok")
 }
+
+func TestFormatBeer(t *testing.T) {
+	tests := []struct {
+		input    int
+		expected string
+	}{
+		{1, "pivo"},
+		{2, "piva"},
+		{3, "piva"},
+		{4, "piva"},
+		{5, "piv"},
+		{6, "piv"},
+		{7, "piv"},
+		{8, "piv"},
+		{9, "piv"},
+		{10, "piv"},
+	}
+
+	for _, test := range tests {
+		if got := FormatBeer(test.input); got != test.expected {
+			t.Errorf("FormatBeer(%d) = %q; want %q", test.input, got, test.expected)
+		}
+	}
+}

@@ -10,7 +10,6 @@ import (
 	"github.com/kotrzina/keg-scale/pkg/hook"
 	"github.com/kotrzina/keg-scale/pkg/prometheus"
 	"github.com/kotrzina/keg-scale/pkg/store"
-	"github.com/kotrzina/keg-scale/pkg/wa"
 	"github.com/sirupsen/logrus"
 )
 
@@ -34,7 +33,7 @@ type Scale struct {
 
 	store    store.Storage
 	discord  *hook.Discord
-	whatsapp *wa.WhatsApp
+	botka    *hook.Botka
 	logger   *logrus.Logger
 	ctx      context.Context
 	fmtUnits durafmt.Units
@@ -55,7 +54,7 @@ func New(
 	monitor *prometheus.Monitor,
 	storage store.Storage,
 	discord *hook.Discord,
-	whatsapp *wa.WhatsApp,
+	botka *hook.Botka,
 	logger *logrus.Logger,
 ) *Scale {
 	fmtUnits, err := durafmt.DefaultUnitsCoder.Decode(localizationUnits)
@@ -86,13 +85,14 @@ func New(
 
 		store:    storage,
 		discord:  discord,
-		whatsapp: whatsapp,
+		botka:    botka,
 		logger:   logger,
 		ctx:      ctx,
 		fmtUnits: fmtUnits,
 	}
 
 	s.loadDataFromStore()
+	s.updateBotka()
 
 	// periodically call recheck
 	go func(s *Scale) {
@@ -229,6 +229,8 @@ func (s *Scale) AddMeasurement(weight float64) error {
 		}
 	}
 
+	s.updateBotka()
+
 	// publish new values for prometheus
 	s.monitor.Weight.WithLabelValues().Set(s.weight)
 	s.monitor.BeersLeft.WithLabelValues().Set(float64(s.beersLeft))
@@ -343,8 +345,8 @@ func (s *Scale) updatePub(isOpen bool) {
 		if err := s.store.SetOpenAt(s.pub.openedAt); err != nil {
 			s.logger.Errorf("Could not set open_at time: %v", err)
 		}
-		s.discord.SendOpen()  // async
-		s.whatsapp.SendOpen() // async
+		s.discord.SendOpen() // async
+		s.botka.SendOpen()   // async
 	} else {
 		s.pub.closedAt = time.Now().Add(-1 * okLimit)
 		if err := s.store.SetCloseAt(s.pub.closedAt); err != nil {
@@ -437,4 +439,22 @@ func (s *Scale) addCurrentKegToTotal() error {
 	}
 
 	return nil
+}
+
+func (s *Scale) updateBotka() {
+	bb := &hook.BotkaBrain{
+		Weight:    s.weight,
+		BeerLeft:  s.beersLeft,
+		ActiveKeg: s.activeKeg,
+		Warehouse: map[int]int{
+			10: s.warehouse[0],
+			15: s.warehouse[1],
+			20: s.warehouse[2],
+			30: s.warehouse[3],
+			50: s.warehouse[4],
+		},
+		WarehouseTotal: GetWarehouseBeersLeft(s.warehouse),
+	}
+
+	s.botka.UpdateBotkaBrain(bb)
 }

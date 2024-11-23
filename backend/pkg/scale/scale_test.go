@@ -8,7 +8,6 @@ import (
 	"github.com/kotrzina/keg-scale/pkg/hook"
 	"github.com/kotrzina/keg-scale/pkg/prometheus"
 	"github.com/kotrzina/keg-scale/pkg/store"
-	"github.com/kotrzina/keg-scale/pkg/wa"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
@@ -22,7 +21,7 @@ func createScaleWithMeasurements(t *testing.T, weights ...float64) *Scale {
 	logger := logrus.New()
 	var buf bytes.Buffer
 	logger.SetOutput(&buf)
-	s := New(context.Background(), prometheus.New(), &store.FakeStore{}, &hook.Discord{}, &wa.WhatsApp{}, logger)
+	s := New(context.Background(), prometheus.New(), &store.FakeStore{}, &hook.Discord{}, &hook.Botka{}, logger)
 	for _, weight := range weights {
 		assert.Nil(t, s.AddMeasurement(weight*1000))
 	}

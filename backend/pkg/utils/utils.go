@@ -46,3 +46,15 @@ func getTz() *time.Location {
 func GetOkJSON() []byte {
 	return []byte(`{"is_ok":true}`)
 }
+
+func FormatBeer(n int) string {
+	if n == 1 {
+		return "pivo"
+	}
+
+	if n < 5 {
+		return "piva"
+	}
+
+	return "piv"
+}

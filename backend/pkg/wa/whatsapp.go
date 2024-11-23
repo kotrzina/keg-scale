@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"strings"
 
 	"github.com/kotrzina/keg-scale/pkg/config"
 	"github.com/sirupsen/logrus"
@@ -18,16 +17,22 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-type WhatsApp struct {
-	client *whatsmeow.Client
-	store  *store.Device
+type WhatsAppClient struct {
+	client   *whatsmeow.Client
+	store    *store.Device
+	handlers []EventHandler
 
 	config *config.Config
 	ctx    context.Context
 	logger *logrus.Logger
 }
 
-func New(ctx context.Context, conf *config.Config, logger *logrus.Logger) *WhatsApp {
+type EventHandler struct {
+	MatchFunc func(msg string) bool
+	Handler   func(from, msg string) error // from is id of the sender
+}
+
+func New(ctx context.Context, conf *config.Config, logger *logrus.Logger) *WhatsAppClient {
 	customLogger := createLogger(logger)
 	container, err := sqlstore.New("postgres", conf.DBString, customLogger)
 	if err != nil {
@@ -72,9 +77,10 @@ func New(ctx context.Context, conf *config.Config, logger *logrus.Logger) *Whats
 		}
 	}
 
-	wa := &WhatsApp{
-		client: client,
-		store:  deviceStore,
+	wa := &WhatsAppClient{
+		client:   client,
+		store:    deviceStore,
+		handlers: []EventHandler{},
 
 		config: conf,
 		ctx:    ctx,
@@ -85,18 +91,23 @@ func New(ctx context.Context, conf *config.Config, logger *logrus.Logger) *Whats
 	return wa
 }
 
-func (wa *WhatsApp) eventHandler(evt interface{}) {
+func (wa *WhatsAppClient) RegisterEventHandler(handler EventHandler) {
+	wa.handlers = append(wa.handlers, handler)
+}
+
+func (wa *WhatsAppClient) eventHandler(evt interface{}) {
 	switch v := evt.(type) {
 	case *events.Message:
 		wa.handleIncomingMessage(v)
 	}
 }
 
-func (wa *WhatsApp) handleIncomingMessage(msg *events.Message) {
+func (wa *WhatsAppClient) handleIncomingMessage(msg *events.Message) {
 	if msg.Message.Conversation == nil {
 		return
 	}
 	text := *msg.Message.Conversation
+	from := msg.Info.MessageSource.Chat.User // we want to replay to the same chat
 
 	wa.logger.Infof(
 		"received message in chat %s@%s from %s@%s: %s",
@@ -107,41 +118,29 @@ func (wa *WhatsApp) handleIncomingMessage(msg *events.Message) {
 		text,
 	)
 
-	to := msg.Info.MessageSource.Chat.User // we want to replay to the same chat
-	if strings.HasPrefix(text, "/help") {
-		reply := "Příkazy: \n" +
-			"/help - zobrazí nápovědu \n" +
-			"/cenik - ceník"
-		if err := wa.SendText(to, reply); err != nil {
-			wa.logger.Errorf("Failed to send price list: %v", err)
-		}
-	}
-
-	if strings.HasPrefix(text, "/cenik") {
-		wa.logger.Infof("Sending price list to %s", to)
-		reply := "Ceník: \n" +
-			"- Vše 25 Kč \n" +
-			"- Víno 130 Kč"
-		if err := wa.SendText(to, reply); err != nil {
-			wa.logger.Errorf("Failed to send price list: %v", err)
+	for _, handler := range wa.handlers {
+		if handler.MatchFunc(text) {
+			if err := handler.Handler(from, text); err != nil {
+				wa.logger.Errorf("Failed from handle message: %v", err)
+			}
 		}
 	}
 }
 
-// SendOpen sends a message to the WhatsApp channel
-func (wa *WhatsApp) SendOpen() {
+// SendOpen sends a message to the WhatsAppClient channel
+func (wa *WhatsAppClient) SendOpen() {
 	go func() {
 		msg := &waE2E.Message{
 			Conversation: proto.String("Pivo."),
 		}
 		err := wa.send(wa.config.WhatsAppOpenJid, msg)
 		if err != nil {
-			wa.logger.Errorf("Failed to send open WhatsApp message: %v", err)
+			wa.logger.Errorf("Failed to send open WhatsAppClient message: %v", err)
 		}
 	}()
 }
 
-func (wa *WhatsApp) SendText(to, text string) error {
+func (wa *WhatsAppClient) SendText(to, text string) error {
 	msg := &waE2E.Message{
 		Conversation: proto.String(text),
 	}
@@ -156,7 +155,7 @@ type Location struct {
 	Comment string
 }
 
-func (wa *WhatsApp) SendLocation(to string, loc Location) error {
+func (wa *WhatsAppClient) SendLocation(to string, loc Location) error {
 	msg := &waE2E.Message{
 		LocationMessage: &waE2E.LocationMessage{
 			DegreesLatitude:  proto.Float64(loc.Lat),
@@ -169,10 +168,10 @@ func (wa *WhatsApp) SendLocation(to string, loc Location) error {
 	return wa.send(to, msg)
 }
 
-func (wa *WhatsApp) SendImage(to, caption, imagePath string) error {
+func (wa *WhatsAppClient) SendImage(to, caption, imagePath string) error {
 	if !wa.client.IsConnected() {
-		wa.logger.Errorf("Not connected to WhatsApp")
-		return fmt.Errorf("not connected to WhatsApp")
+		wa.logger.Errorf("Not connected to WhatsAppClient")
+		return fmt.Errorf("not connected to WhatsAppClient")
 	}
 
 	imageBytes, err := os.ReadFile(imagePath)
@@ -208,11 +207,15 @@ func (wa *WhatsApp) SendImage(to, caption, imagePath string) error {
 	return nil
 }
 
-func (wa *WhatsApp) Close() {
+func (wa *WhatsAppClient) Close() {
 	wa.client.Disconnect()
 }
 
-func (wa *WhatsApp) buildJid(user string) types.JID {
+func (wa *WhatsAppClient) buildJid(user string) types.JID {
+	if wa.config.Debug {
+		user = wa.config.WhatsAppOpenJid // it is set to my personal account
+	}
+
 	server := "s.whatsapp.net" // users
 	if len(user) > 14 {        // longer that phone number
 		server = "g.us" // groups
@@ -223,10 +226,10 @@ func (wa *WhatsApp) buildJid(user string) types.JID {
 	}
 }
 
-func (wa *WhatsApp) send(to string, msg *waE2E.Message) error {
+func (wa *WhatsAppClient) send(to string, msg *waE2E.Message) error {
 	if !wa.client.IsConnected() {
-		wa.logger.Errorf("Not connected to WhatsApp")
-		return fmt.Errorf("not connected to WhatsApp")
+		wa.logger.Errorf("Not connected to WhatsAppClient")
+		return fmt.Errorf("not connected to WhatsAppClient")
 	}
 
 	resp, err := wa.client.SendMessage(wa.ctx, wa.buildJid(to), msg)

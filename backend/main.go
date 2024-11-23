@@ -31,10 +31,11 @@ func main() {
 	ctx, cancel := context.WithCancel(c)
 
 	whatsapp := wa.New(ctx, conf, logger)
+	botka := hook.NewBotka(whatsapp, conf, logger)
 	discord := hook.New(ctx, conf.DiscordOpenHook, conf.DiscordKegHook, logger)
 	monitor := prometheus.New()
 	storage := store.NewRedisStore(ctx, conf)
-	kegScale := scale.New(ctx, monitor, storage, discord, whatsapp, logger)
+	kegScale := scale.New(ctx, monitor, storage, discord, botka, logger)
 
 	prometheusCollector := promector.NewPromector(
 		ctx,
