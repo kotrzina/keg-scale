@@ -9,6 +9,7 @@ import (
 	"github.com/kotrzina/keg-scale/pkg/config"
 	"github.com/kotrzina/keg-scale/pkg/utils"
 	"github.com/kotrzina/keg-scale/pkg/wa"
+	"github.com/kozaktomas/diacritics"
 	"github.com/sirupsen/logrus"
 )
 
@@ -103,7 +104,7 @@ func (b *Botka) SendOpen() {
 func (b *Botka) helpHandler() wa.EventHandler {
 	return wa.EventHandler{
 		MatchFunc: func(msg string) bool {
-			sanitized := sanitizeCommand(msg)
+			sanitized := b.sanitizeCommand(msg)
 			return strings.HasPrefix(sanitized, "help") ||
 				strings.HasPrefix(sanitized, "napoveda") ||
 				strings.HasPrefix(sanitized, "pomoc")
@@ -124,7 +125,7 @@ func (b *Botka) helpHandler() wa.EventHandler {
 func (b *Botka) helloHandler() wa.EventHandler {
 	return wa.EventHandler{
 		MatchFunc: func(msg string) bool {
-			sanitized := sanitizeCommand(msg)
+			sanitized := b.sanitizeCommand(msg)
 			return strings.HasPrefix(sanitized, "hello") ||
 				strings.HasPrefix(sanitized, "hi") ||
 				strings.HasPrefix(sanitized, "ahoj") ||
@@ -144,7 +145,7 @@ func (b *Botka) helloHandler() wa.EventHandler {
 func (b *Botka) pubHandler() wa.EventHandler {
 	return wa.EventHandler{
 		MatchFunc: func(msg string) bool {
-			sanitized := sanitizeCommand(msg)
+			sanitized := b.sanitizeCommand(msg)
 			return strings.HasPrefix(sanitized, "pub") ||
 				strings.HasPrefix(sanitized, "hospoda")
 		},
@@ -166,7 +167,7 @@ func (b *Botka) pubHandler() wa.EventHandler {
 func (b *Botka) kegHandler() wa.EventHandler {
 	return wa.EventHandler{
 		MatchFunc: func(msg string) bool {
-			sanitized := sanitizeCommand(msg)
+			sanitized := b.sanitizeCommand(msg)
 			return strings.HasPrefix(sanitized, "becka") ||
 				strings.HasPrefix(sanitized, "keg")
 		},
@@ -191,7 +192,7 @@ func (b *Botka) kegHandler() wa.EventHandler {
 func (b *Botka) pricesHandler() wa.EventHandler {
 	return wa.EventHandler{
 		MatchFunc: func(msg string) bool {
-			return strings.HasPrefix(sanitizeCommand(msg), "cenik")
+			return strings.HasPrefix(b.sanitizeCommand(msg), "cenik")
 		},
 		HandleFunc: func(from, _ string) error {
 			reply := "Ceník: \n" +
@@ -206,7 +207,7 @@ func (b *Botka) pricesHandler() wa.EventHandler {
 func (b *Botka) warehouseHandler() wa.EventHandler {
 	return wa.EventHandler{
 		MatchFunc: func(msg string) bool {
-			return strings.HasPrefix(sanitizeCommand(msg), "sklad")
+			return strings.HasPrefix(b.sanitizeCommand(msg), "sklad")
 		},
 		HandleFunc: func(from, _ string) error {
 			b.mtx.RLock()
@@ -235,6 +236,12 @@ func (b *Botka) warehouseHandler() wa.EventHandler {
 	}
 }
 
-func sanitizeCommand(command string) string {
-	return strings.ToLower(strings.TrimSpace(strings.TrimPrefix(command, "/")))
+func (b *Botka) sanitizeCommand(command string) string {
+	c := strings.ToLower(strings.TrimSpace(strings.TrimPrefix(command, "/")))
+	c, err := diacritics.Remove(c)
+	if err != nil {
+		b.logger.Fatalf("could not remove diacritics: %v", err) // should never happen
+	}
+
+	return c
 }

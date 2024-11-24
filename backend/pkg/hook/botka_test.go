@@ -23,10 +23,16 @@ func TestWhatsApp_SanitizeCommand(t *testing.T) {
 			command: "/CENIK",
 			want:    "cenik",
 		},
+		{
+			command: "/BEČKA",
+			want:    "becka",
+		},
 	}
+
+	b := Botka{}
 	for _, tt := range tests {
 		t.Run(tt.command, func(t *testing.T) {
-			if got := sanitizeCommand(tt.command); got != tt.want {
+			if got := b.sanitizeCommand(tt.command); got != tt.want {
 				t.Errorf("sanitizeCommand() = %v, want %v", got, tt.want)
 			}
 		})
