@@ -65,13 +65,14 @@ func main() {
 
 	<-done
 	logger.Infof("Terminate signal received")
-	cancel() // cancel application context
 
 	shutdownContext, shutdownContextCancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer shutdownContextCancel()
 	if err := srv.Shutdown(shutdownContext); err != nil {
 		logger.Errorf("Server Shutdown Failed:%+v", err)
 	}
+
+	cancel() // cancel application context
 
 	logger.Infof("Server Exited")
 }
