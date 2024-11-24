@@ -354,7 +354,6 @@ func (s *Scale) updatePub(isOpen bool) {
 		}
 		s.discord.SendOpen() // async
 		s.botka.SendOpen()   // async
-		s.updateBotka()
 	} else {
 		s.pub.closedAt = time.Now().Add(-1 * okLimit)
 		if err := s.store.SetCloseAt(s.pub.closedAt); err != nil {
@@ -368,6 +367,7 @@ func (s *Scale) updatePub(isOpen bool) {
 	}
 
 	s.monitor.PubIsOpen.WithLabelValues().Set(fIsOpen)
+	s.updateBotka()
 }
 
 // tryNewKeg tries to find a new keg based on the current weight
