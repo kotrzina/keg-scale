@@ -174,15 +174,20 @@ func (b *Botka) kegHandler() wa.EventHandler {
 		HandleFunc: func(from, _ string) error {
 			b.mtx.RLock()
 			defer b.mtx.RUnlock()
+			var msg string
 
-			msg := fmt.Sprintf(
-				"Máme naraženou %dl bečku a zbývá v ní %d %s. Naražena byla %s v %s.",
-				b.brain.ActiveKeg,
-				b.brain.BeerLeft,
-				utils.FormatBeer(b.brain.BeerLeft),
-				utils.FormatDateShort(b.brain.ActiveKegAt),
-				utils.FormatTime(b.brain.ActiveKegAt),
-			)
+			if b.brain.ActiveKeg == 0 {
+				msg = "Aktuálně nemáme naraženou žádnou bečku."
+			} else {
+				msg = fmt.Sprintf(
+					"Máme naraženou %dl bečku a zbývá v ní %d %s. Naražena byla %s v %s.",
+					b.brain.ActiveKeg,
+					b.brain.BeerLeft,
+					utils.FormatBeer(b.brain.BeerLeft),
+					utils.FormatDateShort(b.brain.ActiveKegAt),
+					utils.FormatTime(b.brain.ActiveKegAt),
+				)
+			}
 			err := b.whatsapp.SendText(from, msg)
 			return err
 		},
