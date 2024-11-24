@@ -20,8 +20,7 @@ import (
 )
 
 func main() {
-	c := context.Background()
-	ctx, cancel := context.WithCancel(c)
+	ctx, cancel := context.WithCancel(context.Background())
 
 	done := make(chan os.Signal, 1)
 	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
