@@ -42,15 +42,7 @@ func main() {
 	monitor := prometheus.New()
 	storage := store.NewRedisStore(ctx, conf)
 	kegScale := scale.New(ctx, monitor, storage, discord, botka, logger)
-
-	prometheusCollector := promector.NewPromector(
-		ctx,
-		conf.PrometheusURL,
-		conf.PrometheusUser,
-		conf.PrometheusPassword,
-		kegScale,
-		logger,
-	)
+	prometheusCollector := promector.NewPromector(ctx, conf, kegScale, logger)
 
 	router := NewRouter(&HandlerRepository{
 		scale:     kegScale,

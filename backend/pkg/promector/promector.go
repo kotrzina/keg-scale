@@ -12,6 +12,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/kotrzina/keg-scale/pkg/config"
 	"github.com/kotrzina/keg-scale/pkg/scale"
 	"github.com/kotrzina/keg-scale/pkg/utils"
 	"github.com/sirupsen/logrus"
@@ -20,9 +21,7 @@ import (
 // Promector represents a Prometheus collector
 // We download data periodically and store it in cache
 type Promector struct {
-	baseURL  string
-	user     string
-	password string
+	config *config.Config
 
 	scale  *scale.Scale
 	logger *logrus.Logger
@@ -42,11 +41,9 @@ type Response struct {
 	} `json:"data"`
 }
 
-func NewPromector(ctx context.Context, baseURL, user, password string, s *scale.Scale, logger *logrus.Logger) *Promector {
+func NewPromector(ctx context.Context, c *config.Config, s *scale.Scale, logger *logrus.Logger) *Promector {
 	prom := &Promector{
-		baseURL:  baseURL,
-		user:     user,
-		password: password,
+		config: c,
 
 		scale:  s,
 		logger: logger,
@@ -180,7 +177,7 @@ func (p *Promector) GetChartData() Charts {
 }
 
 func (p *Promector) GetRangeData(query string, start, end time.Time, step time.Duration) ([]RangeRecord, error) {
-	url := fmt.Sprintf("%s/api/v1/query_range?", p.baseURL)
+	url := fmt.Sprintf("%s/api/v1/query_range?", p.config.PrometheusURL)
 	req, err := http.NewRequestWithContext(p.ctx, http.MethodGet, url, http.NoBody)
 	if err != nil {
 		return nil, fmt.Errorf("could not create request: %w", err)
@@ -193,7 +190,7 @@ func (p *Promector) GetRangeData(query string, start, end time.Time, step time.D
 	q.Add("end", fmt.Sprintf("%d", end.Unix()))
 	req.URL.RawQuery = q.Encode()
 
-	req.Header.Add("Authorization", getBaseAuth(p.user, p.password))
+	req.Header.Add("Authorization", getBaseAuth(p.config.PrometheusUser, p.config.PrometheusPassword))
 	client := &http.Client{
 		Timeout: 10 * time.Second, // Set the timeout duration here
 	}
