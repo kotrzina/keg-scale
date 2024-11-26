@@ -21,7 +21,7 @@ type Baracek struct {
 func NewBaracek() *Baracek {
 	return &Baracek{
 		client: http.Client{
-			Timeout: 5 * time.Second,
+			Timeout: 10 * time.Second,
 		},
 	}
 }

@@ -278,7 +278,7 @@ func (b *Botka) baracekHandler() wa.EventHandler {
 					continue
 				}
 
-				stock := "❓ "
+				stock := "❓"
 				if beer.Stock == shops.StockTypeAvailable {
 					stock = "🍺"
 				}
@@ -286,7 +286,7 @@ func (b *Botka) baracekHandler() wa.EventHandler {
 				sb.WriteString(fmt.Sprintf("%s %s -> *%d* Kč\n", stock, strings.TrimPrefix(beer.Title, "sud "), beer.Price))
 			}
 
-			sb.WriteString("\n------\n🍺 - skladem\n❓  - neznámý stav skladu")
+			sb.WriteString("\n------\n🍺 - skladem\n❓ - neznámý stav skladu")
 
 			err := b.whatsapp.SendText(from, sb.String())
 			return err
