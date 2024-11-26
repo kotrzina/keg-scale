@@ -118,8 +118,8 @@ func (b *Botka) helpHandler() wa.EventHandler {
 				"/pub /hospoda - informace o hospodě \n" +
 				"/becka - informace o aktuální bečce \n" +
 				"/cenik - ceník \n" +
-				"/sklad - stav skladu" +
-				"/baracek - ceník Baráček" +
+				"/sklad - stav skladu\n" +
+				"/baracek - ceník Baráček\n" +
 				"/maneo - ceník Maneo"
 			err := b.whatsapp.SendText(from, reply)
 			return err
