@@ -271,6 +271,7 @@ func (b *Botka) baracekHandler() wa.EventHandler {
 			}
 
 			sb := strings.Builder{}
+			sb.WriteString("*Ceník sudů u Baráčka:*\n")
 			for _, url := range urls {
 				beer, err := baracek.GetBeer(url)
 				if err != nil {
