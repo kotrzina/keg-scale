@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/kotrzina/keg-scale/pkg/config"
+	"github.com/kotrzina/keg-scale/pkg/shops"
 	"github.com/kotrzina/keg-scale/pkg/utils"
 	"github.com/kotrzina/keg-scale/pkg/wa"
 	"github.com/kozaktomas/diacritics"
@@ -56,6 +57,7 @@ func NewBotka(client *wa.WhatsAppClient, conf *config.Config, logger *logrus.Log
 		client.RegisterEventHandler(w.kegHandler())
 		client.RegisterEventHandler(w.pricesHandler())
 		client.RegisterEventHandler(w.warehouseHandler())
+		client.RegisterEventHandler(w.baracekHandler())
 	}
 
 	return w
@@ -236,6 +238,57 @@ func (b *Botka) warehouseHandler() wa.EventHandler {
 			}
 
 			err := b.whatsapp.SendText(from, reply)
+			return err
+		},
+	}
+}
+
+func (b *Botka) baracekHandler() wa.EventHandler {
+	return wa.EventHandler{
+		MatchFunc: func(msg string) bool {
+			return strings.HasPrefix(b.sanitizeCommand(msg), "baracek")
+		},
+		HandleFunc: func(from, _ string) error {
+			baracek := shops.NewBaracek()
+			urls := []string{
+				"https://www.baracek.cz/sud-policka-otakar-11-10-l",
+				"https://www.baracek.cz/sud-policka-otakar-11-15-l",
+				"https://www.baracek.cz/sud-policka-otakar-11-30l",
+				"https://www.baracek.cz/sud-policka-otakar-11-50-l",
+				"https://www.baracek.cz/sud-bernard-svetly-11-15l-45obj",
+				"https://www.baracek.cz/sud-bernard-svetly-11-30l-45-obj",
+				"https://www.baracek.cz/sud-bernard-svetly-11-50l-45-obj",
+				"https://www.baracek.cz/sud-bernard-svetly-12-20l-5obj",
+				"https://www.baracek.cz/sud-bernard-svetly-12-50l-5obj",
+				"https://www.baracek.cz/sud-plzen-12-keg-15l",
+				"https://www.baracek.cz/sud-plzen-12-keg-30l",
+				"https://www.baracek.cz/sud-plzen-12-keg-50l",
+				"https://www.baracek.cz/sud-radegast-ryze-horka-12-15-l",
+				"https://www.baracek.cz/sud-radegast-ryze-horka-12-30l",
+				"https://www.baracek.cz/sud-radegast-ryze-horka-12-50l",
+				"https://www.baracek.cz/sud-chotebor-12deg-premium-svlezak-30l",
+				"https://www.baracek.cz/sud-chotebor-12deg-premium-svlezak-50l",
+			}
+
+			sb := strings.Builder{}
+			for _, url := range urls {
+				beer, err := baracek.GetBeer(url)
+				if err != nil {
+					b.logger.Errorf("could not get beer from Baracek (%s): %v", url, err)
+					continue
+				}
+
+				stock := "❓ "
+				if beer.Stock == shops.StockTypeAvailable {
+					stock = "🍺"
+				}
+
+				sb.WriteString(fmt.Sprintf("%s %s -> *%d* Kč\n", stock, strings.TrimPrefix(beer.Title, "sud "), beer.Price))
+			}
+
+			sb.WriteString("\n------\n🍺 - skladem\n❓  - neznámý stav skladu")
+
+			err := b.whatsapp.SendText(from, sb.String())
 			return err
 		},
 	}
