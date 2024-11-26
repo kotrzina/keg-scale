@@ -15,6 +15,7 @@ require (
 	github.com/stretchr/testify v1.9.0
 	go.mau.fi/whatsmeow v0.0.0-20241121132808-ae900cb6bee4
 	golang.org/x/net v0.31.0
+	golang.org/x/text v0.20.0
 	google.golang.org/protobuf v1.35.2
 )
 
@@ -42,6 +43,5 @@ require (
 	go.mau.fi/util v0.8.2 // indirect
 	golang.org/x/crypto v0.29.0 // indirect
 	golang.org/x/sys v0.27.0 // indirect
-	golang.org/x/text v0.20.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
