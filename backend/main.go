@@ -37,11 +37,11 @@ func main() {
 
 	whatsapp := wa.New(ctx, conf, logger)
 	defer whatsapp.Close()
-	botka := hook.NewBotka(whatsapp, conf, logger)
-	discord := hook.New(ctx, conf.DiscordOpenHook, conf.DiscordKegHook, logger)
+
 	monitor := prometheus.New()
 	storage := store.NewRedisStore(ctx, conf)
-	kegScale := scale.New(ctx, monitor, storage, discord, botka, logger)
+	kegScale := scale.New(ctx, monitor, storage, conf, whatsapp, logger)
+	_ = hook.NewBotka(whatsapp, kegScale, conf, logger)
 	prometheusCollector := promector.NewPromector(ctx, conf, kegScale, logger)
 
 	router := NewRouter(&HandlerRepository{

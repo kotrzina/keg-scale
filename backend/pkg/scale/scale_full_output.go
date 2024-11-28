@@ -32,6 +32,7 @@ type FullOutput struct {
 	LastUpdateDuration string          `json:"last_update_duration"`
 	Pub                PubOutput       `json:"pub"`
 	ActiveKeg          int             `json:"active_keg"`
+	ActiveKegAt        time.Time       `json:"active_keg_at"`
 	IsLow              bool            `json:"is_low"`
 	Warehouse          []WarehouseItem `json:"warehouse"`
 	WarehouseBeerLeft  int             `json:"warehouse_beer_left"`
@@ -66,6 +67,7 @@ func (s *Scale) GetScale() FullOutput {
 			ClosedAt: utils.FormatTime(s.pub.closedAt),
 		},
 		ActiveKeg:         s.activeKeg,
+		ActiveKegAt:       s.activeKegAt,
 		IsLow:             s.isLow,
 		Warehouse:         warehouse,
 		WarehouseBeerLeft: GetWarehouseBeersLeft(s.warehouse),
