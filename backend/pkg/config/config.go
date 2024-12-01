@@ -21,9 +21,6 @@ type Config struct {
 	PrometheusUser     string
 	PrometheusPassword string
 
-	DiscordOpenHook string
-	DiscordKegHook  string
-
 	DBString string
 
 	WhatsAppOpenJid string
@@ -44,9 +41,6 @@ func NewConfig() *Config {
 		PrometheusURL:      getStringEnvDefault("PROMETHEUS_URL", "http://localhost:9090"),
 		PrometheusUser:     getStringEnvDefault("PROMETHEUS_USER", "test"),
 		PrometheusPassword: getStringEnvDefault("PROMETHEUS_PASSWORD", "test"),
-
-		DiscordOpenHook: getStringEnvDefault("DISCORD_OPEN_HOOK", ""),
-		DiscordKegHook:  getStringEnvDefault("DISCORD_KEG_HOOK", ""),
 
 		DBString: getStringEnvDefault("DB_STRING", "host=localhost port=5432 user=postgres password=admin dbname=pub sslmode=disable"),
 

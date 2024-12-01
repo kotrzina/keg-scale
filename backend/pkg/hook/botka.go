@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/kotrzina/keg-scale/pkg/config"
+	"github.com/kotrzina/keg-scale/pkg/scale"
 	"github.com/kotrzina/keg-scale/pkg/shops"
 	"github.com/kotrzina/keg-scale/pkg/utils"
 	"github.com/kotrzina/keg-scale/pkg/wa"
@@ -19,7 +20,7 @@ import (
 // also receives messages from the group and reacts to them
 type Botka struct {
 	whatsapp *wa.WhatsAppClient
-	brain    *BotkaBrain
+	scale    *scale.Scale
 	config   *config.Config
 
 	mtx    sync.RWMutex
@@ -39,10 +40,15 @@ type BotkaBrain struct {
 	WarehouseTotal int
 }
 
-func NewBotka(client *wa.WhatsAppClient, conf *config.Config, logger *logrus.Logger) *Botka {
+func NewBotka(
+	client *wa.WhatsAppClient,
+	kegScale *scale.Scale,
+	conf *config.Config,
+	logger *logrus.Logger,
+) *Botka {
 	w := &Botka{
 		whatsapp: client,
-		brain:    &BotkaBrain{},
+		scale:    kegScale,
 		config:   conf,
 
 		mtx:    sync.RWMutex{},
@@ -62,46 +68,6 @@ func NewBotka(client *wa.WhatsAppClient, conf *config.Config, logger *logrus.Log
 	}
 
 	return w
-}
-
-// UpdateBotkaBrain updates the Botka's brain with the new data
-// it is initialized by Scale with every significant change
-func (b *Botka) UpdateBotkaBrain(bb *BotkaBrain) {
-	b.mtx.Lock()
-	defer b.mtx.Unlock()
-
-	b.brain = bb
-}
-
-func (b *Botka) SendOpen() {
-	go func() {
-		b.mtx.RLock()
-		defer b.mtx.RUnlock()
-
-		msg := "Pivo! 🍺"
-
-		if b.brain.ActiveKeg > 0 {
-			msg += fmt.Sprintf(
-				"\nMáme naraženou %dl bečku a zbývá v ní %d %s.",
-				b.brain.ActiveKeg,
-				b.brain.BeerLeft,
-				utils.FormatBeer(b.brain.BeerLeft),
-			)
-		}
-
-		if b.brain.WarehouseTotal > 0 {
-			msg += fmt.Sprintf(
-				"\nVe skladu máme %d %s.",
-				b.brain.WarehouseTotal,
-				utils.FormatBeer(b.brain.WarehouseTotal),
-			)
-		}
-
-		err := b.whatsapp.SendText(b.config.WhatsAppOpenJid, msg)
-		if err != nil {
-			b.logger.Errorf("could not send Botka message: %v", err)
-		}
-	}()
 }
 
 func (b *Botka) helpHandler() wa.EventHandler {
@@ -155,11 +121,10 @@ func (b *Botka) pubHandler() wa.EventHandler {
 				strings.HasPrefix(sanitized, "hospoda")
 		},
 		HandleFunc: func(from, _ string) error {
-			b.mtx.RLock()
-			defer b.mtx.RUnlock()
+			s := b.scale.GetScale()
 			var reply string
-			if b.brain.IsOpen {
-				reply = fmt.Sprintf("🍺 Hospoda je otevřená od %s.", utils.FormatTime(b.brain.OpenedAt))
+			if s.Pub.IsOpen {
+				reply = fmt.Sprintf("🍺 Hospoda je otevřená od %s.", s.Pub.OpenedAt)
 			} else {
 				reply = "😥 Hospoda je bohužel zavřená! Půjdeš otevřít?"
 			}
@@ -177,20 +142,18 @@ func (b *Botka) kegHandler() wa.EventHandler {
 				strings.HasPrefix(sanitized, "keg")
 		},
 		HandleFunc: func(from, _ string) error {
-			b.mtx.RLock()
-			defer b.mtx.RUnlock()
+			s := b.scale.GetScale()
 			var msg string
-
-			if b.brain.ActiveKeg == 0 {
+			if s.ActiveKeg == 0 {
 				msg = "Aktuálně nemáme naraženou žádnou bečku."
 			} else {
 				msg = fmt.Sprintf(
 					"Máme naraženou %dl bečku a zbývá v ní %d %s. Naražena byla %s v %s.",
-					b.brain.ActiveKeg,
-					b.brain.BeerLeft,
-					utils.FormatBeer(b.brain.BeerLeft),
-					utils.FormatDateShort(b.brain.ActiveKegAt),
-					utils.FormatTime(b.brain.ActiveKegAt),
+					s.ActiveKeg,
+					s.BeersLeft,
+					utils.FormatBeer(s.BeersLeft),
+					utils.FormatDateShort(s.ActiveKegAt),
+					utils.FormatTime(s.ActiveKegAt),
 				)
 			}
 			err := b.whatsapp.SendText(from, msg)
@@ -220,24 +183,22 @@ func (b *Botka) warehouseHandler() wa.EventHandler {
 			return strings.HasPrefix(b.sanitizeCommand(msg), "sklad")
 		},
 		HandleFunc: func(from, _ string) error {
-			b.mtx.RLock()
-			defer b.mtx.RUnlock()
-
-			reply := fmt.Sprintf("Ve skladu máme celkem %d piv.", b.brain.WarehouseTotal)
-			if b.brain.Warehouse[10] > 0 {
-				reply += fmt.Sprintf("\n%d × 10l", b.brain.Warehouse[10])
+			s := b.scale.GetScale()
+			reply := fmt.Sprintf("Ve skladu máme celkem %d piv.", s.WarehouseBeerLeft)
+			if s.Warehouse[0].Amount > 0 {
+				reply += fmt.Sprintf("\n%d × 10l", s.Warehouse[0].Amount)
 			}
-			if b.brain.Warehouse[15] > 0 {
-				reply += fmt.Sprintf("\n%d × 15l", b.brain.Warehouse[15])
+			if s.Warehouse[1].Amount > 0 {
+				reply += fmt.Sprintf("\n%d × 15l", s.Warehouse[1].Amount)
 			}
-			if b.brain.Warehouse[20] > 0 {
-				reply += fmt.Sprintf("\n%d × 20l", b.brain.Warehouse[20])
+			if s.Warehouse[2].Amount > 0 {
+				reply += fmt.Sprintf("\n%d × 20l", s.Warehouse[2].Amount)
 			}
-			if b.brain.Warehouse[30] > 0 {
-				reply += fmt.Sprintf("\n%d × 30l", b.brain.Warehouse[30])
+			if s.Warehouse[3].Amount > 0 {
+				reply += fmt.Sprintf("\n%d × 30l", s.Warehouse[3].Amount)
 			}
-			if b.brain.Warehouse[50] > 0 {
-				reply += fmt.Sprintf("\n%d × 50l", b.brain.Warehouse[50])
+			if s.Warehouse[4].Amount > 0 {
+				reply += fmt.Sprintf("\n%d × 50l", s.Warehouse[4].Amount)
 			}
 
 			err := b.whatsapp.SendText(from, reply)
