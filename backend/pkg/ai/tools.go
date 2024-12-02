@@ -65,6 +65,10 @@ func (ai *Ai) pubOpenedAtTool() tool {
 		},
 		Fn: func(_ string) (string, error) {
 			data := ai.scale.GetScale()
+			if !data.Pub.IsOpen {
+				return "The pub is closed.", nil
+			}
+
 			return data.Pub.OpenedAt, nil
 		},
 	}
@@ -74,7 +78,7 @@ func (ai *Ai) currentKegTools() tool {
 	return tool{
 		Definition: anthropic.ToolDefinition{
 			Name:        "current_keg",
-			Description: "If there is an active keg, it returns its size in liters",
+			Description: "If there is an active keg, it provides its size in liters",
 			InputSchema: jsonschema.Definition{
 				Type:       jsonschema.Object,
 				Properties: map[string]jsonschema.Definition{},
