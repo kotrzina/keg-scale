@@ -24,6 +24,7 @@ type Config struct {
 	DBString string
 
 	WhatsAppOpenJid string
+	AnthropicAPIKey string
 }
 
 func NewConfig() *Config {
@@ -45,6 +46,7 @@ func NewConfig() *Config {
 		DBString: getStringEnvDefault("DB_STRING", "host=localhost port=5432 user=postgres password=admin dbname=pub sslmode=disable"),
 
 		WhatsAppOpenJid: getStringEnvDefault("WHATSAPP_OPEN_JID", ""),
+		AnthropicAPIKey: getStringEnvDefault("ANTHROPIC_API_KEY", ""),
 	}
 }
 

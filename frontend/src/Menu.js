@@ -6,12 +6,12 @@ function Menu(props) {
     return (
         <Navbar expand="lg" className="bg-body-tertiary">
             <Container fluid>
-                <Navbar.Brand href="#">Pub Veselice</Navbar.Brand>
+                <Navbar.Brand href="#">Pub</Navbar.Brand>
                 <Navbar.Toggle aria-controls="navbarScroll"/>
                 <Navbar.Collapse id="navbarScroll">
                     <Nav
                         className="me-auto my-2 my-lg-0"
-                        style={{maxHeight: '100px'}}
+                        style={{maxHeight: '150px'}}
                         navbarScroll
                     >
 
@@ -22,6 +22,10 @@ function Menu(props) {
                         <Nav.Link onClick={() => {
                             props.showWarehouse()
                         }}>Sklad</Nav.Link>
+
+                        <Nav.Link onClick={() => {
+                            props.showChat()
+                        }}>Chat</Nav.Link>
 
                     </Nav>
                 </Navbar.Collapse>

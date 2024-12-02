@@ -127,6 +127,7 @@ func (wa *WhatsAppClient) handleIncomingMessage(msg *events.Message) {
 			if err := handler.HandleFunc(from, text); err != nil {
 				wa.logger.Errorf("Failed from handle message: %v", err)
 			}
+			continue // do not process other handlers
 		}
 	}
 }

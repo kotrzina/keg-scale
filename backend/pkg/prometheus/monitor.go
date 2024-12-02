@@ -14,6 +14,9 @@ type Monitor struct {
 	ScaleWifiRssi *prometheus.GaugeVec
 	LastPing      *prometheus.GaugeVec
 	PubIsOpen     *prometheus.GaugeVec
+
+	AnthropicInputTokens  *prometheus.CounterVec
+	AnthropicOutputTokens *prometheus.CounterVec
 }
 
 // New creates a new Monitor
@@ -56,6 +59,16 @@ func New() *Monitor {
 			Name: "scale_pub_open",
 			Help: "Is the pub open/closed",
 		}, []string{}),
+
+		AnthropicInputTokens: prometheus.NewCounterVec(prometheus.CounterOpts{
+			Name: "anthropic_input_tokens_total",
+			Help: "Number of input tokens processed by the AI",
+		}, []string{}),
+
+		AnthropicOutputTokens: prometheus.NewCounterVec(prometheus.CounterOpts{
+			Name: "anthropic_output_tokens_total",
+			Help: "Number of output tokens processed by the AI",
+		}, []string{}),
 	}
 
 	reg.MustRegister(
@@ -66,6 +79,8 @@ func New() *Monitor {
 		monitor.ScaleWifiRssi,
 		monitor.LastPing,
 		monitor.PubIsOpen,
+		monitor.AnthropicInputTokens,
+		monitor.AnthropicOutputTokens,
 	)
 
 	return monitor

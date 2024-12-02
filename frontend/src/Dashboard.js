@@ -8,6 +8,7 @@ import {buildUrl} from "./Api";
 import Pivo from "./Pivo";
 import Field from "./Field";
 import FieldChart from "./FieldChart";
+import Chat from "./Chat";
 
 function Dashboard() {
 
@@ -75,6 +76,7 @@ function Dashboard() {
     const [data, setData] = useState(defaultScale);
     const [showKeg, setShowKeg] = useState(false);
     const [showWarehouse, setShowWarehouse] = useState(false);
+    const [showChat, setShowChat] = useState(false);
     const [showSpinner, setShowSpinner] = useState(false);
 
     useEffect(() => {
@@ -108,15 +110,22 @@ function Dashboard() {
 
     return (
         <Container>
-            <Menu showWarehouse={() => {
-                setShowWarehouse(true)
-            }} showKeg={() => {
-                setShowKeg(true)
-            }}/>
+            <Menu
+                showWarehouse={() => {
+                    setShowWarehouse(true)
+                }}
+                showKeg={() => {
+                    setShowKeg(true)
+                }}
+                showChat={() => {
+                    setShowChat(true)
+                }}
+            />
 
             <Warehouse warehouse={data.scale.warehouse} showCanvas={showWarehouse} setShowCanvas={setShowWarehouse}
                        refresh={refresh}/>
             <Keg keg={data.scale.active_keg} showCanvas={showKeg} setShowCanvas={setShowKeg} refresh={refresh}/>
+            <Chat showCanvas={showChat} setShowCanvas={setShowChat}/>
 
             <Row md={12} style={{textAlign: "center", marginTop: "30px"}}>
                 <Field

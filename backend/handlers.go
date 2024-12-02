@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/kotrzina/keg-scale/pkg/ai"
 	"github.com/kotrzina/keg-scale/pkg/config"
 	"github.com/kotrzina/keg-scale/pkg/promector"
 	"github.com/kotrzina/keg-scale/pkg/prometheus"
@@ -18,6 +19,7 @@ import (
 type HandlerRepository struct {
 	scale     *scale.Scale
 	promector *promector.Promector
+	ai        *ai.Ai
 	config    *config.Config
 	monitor   *prometheus.Monitor
 	logger    *logrus.Logger
@@ -197,6 +199,46 @@ func (hr *HandlerRepository) scaleWarehouseHandler() func(http.ResponseWriter, *
 
 		w.Header().Set("Content-Type", "application/json")
 		_, err = w.Write(utils.GetOkJSON())
+		if err != nil {
+			hr.logger.Errorf("Could not write response: %v", err)
+		}
+	}
+}
+
+func (hr *HandlerRepository) aiTestHandler() func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		auth := r.Header.Get("Authorization")
+		if auth != hr.config.Password {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			http.Error(w, "Could not read post body", http.StatusInternalServerError)
+			return
+		}
+
+		var data []ai.ChatMessage
+		err = json.Unmarshal(body, &data)
+		if err != nil {
+			http.Error(w, "Could not unmarshal data", http.StatusBadRequest)
+			return
+		}
+
+		resp, err := hr.ai.GetResponse(data)
+		if err != nil {
+			hr.logger.Warnf("could not get response because %v", err)
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		_, err = w.Write([]byte(resp))
 		if err != nil {
 			hr.logger.Errorf("Could not write response: %v", err)
 		}

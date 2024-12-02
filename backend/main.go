@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/joho/godotenv"
+	"github.com/kotrzina/keg-scale/pkg/ai"
 	"github.com/kotrzina/keg-scale/pkg/config"
 	"github.com/kotrzina/keg-scale/pkg/hook"
 	"github.com/kotrzina/keg-scale/pkg/promector"
@@ -41,12 +42,14 @@ func main() {
 	monitor := prometheus.New()
 	storage := store.NewRedisStore(ctx, conf)
 	kegScale := scale.New(ctx, monitor, storage, conf, whatsapp, logger)
-	_ = hook.NewBotka(whatsapp, kegScale, conf, logger)
+	intelligence := ai.NewAi(ctx, conf, kegScale, monitor, logger)
+	_ = hook.NewBotka(whatsapp, kegScale, intelligence, conf, logger)
 	prometheusCollector := promector.NewPromector(ctx, conf, kegScale, logger)
 
 	router := NewRouter(&HandlerRepository{
 		scale:     kegScale,
 		promector: prometheusCollector,
+		ai:        intelligence,
 		config:    conf,
 		monitor:   monitor,
 		logger:    logger,

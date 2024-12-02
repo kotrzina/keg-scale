@@ -1,3 +1,11 @@
+.toast-container {
+    pointer-events: all;
+}
+
+.toast-container a {
+    color: #917826;
+}
+
 .toast-col {
     margin-bottom: 10px;
 }
