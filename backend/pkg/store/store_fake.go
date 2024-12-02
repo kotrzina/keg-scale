@@ -8,6 +8,14 @@ type FakeStore struct {
 	isLow     bool
 }
 
+func (s *FakeStore) AddEvent(_ string) error {
+	return nil
+}
+
+func (s *FakeStore) GetEvents() ([]string, error) {
+	return []string{}, nil
+}
+
 func (s *FakeStore) SetWeight(_ float64) error {
 	return nil
 }

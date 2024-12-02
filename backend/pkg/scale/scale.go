@@ -47,7 +47,7 @@ type pub struct {
 	closedAt time.Time
 }
 
-const okLimit = 30 * time.Minute
+const okLimit = 10 * time.Minute
 
 const localizationUnits = "r:r,t:t,d:d,h:h,m:m,s:s,ms:ms,microsecond"
 
@@ -354,6 +354,7 @@ func (s *Scale) updatePub(isOpen bool) {
 
 		// send message only once in 12 hours
 		if time.Since(lastOpenAt) > 12*time.Hour {
+			s.makeEvent(EventOpen)
 			s.sendWhatsAppOpen() // async
 		} else {
 			s.logger.Warningf("Pub is open, but the opening message has been skipped. Diff: %s", time.Since(lastOpenAt).String())
@@ -363,6 +364,7 @@ func (s *Scale) updatePub(isOpen bool) {
 		if err := s.store.SetCloseAt(s.pub.closedAt); err != nil {
 			s.logger.Errorf("Could not set close_at time: %v", err)
 		}
+		s.makeEvent(EventClose)
 	}
 
 	fIsOpen := 0.
@@ -417,6 +419,7 @@ func (s *Scale) tryNewKeg() error {
 				s.logger.Warnf("Keg %d is not available in the warehouse", keg)
 			}
 
+			s.makeEvent(EventNewKegTapped)
 			s.logger.Infof("New keg (%d l) CONFIRMED with current value %.0f", keg, s.weight)
 		} else {
 			// new candidate keg

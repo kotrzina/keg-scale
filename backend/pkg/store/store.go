@@ -3,6 +3,9 @@ package store
 import "time"
 
 type Storage interface {
+	AddEvent(event string) error  // add event
+	GetEvents() ([]string, error) // get events
+
 	SetWeight(weight float64) error // set weight
 	GetWeight() (float64, error)    // get weight
 

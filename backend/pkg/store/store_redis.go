@@ -12,6 +12,7 @@ import (
 )
 
 const (
+	Events         = "events"
 	WeightKey      = "weight"
 	WeightAtKey    = "weight_at"
 	ActiveKegKey   = "active_keg"
@@ -39,6 +40,19 @@ func NewRedisStore(ctx context.Context, c *config.Config) *RedisStore {
 		}),
 		ctx: ctx,
 	}
+}
+
+func (s *RedisStore) AddEvent(event string) error {
+	err := s.Client.RPush(s.ctx, Events, event).Err()
+	if err != nil {
+		return err
+	}
+
+	return s.Client.LTrim(s.ctx, Events, -200, -1).Err() // keep only the last 200 events
+}
+
+func (s *RedisStore) GetEvents() ([]string, error) {
+	return s.Client.LRange(s.ctx, Events, 0, -1).Result()
 }
 
 func (s *RedisStore) SetWeight(weight float64) error {
