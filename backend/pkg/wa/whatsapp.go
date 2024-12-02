@@ -119,6 +119,7 @@ func (wa *WhatsAppClient) handleIncomingMessage(msg *events.Message) {
 	)
 
 	if len(text) > 500 {
+		wa.logger.Warnf("Message from %q is too long: %d", from, len(text))
 		return // do not process long messages
 	}
 
