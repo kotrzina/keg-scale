@@ -70,7 +70,7 @@ func (ai *Ai) currentKegTools() tool {
 				return "There is no active keg.", nil
 			}
 
-			return fmt.Sprintf("A <size>%d</size> liter keg is tapped.",
+			return fmt.Sprintf("<size>%d</size> liter keg is tapped.",
 				data.ActiveKeg,
 			), nil
 		},
@@ -135,7 +135,7 @@ func (ai *Ai) warehouseTotalTool() tool {
 		Fn: func(_ string) (string, error) {
 			data := ai.scale.GetScale()
 
-			return fmt.Sprintf("%d", data.WarehouseBeerLeft), nil
+			return fmt.Sprintf("%d beers", data.WarehouseBeerLeft), nil
 		},
 	}
 }
