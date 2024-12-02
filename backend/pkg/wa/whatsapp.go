@@ -118,7 +118,7 @@ func (wa *WhatsAppClient) handleIncomingMessage(msg *events.Message) {
 		text,
 	)
 
-	if len(text) > 20 {
+	if len(text) > 500 {
 		return // do not process long messages
 	}
 
