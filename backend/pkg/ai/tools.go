@@ -3,7 +3,9 @@ package ai
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/kotrzina/keg-scale/pkg/shops"
@@ -333,6 +335,79 @@ func (ai *Ai) localNewsTool() tool {
 			}
 
 			return string(j), nil
+		},
+	}
+}
+
+// @todo - this does not work and its huge - probably just scrape it from the website
+// @todo optimalizations
+func (ai *Ai) lesempolemTool() tool {
+	return tool{
+		Definition: anthropic.ToolDefinition{
+			Name:        "lesempolem_running_results",
+			Description: "All results of the Lesempolem running competition from Veselice. The result is JSON combining all years and categories. 'cp' means category place. 'p' means position. 'lt' means lap time. 'c' means category.",
+			InputSchema: jsonschema.Definition{
+				Type:       jsonschema.Object,
+				Properties: map[string]jsonschema.Definition{},
+				Required:   []string{""},
+			},
+		},
+		Fn: func(_ string) (string, error) {
+			resp, err := http.DefaultClient.Get("https://lesempolem.cz/results_merged.json")
+			if err != nil {
+				return "", fmt.Errorf("could not get results: %w", err)
+			}
+			defer resp.Body.Close()
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return "", fmt.Errorf("could not read response body: %w", err)
+			}
+
+			result := strings.ReplaceAll(string(body), "\"category_place\"", "\"cp\"")
+			result = strings.ReplaceAll(result, "\"place\"", "\"p\"")
+			result = strings.ReplaceAll(result, "\"position\"", "\"p\"")
+			result = strings.ReplaceAll(result, "\"lapTime\"", "\"lt\"")
+			result = strings.ReplaceAll(result, "\"category\"", "\"c\"")
+
+			return result, nil
+		},
+	}
+}
+
+func (ai *Ai) tennisTool() tool {
+	return tool{
+		Definition: anthropic.ToolDefinition{
+			Name:        "tennis_results",
+			Description: "Results of the tennis tournament called Veselice Open. You can get results for every tournament separately. The result is a webpage with results.",
+			InputSchema: jsonschema.Definition{
+				Type: jsonschema.Object,
+				Properties: map[string]jsonschema.Definition{
+					"tournament_name": {
+						Type:        jsonschema.Integer,
+						Enum:        []string{"2023-debl", "2024-singl"},
+						Description: "The name of the tournament. Usually the year and type of the tournament.",
+					},
+				},
+				Required: []string{"tournament_name"},
+			},
+		},
+		Fn: func(input string) (string, error) {
+			var i struct {
+				TournamentName string `json:"tournament_name"`
+			}
+
+			err := json.Unmarshal([]byte(input), &i)
+			if err != nil {
+				return "", fmt.Errorf("could not unmarshal input: %w", err)
+			}
+			tournamentName := i.TournamentName
+
+			data, err := ProvideTennisData(tournamentName)
+			if err != nil {
+				return "", fmt.Errorf("could not get tennis data: %w", err)
+			}
+
+			return data, nil
 		},
 	}
 }

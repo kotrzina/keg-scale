@@ -59,6 +59,8 @@ func NewAi(ctx context.Context, conf *config.Config, s *scale.Scale, m *promethe
 		ai.suppliersTool(),
 
 		ai.localNewsTool(),
+		ai.lesempolemTool(),
+		ai.tennisTool(),
 	}
 	ai.tools = tools
 
@@ -77,6 +79,8 @@ Functions: Pub provides various functions and pubic data such as:
 	- wifi signal strength
 	- information from village (news, events, local government announcements)
 	- calculate bill for multiple guests at the same time
+	- results of running competitions called Lesempolem organized by the pub 
+	- results of tennis tournaments organized by the pub
 Facts:
 	- there is various sentiment in the pub - we sell beer, non alcoholic drinks, snacks, wine, coffee, tea
 	- prices in the pub are fixed: everything is 25 Kč except for a bottle of wine which is 130 Kč
@@ -126,10 +130,6 @@ func (ai *Ai) GetResponse(history []ChatMessage) (string, error) {
 			// replies from assistant
 			messages[i] = anthropic.NewAssistantTextMessage(message.Text)
 		}
-	}
-
-	for _, msg := range messages {
-		ai.logger.WithField("message", msg.Content).Info("Anthropic message")
 	}
 
 	running := true
