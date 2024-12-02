@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/kotrzina/keg-scale/pkg/shops"
 	"github.com/kotrzina/keg-scale/pkg/utils"
 	"github.com/liushuangls/go-anthropic/v2"
 	"github.com/liushuangls/go-anthropic/v2/jsonschema"
@@ -228,7 +227,7 @@ func (ai *Ai) suppliersTool() tool {
 	return tool{
 		Definition: anthropic.ToolDefinition{
 			Name:        "supplier_beer_price_list",
-			Description: "Returns a beer prices for the specific supplier. Response contains a json document with beer title and price. There might be multiple results for a single brand with various sizes and beer types! The structure is flat - it means there is no structure for brands and keg sizes. Title usually contains the size of the keg and the type of beer.",
+			Description: "Provides beer prices (list) for the specific supplier. Response contains a json document with beer title and price. There might be multiple results for a single brand with various sizes and beer types! The structure is flat - it means there is no structure for brands and keg sizes. Title usually contains the size of the keg and the type of beer.",
 			InputSchema: jsonschema.Definition{
 				Type: jsonschema.Object,
 				Properties: map[string]jsonschema.Definition{
@@ -250,11 +249,11 @@ func (ai *Ai) suppliersTool() tool {
 				return "", fmt.Errorf("error unmarshalling input: %w", err)
 			}
 
-			var provider shops.Provider
+			var provider beerProvider
 			if data.Supplier == "maneo" {
-				provider = &shops.ManeoProvider{}
+				provider = &ManeoProvider{}
 			} else {
-				provider = &shops.BaracekProvider{}
+				provider = &BaracekProvider{}
 			}
 
 			items, err := provider.GetItems()

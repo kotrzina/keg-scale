@@ -109,11 +109,29 @@ type ChatMessage struct {
 	From string `json:"from"` // me means the user. Anything else is the assistant
 }
 
+type Response struct {
+	Text string `json:"text"`
+	Cost Cost   `json:"cost"`
+}
+
+type Cost struct {
+	Input  int `json:"input"`
+	Output int `json:"output"`
+}
+
 const Me = "me" // user
 
-func (ai *Ai) GetResponse(history []ChatMessage) (string, error) {
+func (ai *Ai) GetResponse(history []ChatMessage) (Response, error) {
+	output := Response{
+		Text: "",
+		Cost: Cost{
+			Input:  0,
+			Output: 0,
+		},
+	}
+
 	if len(history) == 0 {
-		return "", errors.New("no messages")
+		return output, errors.New("no messages")
 	}
 
 	messages := make([]anthropic.Message, len(history))
@@ -134,8 +152,6 @@ func (ai *Ai) GetResponse(history []ChatMessage) (string, error) {
 
 	running := true
 	sem := 0
-	lastMessage := ""
-
 	for running && sem < 10 {
 		sem++
 
@@ -152,10 +168,10 @@ func (ai *Ai) GetResponse(history []ChatMessage) (string, error) {
 		if err != nil {
 			var e *anthropic.APIError
 			if errors.As(err, &e) {
-				return "", fmt.Errorf("messages error, type: %s, message: %s", e.Type, e.Message)
+				return output, fmt.Errorf("messages error, type: %s, message: %s", e.Type, e.Message)
 			}
 
-			return "", fmt.Errorf("messages error: %w", err)
+			return output, fmt.Errorf("messages error: %w", err)
 		}
 
 		messages = append(messages, anthropic.Message{
@@ -179,7 +195,7 @@ func (ai *Ai) GetResponse(history []ChatMessage) (string, error) {
 						if aiTool.Definition.Name == requestedTool.Name {
 							toolResponse, err := aiTool.Fn(string(requestedTool.Input))
 							if err != nil {
-								return "", fmt.Errorf("error running tool %s: %w", requestedTool.Name, err)
+								return output, fmt.Errorf("error running tool %s: %w", requestedTool.Name, err)
 							}
 							toolsResponse.Content = append(
 								toolsResponse.Content,
@@ -198,8 +214,11 @@ func (ai *Ai) GetResponse(history []ChatMessage) (string, error) {
 		}
 
 		if len(resp.Content) > 0 {
-			lastMessage = resp.Content[len(resp.Content)-1].GetText()
+			output.Text = resp.Content[len(resp.Content)-1].GetText()
 		}
+
+		output.Cost.Output += resp.Usage.OutputTokens
+		output.Cost.Input += resp.Usage.InputTokens
 
 		ai.monitor.AnthropicInputTokens.WithLabelValues().Add(float64(resp.Usage.InputTokens))
 		ai.monitor.AnthropicOutputTokens.WithLabelValues().Add(float64(resp.Usage.OutputTokens))
@@ -208,8 +227,8 @@ func (ai *Ai) GetResponse(history []ChatMessage) (string, error) {
 		ai.logger.WithField("billing", "output").Infof("Anthropic output tokens: %d", resp.Usage.OutputTokens)
 	}
 
-	if lastMessage == "" {
-		lastMessage = "Nemohu odpovědět na tuto otázku."
+	if output.Text == "" {
+		output.Text = "Nemohu odpovědět na tuto otázku."
 	}
-	return lastMessage, nil
+	return output, nil
 }

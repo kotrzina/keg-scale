@@ -218,7 +218,7 @@ func (b *Botka) aiHandler() wa.EventHandler {
 				b.logger.Errorf("could not get response from AI: %v", err)
 				return err
 			}
-			return b.whatsapp.SendText(from, response)
+			return b.whatsapp.SendText(from, response.Text)
 		},
 	}
 }

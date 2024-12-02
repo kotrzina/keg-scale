@@ -6,11 +6,20 @@ import (
 	"io"
 	"net/http"
 	"regexp"
+	"strings"
 
 	"golang.org/x/net/html"
 )
 
+type StockType string
+
+const (
+	StockTypeAvailable StockType = "available"
+	StockTypeUnknown   StockType = "unknown"
+)
+
 var (
+	// compile regexes compile time
 	reSvgs          = regexp.MustCompile(`<svg.*?</svg>`)
 	reImages        = regexp.MustCompile(`<img.*?>`)
 	reStyles        = regexp.MustCompile(`style=".*?"`)
@@ -41,6 +50,35 @@ func provideParsePage(url string) (*html.Node, error) {
 	return els, nil
 }
 
+type beerProvider interface {
+	GetItems() ([]BeerItem, error)
+}
+
+type BeerItem struct {
+	Title string    `json:"title"`
+	link  string    // do not export for language model (savings)
+	Price string    `json:"price"`
+	stock StockType // currently not exported for language model
+}
+
+// title sanitization - remove useless words and prefixes
+func sanitizeBeerTitle(s string) string {
+	titlePrefixes := []string{"sud", "pivo"}
+	uselessWords := []string{"AKCE"}
+	for _, prefix := range titlePrefixes {
+		s = strings.TrimPrefix(s, prefix)
+	}
+	for _, word := range uselessWords {
+		s = strings.ReplaceAll(s, word, "")
+	}
+	s = reSpaces.ReplaceAllString(s, " ")
+
+	return strings.TrimSpace(s)
+}
+
+// removeUnwantedHTML removes unwanted HTML elements from the document
+// images, svgs, styles, classes, multiple spaces, spaces between tags
+// none of these are needed for the AI to understand the content
 func removeUnwantedHTML(doc string) string {
 	doc = reSvgs.ReplaceAllString(doc, "")
 	doc = reImages.ReplaceAllString(doc, "")

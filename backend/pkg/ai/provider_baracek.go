@@ -1,4 +1,4 @@
-package shops
+package ai
 
 import (
 	"bytes"
@@ -13,7 +13,7 @@ import (
 
 type BaracekProvider struct{}
 
-func (provider *BaracekProvider) GetItems() ([]ProviderItem, error) {
+func (provider *BaracekProvider) GetItems() ([]BeerItem, error) {
 	var (
 		err      error
 		document *html.Node
@@ -24,7 +24,7 @@ func (provider *BaracekProvider) GetItems() ([]ProviderItem, error) {
 		return nil, fmt.Errorf("could not get pages from Baracek: %w", err)
 	}
 
-	items := []ProviderItem{}
+	items := []BeerItem{}
 	for _, page := range pages {
 
 		document, err = provider.getParserForPage(page)
@@ -55,7 +55,7 @@ func (provider *BaracekProvider) GetItems() ([]ProviderItem, error) {
 					}
 
 					if attr.Key == "title" {
-						title = sanitizeTitle(attr.Val)
+						title = sanitizeBeerTitle(attr.Val)
 					}
 				}
 			}
@@ -75,9 +75,9 @@ func (provider *BaracekProvider) GetItems() ([]ProviderItem, error) {
 			}
 
 			if title != "" {
-				items = append(items, ProviderItem{
-					Name:  title,
-					Link:  "https://www.baracek.cz" + href,
+				items = append(items, BeerItem{
+					Title: title,
+					link:  "https://www.baracek.cz" + href,
 					Price: price,
 					stock: stock,
 				})

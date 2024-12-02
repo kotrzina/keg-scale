@@ -238,7 +238,16 @@ func (hr *HandlerRepository) aiTestHandler() func(http.ResponseWriter, *http.Req
 			return
 		}
 
-		_, err = w.Write([]byte(resp))
+		resp.Text = strings.ReplaceAll(resp.Text, "\n", "<br/>")
+
+		output, err := json.Marshal(resp)
+		if err != nil {
+			http.Error(w, "Could not marshal data", http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		_, err = w.Write(output)
 		if err != nil {
 			hr.logger.Errorf("Could not write response: %v", err)
 		}

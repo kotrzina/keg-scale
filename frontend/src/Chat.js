@@ -60,10 +60,10 @@ function Chat(props) {
         if (response.status === 200) {
             setPasswordHidden(true)
             setShowError(false)
-            const body = await response.text()
+            const data = await response.json()
             setShowLoadingMessage(false)
             setMessages((curr) => {
-                return [{text: body, from: "ai"}, ...curr]
+                return [{text: data.text, from: "ai", cost: data.cost}, ...curr]
             })
         } else {
             setShowError(true)
@@ -94,7 +94,7 @@ function Chat(props) {
                 <Row>
 
                     <Alert hidden={!showError} variant={"danger"}>
-                        Chyba! Asi špatné heslo.
+                        Chyba! Zkus to prosim pozdeji.
                     </Alert>
 
                     <Form className="d-flex" onSubmit={(e) => {
@@ -127,6 +127,7 @@ function Chat(props) {
                         <Button
                             onClick={() => {
                                 setMessages([])
+                                setShowError(false)
                             }}
                             hidden={messages.length === 0}
                             size={"lg"}
@@ -147,7 +148,9 @@ function Chat(props) {
                             {messages.map((message, k) => {
                                 return (
                                     <Alert key={k} className={"mt-2"}
-                                           variant={message.from === "ai" ? "success" : "info"}>
+                                           variant={message.from === "ai" ? "success" : "info"}
+                                           title={message.from === "ai" ? `${message.cost.input} / ${message.cost.output}` : ""}
+                                    >
                                         <Alert.Heading>{message.from === "ai" ? "Pan Botka" : "Místní štamgast"}</Alert.Heading>
                                         <p dangerouslySetInnerHTML={{__html: urlify(message.text)}}></p>
 

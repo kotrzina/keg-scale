@@ -1,4 +1,4 @@
-package shops
+package ai
 
 import (
 	"fmt"
@@ -14,7 +14,7 @@ import (
 
 type ManeoProvider struct{}
 
-func (provider *ManeoProvider) GetItems() ([]ProviderItem, error) {
+func (provider *ManeoProvider) GetItems() ([]BeerItem, error) {
 	const url = "https://www.eshop.maneo.cz/pivo-sudove-vse-katskup5.1.A.php?KATALOG_ZBOZI_VYPISOVAT_OD=0&ajax=1&KATALOG_POCET_ZBOZI_VYPISOVAT=1000"
 
 	var (
@@ -24,7 +24,7 @@ func (provider *ManeoProvider) GetItems() ([]ProviderItem, error) {
 	)
 
 	client := http.Client{
-		Timeout: 15 * time.Second,
+		Timeout: 30 * time.Second,
 	}
 
 	for retries > 0 {
@@ -65,7 +65,7 @@ func (provider *ManeoProvider) GetItems() ([]ProviderItem, error) {
 		return nil, fmt.Errorf("could not parse items from Maneo: %w", err)
 	}
 
-	items := make([]ProviderItem, len(els))
+	items := make([]BeerItem, len(els))
 	for i, el := range els {
 		title, path, err := provider.parseTitleAndURL(el)
 		if err != nil {
@@ -82,9 +82,9 @@ func (provider *ManeoProvider) GetItems() ([]ProviderItem, error) {
 			return nil, fmt.Errorf("could not parse stock from Maneo: %w", err)
 		}
 
-		items[i] = ProviderItem{
-			Name:  title,
-			Link:  fmt.Sprintf("%s/%s", "https://www.eshop.maneo.cz/", path),
+		items[i] = BeerItem{
+			Title: title,
+			link:  fmt.Sprintf("%s/%s", "https://www.eshop.maneo.cz/", path),
 			Price: price,
 			stock: stock,
 		}
@@ -103,7 +103,7 @@ func (provider *ManeoProvider) parseTitleAndURL(node *html.Node) (title, url str
 		return "", "", fmt.Errorf("could not parse title: %w", err)
 	}
 
-	title = sanitizeTitle(els[0].FirstChild.Data)
+	title = sanitizeBeerTitle(els[0].FirstChild.Data)
 
 	url = ""
 	for _, attr := range els[0].Attr {
