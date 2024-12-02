@@ -59,7 +59,6 @@ func NewAi(ctx context.Context, conf *config.Config, s *scale.Scale, m *promethe
 		ai.suppliersTool(),
 
 		ai.localNewsTool(),
-		ai.lesempolemTool(),
 		ai.tennisTool(),
 	}
 	ai.tools = tools
