@@ -26,6 +26,10 @@ func FormatDate(t time.Time) string {
 	return t.In(getTz()).Format("2006-01-02 15:04:05")
 }
 
+func FormatWeekday(t time.Time) string {
+	return t.In(getTz()).Weekday().String()
+}
+
 func FormatDateShort(t time.Time) string {
 	if t.Unix() <= 0 {
 		return ""

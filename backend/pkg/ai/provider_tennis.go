@@ -5,18 +5,10 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"regexp"
 	"strings"
 
 	"github.com/antchfx/htmlquery"
 	"golang.org/x/net/html"
-)
-
-var (
-	reSvgs    = regexp.MustCompile(`<svg.*?</svg>`)
-	reImages  = regexp.MustCompile(`<img.*?>`)
-	reStyles  = regexp.MustCompile(`style=".*?"`)
-	reClasses = regexp.MustCompile(`class=".*?"`)
 )
 
 func ProvideTennisData(name string) (string, error) {
@@ -50,12 +42,7 @@ func ProvideTennisData(name string) (string, error) {
 	}
 
 	doc := htmlquery.OutputHTML(els[0], false)
-
-	// remove all svg and img tags from doc
-	doc = reSvgs.ReplaceAllString(doc, "")
-	doc = reImages.ReplaceAllString(doc, "")
-	doc = reStyles.ReplaceAllString(doc, "")
-	doc = reClasses.ReplaceAllString(doc, "")
+	doc = removeUnwantedHTML(doc)
 	doc = strings.ReplaceAll(doc, "<!-- -->", "")
 
 	return doc, nil

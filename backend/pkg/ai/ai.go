@@ -60,6 +60,7 @@ func NewAi(ctx context.Context, conf *config.Config, s *scale.Scale, m *promethe
 
 		ai.localNewsTool(),
 		ai.tennisTool(),
+		ai.lunchMenu(),
 	}
 	ai.tools = tools
 
@@ -78,7 +79,7 @@ Functions: Pub provides various functions and pubic data such as:
 	- wifi signal strength
 	- information from village (news, events, local government announcements)
 	- calculate bill for multiple guests at the same time
-	- results of running competitions called Lesempolem organized by the pub 
+	- lunch menu from various restaurants nearby
 	- results of tennis tournaments organized by the pub
 Facts:
 	- there is various sentiment in the pub - we sell beer, non alcoholic drinks, snacks, wine, coffee, tea

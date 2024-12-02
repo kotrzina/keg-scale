@@ -17,7 +17,7 @@ func (ai *Ai) currentTimeTool() tool {
 	return tool{
 		Definition: anthropic.ToolDefinition{
 			Name:        "current_time",
-			Description: "Provides current time in Europe/Prague timezone. The place where the pub is located.",
+			Description: "Provides current day, date and time in Europe/Prague timezone",
 			InputSchema: jsonschema.Definition{
 				Type:       jsonschema.Object,
 				Properties: map[string]jsonschema.Definition{},
@@ -25,7 +25,8 @@ func (ai *Ai) currentTimeTool() tool {
 			},
 		},
 		Fn: func(_ string) (string, error) {
-			return utils.FormatDate(time.Now()), nil
+			now := time.Now()
+			return fmt.Sprintf("%s %s", utils.FormatWeekday(now), utils.FormatDate(now)), nil
 		},
 	}
 }
@@ -368,6 +369,55 @@ func (ai *Ai) tennisTool() tool {
 			data, err := ProvideTennisData(tournamentName)
 			if err != nil {
 				return "", fmt.Errorf("could not get tennis data: %w", err)
+			}
+
+			return data, nil
+		},
+	}
+}
+
+func (ai *Ai) lunchMenu() tool {
+	return tool{
+		Definition: anthropic.ToolDefinition{
+			Name:        "lunch_menu",
+			Description: "Provides lunch menu for the restaurants nearby (Restaurace Obůrka, Hotel Broušek, Penzion U Hrabenky). The result is a webpage with the menu. The page might be outdated for current week. Restaurants usually provide unique meals for each day. They also might have some meals for the whole week.",
+			InputSchema: jsonschema.Definition{
+				Type: jsonschema.Object,
+				Properties: map[string]jsonschema.Definition{
+					"restaurant_name": {
+						Type:        jsonschema.Integer,
+						Enum:        []string{"oburka", "brousek", "hrabenka"},
+						Description: "The name of the restaurant",
+					},
+				},
+				Required: []string{"restaurant_name"},
+			},
+		},
+		Fn: func(input string) (string, error) {
+			var i struct {
+				RestaurantName string `json:"restaurant_name"`
+			}
+
+			err := json.Unmarshal([]byte(input), &i)
+			if err != nil {
+				return "", fmt.Errorf("could not unmarshal input: %w", err)
+			}
+			restaurant := i.RestaurantName
+
+			var data string
+			switch restaurant {
+			case "oburka":
+				data, err = ProvideOburkaMenu()
+			case "brousek":
+				data, err = ProvideBrousekMenu()
+			case "hrabenka":
+				data, err = ProvideHrabenkaMenu()
+			default:
+				return "", fmt.Errorf("unknown restaurant: %s", restaurant)
+			}
+
+			if err != nil {
+				return "", fmt.Errorf("could not get lunch menu: %w", err)
 			}
 
 			return data, nil
