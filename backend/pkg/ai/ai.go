@@ -42,6 +42,8 @@ func NewAi(ctx context.Context, conf *config.Config, s *scale.Scale, m *promethe
 	}
 
 	tools := []tool{
+		ai.currentTimeTool(),
+
 		ai.isOpenTool(),
 		ai.pubOpenedAtTool(),
 
@@ -126,6 +128,10 @@ func (ai *Ai) GetResponse(history []ChatMessage) (string, error) {
 		}
 	}
 
+	for _, msg := range messages {
+		ai.logger.WithField("message", msg.Content).Info("Anthropic message")
+	}
+
 	running := true
 	sem := 0
 	lastMessage := ""
@@ -157,18 +163,34 @@ func (ai *Ai) GetResponse(history []ChatMessage) (string, error) {
 			Content: resp.Content,
 		})
 
+		// solve all requested tools from the response and push results back to the messages
 		if resp.StopReason == anthropic.MessagesStopReasonToolUse {
-			requestedTool := resp.Content[len(resp.Content)-1].MessageContentToolUse
+			// combined response for all tools
+			toolsResponse := anthropic.Message{
+				Role:    anthropic.RoleUser,
+				Content: []anthropic.MessageContent{},
+			}
 
-			for _, tool := range ai.tools {
-				if requestedTool.Name == tool.Definition.Name {
-					toolResponse, err := tool.Fn(string(requestedTool.Input))
-					if err != nil {
-						ai.logger.Errorf("Could not get %s tool response: %v", tool.Definition.Name, err)
+			// find all requested tool to solve
+			for _, content := range resp.Content {
+				requestedTool := content.MessageContentToolUse
+				if requestedTool != nil {
+					for _, aiTool := range ai.tools {
+						if aiTool.Definition.Name == requestedTool.Name {
+							toolResponse, err := aiTool.Fn(string(requestedTool.Input))
+							if err != nil {
+								return "", fmt.Errorf("error running tool %s: %w", requestedTool.Name, err)
+							}
+							toolsResponse.Content = append(
+								toolsResponse.Content,
+								anthropic.NewToolResultMessageContent(requestedTool.ID, toolResponse, err != nil),
+							)
+						}
 					}
-					messages = append(messages, anthropic.NewToolResultsMessage(requestedTool.ID, toolResponse, err != nil))
 				}
 			}
+
+			messages = append(messages, toolsResponse)
 		}
 
 		if resp.StopReason != anthropic.MessagesStopReasonToolUse {

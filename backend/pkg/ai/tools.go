@@ -13,6 +13,23 @@ import (
 	"github.com/mmcdole/gofeed"
 )
 
+func (ai *Ai) currentTimeTool() tool {
+	return tool{
+		Definition: anthropic.ToolDefinition{
+			Name:        "current_time",
+			Description: "Provides current time in Europe/Prague timezone. The place where the pub is located.",
+			InputSchema: jsonschema.Definition{
+				Type:       jsonschema.Object,
+				Properties: map[string]jsonschema.Definition{},
+				Required:   []string{""},
+			},
+		},
+		Fn: func(_ string) (string, error) {
+			return utils.FormatDate(time.Now()), nil
+		},
+	}
+}
+
 func (ai *Ai) isOpenTool() tool {
 	return tool{
 		Definition: anthropic.ToolDefinition{
