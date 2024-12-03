@@ -7,7 +7,7 @@ import PasswordBox from "./PasswordBox";
 
 function Warehouse(props) {
 
-    const [_, isApiReady] = useApiPassword()
+    const [, isApiReady] = useApiPassword()
     const [showError, setShowError] = React.useState(false)
 
     return (
