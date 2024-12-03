@@ -341,7 +341,7 @@ func (ai *Ai) tennisTool() tool {
 	return tool{
 		Definition: anthropic.ToolDefinition{
 			Name:        "tennis_results",
-			Description: "Results of the tennis tournament called Veselice Open. You can get results for every tournament separately. The result is a webpage with results.",
+			Description: "Results of the tennis tournament called Veselice Open. You can get results for every tournament separately. The result is a webpage with results. Page also contains links to the photo library.",
 			InputSchema: jsonschema.Definition{
 				Type: jsonschema.Object,
 				Properties: map[string]jsonschema.Definition{

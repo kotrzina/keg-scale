@@ -238,7 +238,7 @@ func (hr *HandlerRepository) aiTestHandler() func(http.ResponseWriter, *http.Req
 			return
 		}
 
-		resp.Text = strings.ReplaceAll(resp.Text, "\n", "<br/>")
+		resp.Text = utils.UnwrapHTML(resp.Text)
 
 		output, err := json.Marshal(resp)
 		if err != nil {

@@ -52,3 +52,25 @@ func TestFormatBeer(t *testing.T) {
 		}
 	}
 }
+
+func TestUnwrapHTML(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected string
+	}{
+		{"", ""},
+		{"🍺🍺🍺", "🍺🍺🍺"},
+		{"Hello, World!", "Hello, World!"},
+		{"The Link is https://example.com right?", "The Link is <a href=\"https://example.com\">https://example.com</a> right?"},
+		{"http://notsecured.cz page", "<a href=\"http://notsecured.cz\">http://notsecured.cz</a> page"},
+		{"Two links:\n- http://notsecured.cz\n- https://go.lang", "Two links:<br/>- <a href=\"http://notsecured.cz\">http://notsecured.cz</a><br/>- <a href=\"https://go.lang\">https://go.lang</a>"},
+		{"Link is last word in the sentence https://dotpage.cz/hell.", "Link is last word in the sentence <a href=\"https://dotpage.cz/hell\">https://dotpage.cz/hell</a>."},
+		{"Fotky z tenisového turnaje 2023 najdete na této adrese: https://www.rajce.idnes.cz/dao/album/tenis-veselice-2023\n\nPokracovani", "Fotky z tenisového turnaje 2023 najdete na této adrese: <a href=\"https://www.rajce.idnes.cz/dao/album/tenis-veselice-2023\">https://www.rajce.idnes.cz/dao/album/tenis-veselice-2023</a><br/><br/>Pokracovani"},
+	}
+
+	for _, test := range tests {
+		if got := UnwrapHTML(test.input); got != test.expected {
+			t.Errorf("UnwrapHTML(%q) = %q; want %q", test.input, got, test.expected)
+		}
+	}
+}

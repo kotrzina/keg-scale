@@ -1,9 +1,12 @@
 package utils
 
 import (
+	"fmt"
 	"os"
 	"strings"
 	"time"
+
+	"mvdan.cc/xurls/v2"
 )
 
 func Strip(s string) string {
@@ -69,4 +72,18 @@ func FormatBeer(n int) string {
 	}
 
 	return "piv"
+}
+
+// UnwrapHTML replaces all URLs in the string with HTML links
+// and replaces newlines with <br/>
+// handles use cases like the link is the last word in the sentence with a dot
+func UnwrapHTML(s string) string {
+	rxStrict := xurls.Strict()
+	links := rxStrict.FindAllString(s, -1)
+	for _, link := range links {
+		s = strings.ReplaceAll(s, link, fmt.Sprintf("<a target=\"_blank\" href=\"%s\">%s</a>", link, link))
+	}
+
+	s = strings.ReplaceAll(s, "\n", "<br/>")
+	return s
 }

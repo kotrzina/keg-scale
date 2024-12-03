@@ -27,19 +27,6 @@ function Chat(props) {
         return () => clearInterval(interval)
     }, [loadingIterator])
 
-    function htmlDecode(content) {
-        let e = document.createElement('div');
-        e.innerHTML = content;
-        return e.innerHTML
-    }
-
-    function urlify(text) {
-        const urlRegex = /(https?:\/\/[^\s]+)/g;
-        return text.replace(urlRegex, function (url) {
-            return htmlDecode('<a target="_blank" href="' + url + '">' + url + '</a>');
-        })
-    }
-
     async function send() {
         // add message to messages
         setMessages((curr) => {
@@ -138,8 +125,7 @@ function Chat(props) {
                                            title={message.from === "ai" ? `${message.cost.input} / ${message.cost.output}` : ""}
                                     >
                                         <Alert.Heading>{message.from === "ai" ? "Pan Botka" : "Místní štamgast"}</Alert.Heading>
-                                        <p dangerouslySetInnerHTML={{__html: urlify(message.text)}}></p>
-
+                                        <p dangerouslySetInnerHTML={{__html: message.text}}></p>
                                     </Alert>
                                 )
                             })}
