@@ -3,13 +3,14 @@ import Form from "react-bootstrap/Form";
 import React, {useEffect} from "react";
 import {buildUrl} from "./Api";
 import Button from "react-bootstrap/Button";
+import useApiPassword from "./useApiPassword";
+import PasswordBox from "./PasswordBox";
 
 function Chat(props) {
 
-    const [passwordHidden, setPasswordHidden] = React.useState(false)
+    const [apiPassword, isApiReady] = useApiPassword()
     const [showError, setShowError] = React.useState(false)
     const [text, setText] = React.useState("")
-    const [password, setPassword] = React.useState("")
     const [messages, setMessages] = React.useState([])
 
     const [showLoadingMessage, setShowLoadingMessage] = React.useState(false)
@@ -49,7 +50,7 @@ function Chat(props) {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
-                "Authorization": password,
+                "Authorization": apiPassword,
             },
             body: JSON.stringify([{text: text, from: "me"}, ...messages].reverse()), // reverse to keep order for AI
         });
@@ -58,7 +59,6 @@ function Chat(props) {
         setShowLoadingMessage(true)
         const response = await fetch(request)
         if (response.status === 200) {
-            setPasswordHidden(true)
             setShowError(false)
             const data = await response.json()
             setShowLoadingMessage(false)
@@ -72,17 +72,6 @@ function Chat(props) {
         setShowLoadingMessage(false)
     }
 
-    useEffect(() => {
-        if (password !== "") {
-            return
-        }
-
-        const storedPassword = localStorage.getItem("password")
-        if (storedPassword !== null && storedPassword !== "") {
-            setPassword(storedPassword)
-        }
-    }, [password]);
-
     return (
         <Offcanvas placement={"end"} show={props.showCanvas} onHide={() => {
             props.setShowCanvas(false)
@@ -91,8 +80,7 @@ function Chat(props) {
                 <Offcanvas.Title>Chat</Offcanvas.Title>
             </Offcanvas.Header>
             <Offcanvas.Body>
-                <Row>
-
+                <Row hidden={!isApiReady}>
                     <Alert hidden={!showError} variant={"danger"}>
                         Chyba! Zkus to prosim pozdeji.
                     </Alert>
@@ -110,8 +98,6 @@ function Chat(props) {
                             className="me-2"
                             aria-label="Message"
                         />
-
-
                     </Form>
 
                     <Col md={12} className={"mt-3"}>
@@ -159,24 +145,9 @@ function Chat(props) {
                             })}
                         </ToastContainer>
                     </Col>
-
-                    <Col hidden={passwordHidden} md={12} className={"mt-5"}>
-                        <Form className="d-flex">
-                            <Form.Control
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                type="password"
-                                placeholder="Heslo"
-                                className="me-2"
-                                aria-label="Heslo"
-                            />
-                            <Form.Text className="text-muted">
-                                <code>heslo</code>
-                            </Form.Text>
-                        </Form>
-                    </Col>
                 </Row>
 
+                <PasswordBox/>
 
             </Offcanvas.Body>
         </Offcanvas>

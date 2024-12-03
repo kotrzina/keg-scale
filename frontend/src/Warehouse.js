@@ -1,24 +1,14 @@
 import {Alert, Col, Offcanvas, Row, Table} from "react-bootstrap";
-import Form from "react-bootstrap/Form";
-import React, {useEffect} from "react";
+import React from "react";
 import WarehouseKeg from "./WarehouseKeg";
+import useApiPassword from "./useApiPassword";
+import PasswordBox from "./PasswordBox";
 
 
 function Warehouse(props) {
 
+    const [_, isApiReady] = useApiPassword()
     const [showError, setShowError] = React.useState(false)
-    const [password, setPassword] = React.useState("")
-
-    useEffect(() => {
-        if (password !== "") {
-            return
-        }
-
-        const storedPassword = localStorage.getItem("password")
-        if (storedPassword !== null && storedPassword !== "") {
-            setPassword(storedPassword)
-        }
-    }, [password]);
 
     return (
         <Offcanvas show={props.showCanvas} onHide={() => {
@@ -29,9 +19,9 @@ function Warehouse(props) {
             </Offcanvas.Header>
             <Offcanvas.Body>
 
-                <Row>
+                <Row hidden={!isApiReady}>
                     <Alert hidden={!showError} variant={"danger"}>
-                        Chyba! Asi špatné heslo.
+                        Chyba! Zkus to prosim pozdeji.
                     </Alert>
 
                     <Col md={12}>
@@ -43,31 +33,16 @@ function Warehouse(props) {
                                         key={keg.keg}
                                         keg={keg}
                                         refresh={props.refresh}
-                                        password={password}
                                         setShowError={setShowError}
                                     />
                                 )
                             })}
-
                             </tbody>
                         </Table>
                     </Col>
                 </Row>
 
-                <div className={"mt-3"}></div>
-                <Form className="d-flex">
-                    <Form.Control
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        type="password"
-                        placeholder="Heslo"
-                        className="me-2"
-                        aria-label="Heslo"
-                    />
-                    <Form.Text className="text-muted">
-                        <code>heslo</code>
-                    </Form.Text>
-                </Form>
+                <PasswordBox/>
             </Offcanvas.Body>
         </Offcanvas>
     )

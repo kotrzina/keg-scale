@@ -253,3 +253,15 @@ func (hr *HandlerRepository) aiTestHandler() func(http.ResponseWriter, *http.Req
 		}
 	}
 }
+
+func (hr *HandlerRepository) checkPassword() func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		auth := r.Header.Get("Authorization")
+		if auth != hr.config.Password {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		w.WriteHeader(http.StatusNoContent)
+	}
+}

@@ -1,15 +1,18 @@
 import Button from "react-bootstrap/Button";
 import React from "react";
 import {buildUrl} from "./Api";
+import useApiPassword from "./useApiPassword";
 
 function WarehouseKeg(props) {
+
+    const [apiPassword] = useApiPassword()
 
     async function onKegChange(way) {
         const request = new Request(buildUrl("/api/scale/warehouse"), {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
-                "Authorization": props.password,
+                "Authorization": apiPassword,
             },
             body: JSON.stringify({
                 keg: props.keg.keg,
@@ -21,7 +24,6 @@ function WarehouseKeg(props) {
         if (response.status === 200) {
             props.refresh()
             props.setShowError(false)
-            localStorage.setItem("password", props.password)
         } else {
             props.setShowError(true)
         }

@@ -1,13 +1,14 @@
 import {Alert, Col, Offcanvas, Row} from "react-bootstrap";
-import Form from "react-bootstrap/Form";
 import Button from "react-bootstrap/Button";
-import React, {useEffect} from "react";
+import React from "react";
 import {buildUrl} from "./Api";
+import useApiPassword from "./useApiPassword";
+import PasswordBox from "./PasswordBox";
 
 function Keg(props) {
 
     const [showError, setShowError] = React.useState(false)
-    const [password, setPassword] = React.useState("")
+    const [apiPassword, isApiReady] = useApiPassword()
 
     const kegs = [10, 15, 20, 30, 50]
 
@@ -17,7 +18,7 @@ function Keg(props) {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
-                "Authorization": password,
+                "Authorization": apiPassword,
             },
             body: JSON.stringify({keg: size}),
         });
@@ -27,22 +28,10 @@ function Keg(props) {
             props.refresh()
             props.setShowCanvas(false)
             setShowError(false)
-            localStorage.setItem("password", password)
         } else {
             setShowError(true)
         }
     }
-
-    useEffect(() => {
-        if (password !== "") {
-            return
-        }
-
-        const storedPassword = localStorage.getItem("password")
-        if (storedPassword !== null && storedPassword !== "") {
-            setPassword(storedPassword)
-        }
-    }, [password]);
 
     return (
         <Offcanvas show={props.showCanvas} onHide={() => {
@@ -52,10 +41,9 @@ function Keg(props) {
                 <Offcanvas.Title>Naražená bečka</Offcanvas.Title>
             </Offcanvas.Header>
             <Offcanvas.Body>
-                <Row>
-
+                <Row hidden={!isApiReady}>
                     <Alert hidden={!showError} variant={"danger"}>
-                        Chyba! Asi špatné heslo.
+                        Chyba! Zkus to prosim pozdeji.
                     </Alert>
 
                     <Col md={12}>
@@ -73,23 +61,9 @@ function Keg(props) {
                             }
                         )}
                     </Col>
-
-                    <div className={"mt-3"}></div>
-                    <Form className="d-flex">
-                        <Form.Control
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            type="password"
-                            placeholder="Heslo"
-                            className="me-2"
-                            aria-label="Heslo"
-                        />
-                        <Form.Text className="text-muted">
-                            <code>heslo</code>
-                        </Form.Text>
-                    </Form>
                 </Row>
 
+                <PasswordBox/>
 
             </Offcanvas.Body>
         </Offcanvas>
