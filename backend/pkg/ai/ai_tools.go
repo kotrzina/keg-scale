@@ -25,7 +25,7 @@ func (ai *Ai) currentTimeTool() tool {
 		},
 		Fn: func(_ string) (string, error) {
 			now := time.Now()
-			return fmt.Sprintf("%s %s", utils.FormatWeekday(now), utils.FormatDate(now)), nil
+			return fmt.Sprintf("%s, %s", utils.FormatWeekday(now), utils.FormatDate(now)), nil
 		},
 	}
 }
