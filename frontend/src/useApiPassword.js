@@ -29,6 +29,8 @@ export default function useApiPassword() {
                     setPwd(storedPassword)
                     setIsOk(true)
                 }
+            }).catch(() => {
+                setIsOk(false)
             })
         }
     }, [pwd, isOk]);
@@ -42,19 +44,23 @@ export default function useApiPassword() {
             return
         }
 
-        const response = await fetch(buildUrl("/api/check/password"), {
-            method: "GET",
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": password,
-            },
-        })
+        try {
+            const response = await fetch(buildUrl("/api/check/password"), {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": password,
+                },
+            })
 
-        if (response.status === 204) {
-            localStorage.setItem(STORAGE_KEY, password)
-            window.location.reload() // reload the page to propagate the password
-        } else {
-            localStorage.removeItem(STORAGE_KEY)
+            if (response.status === 204) {
+                localStorage.setItem(STORAGE_KEY, password)
+                window.location.reload() // reload the page to propagate the password
+            } else {
+                localStorage.removeItem(STORAGE_KEY)
+            }
+        } catch {
+            setIsOk(false)
         }
     }, [isOk]);
 
