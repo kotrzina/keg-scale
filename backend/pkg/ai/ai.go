@@ -62,6 +62,13 @@ func NewAi(ctx context.Context, conf *config.Config, s *scale.Scale, m *promethe
 		ai.tennisTool(),
 		ai.lunchMenu(),
 	}
+
+	staticTools, err := ai.staticTools()
+	if err != nil {
+		l.Fatalf("could not load StaticConfig tools: %v", err)
+	}
+	tools = append(tools, staticTools...)
+
 	ai.tools = tools
 
 	return ai
