@@ -85,8 +85,6 @@ func (provider *BaracekProvider) GetItems() ([]BeerItem, error) {
 		}
 	}
 
-	fmt.Println(items)
-
 	return items, nil
 }
 

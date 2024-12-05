@@ -30,7 +30,6 @@ func (ai *Ai) staticTools() ([]tool, error) {
 
 	tools := make([]tool, len(config.Tools))
 	for i, t := range config.Tools {
-		fmt.Println(t.Result)
 		tools[i] = tool{
 			Definition: anthropic.ToolDefinition{
 				Name:        t.Name,
