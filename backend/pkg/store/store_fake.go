@@ -1,6 +1,8 @@
 package store
 
-import "time"
+import (
+	"time"
+)
 
 // FakeStore is primarily used for testing purposes
 type FakeStore struct {
@@ -113,4 +115,16 @@ func (s *FakeStore) SetIsOpen(_ bool) error {
 
 func (s *FakeStore) GetIsOpen() (bool, error) {
 	return false, nil
+}
+
+func (s *FakeStore) AddConversationMessage(_ string, _ ConservationMessage) error {
+	return nil
+}
+
+func (s *FakeStore) GetConversation(_ string) ([]ConservationMessage, error) {
+	return nil, nil
+}
+
+func (s *FakeStore) ResetConversation(_ string) error {
+	return nil
 }

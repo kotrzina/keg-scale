@@ -9,6 +9,7 @@ import (
 	"github.com/kotrzina/keg-scale/pkg/ai"
 	"github.com/kotrzina/keg-scale/pkg/config"
 	"github.com/kotrzina/keg-scale/pkg/scale"
+	"github.com/kotrzina/keg-scale/pkg/store"
 	"github.com/kotrzina/keg-scale/pkg/utils"
 	"github.com/kotrzina/keg-scale/pkg/wa"
 	"github.com/kozaktomas/diacritics"
@@ -23,6 +24,7 @@ type Botka struct {
 	scale    *scale.Scale
 	ai       *ai.Ai
 	config   *config.Config
+	storage  store.Storage
 
 	mtx    sync.RWMutex
 	logger *logrus.Logger
@@ -46,6 +48,7 @@ func NewBotka(
 	kegScale *scale.Scale,
 	intelligence *ai.Ai,
 	conf *config.Config,
+	storage store.Storage,
 	logger *logrus.Logger,
 ) *Botka {
 	w := &Botka{
@@ -53,6 +56,7 @@ func NewBotka(
 		scale:    kegScale,
 		ai:       intelligence,
 		config:   conf,
+		storage:  storage,
 
 		mtx:    sync.RWMutex{},
 		logger: logger,
@@ -105,8 +109,9 @@ func (b *Botka) helloHandler() wa.EventHandler {
 				strings.HasPrefix(sanitized, "cau") ||
 				strings.HasPrefix(sanitized, "cus")
 		},
-		HandleFunc: func(from, _ string) error {
-			reply := "Ahoj! Já jsem pan Botka. Napiš /help pro nápovědu."
+		HandleFunc: func(from, msg string) error {
+			reply := "Ahoj! Já jsem Pan Botka. Napiš /help pro nápovědu."
+			b.storeConversation(from, msg, reply)
 			err := b.whatsapp.SendText(from, reply)
 			return err
 		},
@@ -120,7 +125,7 @@ func (b *Botka) pubHandler() wa.EventHandler {
 			return strings.HasPrefix(sanitized, "pub") ||
 				strings.HasPrefix(sanitized, "hospoda")
 		},
-		HandleFunc: func(from, _ string) error {
+		HandleFunc: func(from, msg string) error {
 			s := b.scale.GetScale()
 			var reply string
 			if s.Pub.IsOpen {
@@ -128,6 +133,7 @@ func (b *Botka) pubHandler() wa.EventHandler {
 			} else {
 				reply = "😥 Hospoda je bohužel zavřená! Půjdeš otevřít?"
 			}
+			b.storeConversation(from, msg, reply)
 			err := b.whatsapp.SendText(from, reply)
 			return err
 		},
@@ -141,13 +147,13 @@ func (b *Botka) kegHandler() wa.EventHandler {
 			return strings.HasPrefix(sanitized, "becka") ||
 				strings.HasPrefix(sanitized, "keg")
 		},
-		HandleFunc: func(from, _ string) error {
+		HandleFunc: func(from, msg string) error {
 			s := b.scale.GetScale()
-			var msg string
+			var reply string
 			if s.ActiveKeg == 0 {
-				msg = "Aktuálně nemáme naraženou žádnou bečku."
+				reply = "Aktuálně nemáme naraženou žádnou bečku."
 			} else {
-				msg = fmt.Sprintf(
+				reply = fmt.Sprintf(
 					"Máme naraženou %dl bečku a zbývá v ní %d %s. Naražena byla %s v %s.",
 					s.ActiveKeg,
 					s.BeersLeft,
@@ -156,7 +162,8 @@ func (b *Botka) kegHandler() wa.EventHandler {
 					utils.FormatTime(s.ActiveKegAt),
 				)
 			}
-			err := b.whatsapp.SendText(from, msg)
+			b.storeConversation(from, msg, reply)
+			err := b.whatsapp.SendText(from, reply)
 			return err
 		},
 	}
@@ -167,10 +174,11 @@ func (b *Botka) pricesHandler() wa.EventHandler {
 		MatchFunc: func(msg string) bool {
 			return strings.HasPrefix(b.sanitizeCommand(msg), "cenik")
 		},
-		HandleFunc: func(from, _ string) error {
+		HandleFunc: func(from, msg string) error {
 			reply := "Ceník: \n" +
 				"- Vše 25 Kč \n" +
 				"- Víno 130 Kč"
+			b.storeConversation(from, msg, reply)
 			err := b.whatsapp.SendText(from, reply)
 			return err
 		},
@@ -182,7 +190,7 @@ func (b *Botka) warehouseHandler() wa.EventHandler {
 		MatchFunc: func(msg string) bool {
 			return strings.HasPrefix(b.sanitizeCommand(msg), "sklad")
 		},
-		HandleFunc: func(from, _ string) error {
+		HandleFunc: func(from, msg string) error {
 			s := b.scale.GetScale()
 			reply := fmt.Sprintf("Ve skladu máme celkem %d piv.", s.WarehouseBeerLeft)
 			if s.Warehouse[0].Amount > 0 {
@@ -201,6 +209,7 @@ func (b *Botka) warehouseHandler() wa.EventHandler {
 				reply += fmt.Sprintf("\n%d × 50l", s.Warehouse[4].Amount)
 			}
 
+			b.storeConversation(from, msg, reply)
 			err := b.whatsapp.SendText(from, reply)
 			return err
 		},
@@ -213,13 +222,61 @@ func (b *Botka) aiHandler() wa.EventHandler {
 			return true // always match as a backup command
 		},
 		HandleFunc: func(from, msg string) error {
-			response, err := b.ai.GetResponse([]ai.ChatMessage{{Text: msg, From: ai.Me}})
+			conversation, err := b.storage.GetConversation(from)
+			if err != nil {
+				return fmt.Errorf("could not get conversation: %w", err)
+			}
+
+			var messages []ai.ChatMessage
+			count := 0
+			for _, message := range conversation {
+				if time.Since(message.At) < 12*time.Hour { // ignore message sent more than 12 hours ago
+					// we need to make sure that first message will be from user
+					if count == 0 && message.Author == store.ConversationMessageAuthorBot {
+						continue
+					}
+
+					messages = append(messages, ai.ChatMessage{
+						Text: message.Message,
+						From: mapUser(message.Author),
+					})
+
+					count++
+				}
+			}
+
+			response, err := b.ai.GetResponse(messages)
 			if err != nil {
 				b.logger.Errorf("could not get response from AI: %v", err)
 				return err
 			}
+
+			b.storeConversation(from, msg, response.Text)
 			return b.whatsapp.SendText(from, response.Text)
 		},
+	}
+}
+
+func (b *Botka) storeConversation(ID, question, answer string) {
+	now := time.Now()
+	err := b.storage.AddConversationMessage(ID, store.ConservationMessage{
+		ID:      ID,
+		Message: question,
+		At:      now,
+		Author:  store.ConversationMessageAuthorUser,
+	})
+	if err != nil {
+		b.logger.Errorf("could not add conversation message: %v", err)
+	}
+
+	err = b.storage.AddConversationMessage(ID, store.ConservationMessage{
+		ID:      ID,
+		Message: answer,
+		At:      now,
+		Author:  store.ConversationMessageAuthorBot,
+	})
+	if err != nil {
+		b.logger.Errorf("could not add conversation message: %v", err)
 	}
 }
 
@@ -231,4 +288,12 @@ func (b *Botka) sanitizeCommand(command string) string {
 	}
 
 	return c
+}
+
+func mapUser(author store.ConversationMessageAuthor) string {
+	if author == store.ConversationMessageAuthorUser {
+		return ai.Me
+	}
+
+	return "bot"
 }

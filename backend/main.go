@@ -43,7 +43,7 @@ func main() {
 	storage := store.NewRedisStore(ctx, conf)
 	kegScale := scale.New(ctx, monitor, storage, conf, whatsapp, logger)
 	intelligence := ai.NewAi(ctx, conf, kegScale, monitor, logger)
-	_ = hook.NewBotka(whatsapp, kegScale, intelligence, conf, logger)
+	_ = hook.NewBotka(whatsapp, kegScale, intelligence, conf, storage, logger)
 	prometheusCollector := promector.NewPromector(ctx, conf, kegScale, logger)
 
 	router := NewRouter(&HandlerRepository{

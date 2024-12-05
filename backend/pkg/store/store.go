@@ -2,6 +2,20 @@ package store
 
 import "time"
 
+type ConversationMessageAuthor string
+
+const (
+	ConversationMessageAuthorUser ConversationMessageAuthor = "user"
+	ConversationMessageAuthorBot  ConversationMessageAuthor = "bot"
+)
+
+type ConservationMessage struct {
+	ID      string                    `json:"id"`
+	Message string                    `json:"msg"`
+	At      time.Time                 `json:"at"`
+	Author  ConversationMessageAuthor `json:"author"` // user or bot
+}
+
 type Storage interface {
 	AddEvent(event string) error  // add event
 	GetEvents() ([]string, error) // get events
@@ -41,4 +55,8 @@ type Storage interface {
 
 	SetIsOpen(isOpen bool) error // set is open flag
 	GetIsOpen() (bool, error)    // get is open flag
+
+	AddConversationMessage(id string, msg ConservationMessage) error // add conversation message
+	GetConversation(id string) ([]ConservationMessage, error)        // get conversation messages from oldest to newest
+	ResetConversation(id string) error                               // reset conversation - delete all messages
 }

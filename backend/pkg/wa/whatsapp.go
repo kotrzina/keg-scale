@@ -27,9 +27,13 @@ type WhatsAppClient struct {
 	logger *logrus.Logger
 }
 
+type EventMatchFunc func(msg string) bool
+
+type EventHandleFunc func(from, msg string) error // from = sender ID
+
 type EventHandler struct {
-	MatchFunc  func(msg string) bool
-	HandleFunc func(from, msg string) error // from = sender ID
+	MatchFunc  EventMatchFunc
+	HandleFunc EventHandleFunc
 }
 
 func New(ctx context.Context, conf *config.Config, logger *logrus.Logger) *WhatsAppClient {

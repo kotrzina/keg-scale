@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
@@ -12,19 +13,20 @@ import (
 )
 
 const (
-	Events         = "events"
-	WeightKey      = "weight"
-	WeightAtKey    = "weight_at"
-	ActiveKegKey   = "active_keg"
-	ActiveKegAtKey = "active_keg_at"
-	IsLowKey       = "is_low"
-	BeersLeftKey   = "beers_left"
-	BeersTotal     = "beers_total"
-	WarehouseKey   = "warehouse"
-	LastOkKey      = "last_ok"
-	OpenAtKey      = "open_at"
-	CloseAtKey     = "close_at"
-	IsOpenKey      = "is_open"
+	Events             = "events"
+	WeightKey          = "weight"
+	WeightAtKey        = "weight_at"
+	ActiveKegKey       = "active_keg"
+	ActiveKegAtKey     = "active_keg_at"
+	IsLowKey           = "is_low"
+	BeersLeftKey       = "beers_left"
+	BeersTotal         = "beers_total"
+	WarehouseKey       = "warehouse"
+	LastOkKey          = "last_ok"
+	OpenAtKey          = "open_at"
+	CloseAtKey         = "close_at"
+	IsOpenKey          = "is_open"
+	ConversationPrefix = "conversation:"
 )
 
 type RedisStore struct {
@@ -48,7 +50,7 @@ func (s *RedisStore) AddEvent(event string) error {
 		return err
 	}
 
-	return s.Client.LTrim(s.ctx, Events, -200, -1).Err() // keep only the last 200 events
+	return s.Client.LTrim(s.ctx, Events, -500, -1).Err() // keep only the last 500 events
 }
 
 func (s *RedisStore) GetEvents() ([]string, error) {
@@ -177,4 +179,45 @@ func (s *RedisStore) SetIsOpen(isOpen bool) error {
 
 func (s *RedisStore) GetIsOpen() (bool, error) {
 	return s.Client.Get(s.ctx, IsOpenKey).Bool()
+}
+
+func (s *RedisStore) AddConversationMessage(id string, msg ConservationMessage) error {
+	msg.ID = id
+	data, err := json.Marshal(msg)
+	if err != nil {
+		return fmt.Errorf("failed to marshal conversation message: %w", err)
+	}
+
+	key := fmt.Sprintf("%s%s", ConversationPrefix, id)
+	err = s.Client.RPush(s.ctx, key, data).Err()
+	if err != nil {
+		return fmt.Errorf("failed to add conversation message: %w", err)
+	}
+
+	return s.Client.LTrim(s.ctx, key, -500, -1).Err() // keep only the last 500 events
+}
+
+func (s *RedisStore) GetConversation(id string) ([]ConservationMessage, error) {
+	key := fmt.Sprintf("%s%s", ConversationPrefix, id)
+	data, err := s.Client.LRange(s.ctx, key, 0, -1).Result()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get conversation messages: %w", err)
+	}
+
+	output := make([]ConservationMessage, len(data))
+	for i, d := range data {
+		var msg ConservationMessage
+		err := json.Unmarshal([]byte(d), &msg)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal conversation message: %w", err)
+		}
+
+		output[i] = msg
+	}
+
+	return output, nil
+}
+
+func (s *RedisStore) ResetConversation(id string) error {
+	return s.Client.Del(s.ctx, fmt.Sprintf("%s%s", ConversationPrefix, id)).Err()
 }
