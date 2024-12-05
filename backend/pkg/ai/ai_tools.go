@@ -375,7 +375,7 @@ func (ai *Ai) tennisTool() tool {
 	}
 }
 
-func (ai *Ai) lunchMenu() tool {
+func (ai *Ai) lunchMenuTool() tool {
 	return tool{
 		Definition: anthropic.ToolDefinition{
 			Name:        "lunch_menu",
@@ -417,6 +417,28 @@ func (ai *Ai) lunchMenu() tool {
 
 			if err != nil {
 				return "", fmt.Errorf("could not get lunch menu: %w", err)
+			}
+
+			return data, nil
+		},
+	}
+}
+
+func (ai *Ai) eventBlanskoTool() tool {
+	return tool{
+		Definition: anthropic.ToolDefinition{
+			Name:        "events_blansko",
+			Description: "Provides culture events in Blansko. Tool returns json structure. The source is the website akceblansko.cz. Includes timetable of the cinema, concerts, etc. Make sure to check exact dates for events and provide exact event names/movies",
+			InputSchema: jsonschema.Definition{
+				Type:       jsonschema.Object,
+				Properties: map[string]jsonschema.Definition{},
+				Required:   []string{},
+			},
+		},
+		Fn: func(_ string) (string, error) {
+			data, err := ProvideEventsBlansko()
+			if err != nil {
+				return "", fmt.Errorf("could not get events: %w", err)
 			}
 
 			return data, nil

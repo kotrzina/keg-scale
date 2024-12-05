@@ -87,6 +87,6 @@ func removeUnwantedHTML(doc string) string {
 	doc = reSpaces.ReplaceAllString(doc, " ")
 	doc = endTagSpace.ReplaceAllString(doc, ">")
 	doc = tagBetweenSpace.ReplaceAllString(doc, "><")
-
+	doc = strings.TrimSpace(doc)
 	return doc
 }

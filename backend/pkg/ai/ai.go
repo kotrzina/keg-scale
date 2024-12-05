@@ -5,10 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/kotrzina/keg-scale/pkg/config"
 	"github.com/kotrzina/keg-scale/pkg/prometheus"
 	"github.com/kotrzina/keg-scale/pkg/scale"
+	"github.com/kotrzina/keg-scale/pkg/utils"
 	"github.com/liushuangls/go-anthropic/v2"
 	"github.com/sirupsen/logrus"
 )
@@ -60,7 +62,8 @@ func NewAi(ctx context.Context, conf *config.Config, s *scale.Scale, m *promethe
 
 		ai.localNewsTool(),
 		ai.tennisTool(),
-		ai.lunchMenu(),
+		ai.lunchMenuTool(),
+		ai.eventBlanskoTool(),
 	}
 
 	staticTools, err := ai.staticTools()
@@ -90,7 +93,9 @@ Functions: Pub provides various functions and pubic data such as:
 	- lunch menu from various restaurants nearby
 	- results of tennis tournaments organized by the pub
 	- scale wifi signal strength
+	- events in Blansko including movies in the local cinema
 Facts:
+	- current date and time: <datetime>${datetime}</datetime>
 	- there is various sentiment in the pub - we sell beer, non alcoholic drinks, snacks, wine, coffee, tea
 	- prices in the pub are fixed: everything is 25 Kč except for a bottle of wine which is 130 Kč
 	- you can get total price for a specific amount of beers by multiplying the price by the amount of beers
@@ -103,6 +108,7 @@ Facts:
 	- always prefer baracek supplier
 	- pub is located in the small village call Veselice
 	- Veselice is a small village in Moravsky Kras in the Czech Republic
+	- the nearest town is Blansko
 	- Veselice is a feminine word in Czech language
 
 Generate a response to the following message:
@@ -152,7 +158,9 @@ func (ai *Ai) GetResponse(history []ChatMessage) (Response, error) {
 		case message.From == Me && i == 0:
 			// first message from user is special
 			// we want to use full Prompt
-			messages[i] = anthropic.NewUserTextMessage(strings.ReplaceAll(Prompt, "${msg}", message.Text))
+			m := strings.ReplaceAll(Prompt, "${msg}", message.Text)
+			m = strings.ReplaceAll(m, "${datetime}", utils.FormatDate(time.Now()))
+			messages[i] = anthropic.NewUserTextMessage(m)
 		case message.From == Me:
 			// all other messages from user
 			messages[i] = anthropic.NewUserTextMessage(message.Text)
@@ -205,6 +213,7 @@ func (ai *Ai) GetResponse(history []ChatMessage) (Response, error) {
 				if requestedTool != nil {
 					for _, aiTool := range ai.tools {
 						if aiTool.Definition.Name == requestedTool.Name {
+							ai.logger.Infof("running tool %s", requestedTool.Name)
 							toolResponse, err := aiTool.Fn(string(requestedTool.Input))
 							if err != nil {
 								return output, fmt.Errorf("error running tool %s: %w", requestedTool.Name, err)
