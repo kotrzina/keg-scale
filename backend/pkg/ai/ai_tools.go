@@ -445,3 +445,25 @@ func (ai *Ai) eventBlanskoTool() tool {
 		},
 	}
 }
+
+func (ai *Ai) siestaMenuTool() tool {
+	return tool{
+		Definition: anthropic.ToolDefinition{
+			Name:        "siesta_pizza",
+			Description: "Provides pizza menu from Siesta Pizza. The Siesta is usually used for the pizza delivery in our pub. Pizza is always 32 cm.",
+			InputSchema: jsonschema.Definition{
+				Type:       jsonschema.Object,
+				Properties: map[string]jsonschema.Definition{},
+				Required:   []string{},
+			},
+		},
+		Fn: func(_ string) (string, error) {
+			output, err := ProvideSiestaMenu()
+			if err != nil {
+				return "", fmt.Errorf("could not get menu: %w", err)
+			}
+
+			return output, nil
+		},
+	}
+}

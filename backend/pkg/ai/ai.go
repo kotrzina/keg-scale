@@ -64,6 +64,7 @@ func NewAi(ctx context.Context, conf *config.Config, s *scale.Scale, m *promethe
 		ai.tennisTool(),
 		ai.lunchMenuTool(),
 		ai.eventBlanskoTool(),
+		ai.siestaMenuTool(),
 	}
 
 	staticTools, err := ai.staticTools()
