@@ -131,6 +131,10 @@ func (wa *WhatsAppClient) handleIncomingMessage(msg *events.Message) {
 		if handler.MatchFunc(text) {
 			if err := handler.HandleFunc(from, text); err != nil {
 				wa.logger.Errorf("Failed from handle message: %v", err)
+				err = wa.SendText(from, "🥺Omlouvám se, ale něco se pokazilo. Zkuste to prosím později znovu.")
+				if err != nil {
+					wa.logger.Errorf("Failed to send WA error message: %v", err)
+				}
 			}
 			break // do not process other handlers
 		}
