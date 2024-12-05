@@ -70,6 +70,7 @@ func NewBotka(
 		client.RegisterEventHandler(w.kegHandler())
 		client.RegisterEventHandler(w.pricesHandler())
 		client.RegisterEventHandler(w.warehouseHandler())
+		client.RegisterEventHandler(w.resetHandler())
 		client.RegisterEventHandler(w.aiHandler())
 	}
 
@@ -90,7 +91,8 @@ func (b *Botka) helpHandler() wa.EventHandler {
 				"/pub /hospoda - informace o hospodě \n" +
 				"/becka - informace o aktuální bečce \n" +
 				"/cenik - ceník \n" +
-				"/sklad - stav skladu\n"
+				"/sklad - stav skladu\n" +
+				"/reset - Pan Botka zapomene všechno"
 			err := b.whatsapp.SendText(from, reply)
 			return err
 		},
@@ -216,6 +218,26 @@ func (b *Botka) warehouseHandler() wa.EventHandler {
 	}
 }
 
+func (b *Botka) resetHandler() wa.EventHandler {
+	return wa.EventHandler{
+		MatchFunc: func(msg string) bool {
+			return strings.HasPrefix(b.sanitizeCommand(msg), "reset")
+		},
+		HandleFunc: func(from, _ string) error {
+			err := b.storage.ResetConversation(from)
+			reply := "Cože? O čem jsme mluvili? 🤔"
+			if err != nil {
+				b.logger.Errorf("could not reset conversation: %v", err)
+				reply = "Něco se pokazilo, zkuste to prosím znovu."
+			} else {
+				b.logger.Infof("conversation with %q has been reset", from)
+			}
+
+			return b.whatsapp.SendText(from, reply)
+		},
+	}
+}
+
 func (b *Botka) aiHandler() wa.EventHandler {
 	return wa.EventHandler{
 		MatchFunc: func(_ string) bool {
@@ -257,10 +279,10 @@ func (b *Botka) aiHandler() wa.EventHandler {
 	}
 }
 
-func (b *Botka) storeConversation(ID, question, answer string) {
+func (b *Botka) storeConversation(id, question, answer string) {
 	now := time.Now()
-	err := b.storage.AddConversationMessage(ID, store.ConservationMessage{
-		ID:      ID,
+	err := b.storage.AddConversationMessage(id, store.ConservationMessage{
+		ID:      id,
 		Message: question,
 		At:      now,
 		Author:  store.ConversationMessageAuthorUser,
@@ -269,8 +291,8 @@ func (b *Botka) storeConversation(ID, question, answer string) {
 		b.logger.Errorf("could not add conversation message: %v", err)
 	}
 
-	err = b.storage.AddConversationMessage(ID, store.ConservationMessage{
-		ID:      ID,
+	err = b.storage.AddConversationMessage(id, store.ConservationMessage{
+		ID:      id,
 		Message: answer,
 		At:      now,
 		Author:  store.ConversationMessageAuthorBot,
