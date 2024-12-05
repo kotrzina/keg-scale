@@ -225,7 +225,7 @@ func (b *Botka) resetHandler() wa.EventHandler {
 		},
 		HandleFunc: func(from, _ string) error {
 			err := b.storage.ResetConversation(from)
-			reply := "Cože? O čem jsme mluvili? 🤔"
+			reply := "Cože? O čem jsme to mluvili? 🤔"
 			if err != nil {
 				b.logger.Errorf("could not reset conversation: %v", err)
 				reply = "Něco se pokazilo, zkuste to prosím znovu."
@@ -266,6 +266,12 @@ func (b *Botka) aiHandler() wa.EventHandler {
 					count++
 				}
 			}
+
+			// add the current message
+			messages = append(messages, ai.ChatMessage{
+				Text: msg,
+				From: ai.Me,
+			})
 
 			response, err := b.ai.GetResponse(messages)
 			if err != nil {
