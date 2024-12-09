@@ -1,8 +1,9 @@
 package ai
 
 import (
-	_ "embed"
 	"fmt"
+	"io"
+	"net/http"
 
 	"github.com/liushuangls/go-anthropic/v2"
 	"github.com/liushuangls/go-anthropic/v2/jsonschema"
@@ -18,12 +19,21 @@ type StaticConfig struct {
 	} `yaml:"tools"`
 }
 
-//go:embed static.yml
-var staticContent []byte
-
 func (ai *Ai) staticTools() ([]tool, error) {
-	var config StaticConfig
+	url := "https://static.kozak.in/pub-ai/static.yml"
+	resp, err := http.DefaultClient.Get(url)
+	if err != nil {
+		return nil, fmt.Errorf("could not get static tools: %w", err)
+	}
 
+	defer resp.Body.Close()
+
+	staticContent, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("could not read response body: %w", err)
+	}
+
+	var config StaticConfig
 	if err := yaml.Unmarshal(staticContent, &config); err != nil {
 		return nil, fmt.Errorf("could not unmarshal StaticConfig content: %w", err)
 	}
