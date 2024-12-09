@@ -99,17 +99,15 @@ Functions: Pub provides various functions and pubic data such as:
 Facts:
 	- current date and time: <datetime>${datetime}</datetime>
 	- there is various sentiment in the pub - we sell beer, non alcoholic drinks, snacks, wine, coffee, tea
+	- usually we have Policka - Otakar 11 beer
 	- prices in the pub are fixed: everything is 25 Kč except for a bottle of wine which is 130 Kč
 	- you can get total price for a specific amount of beers by multiplying the price by the amount of beers
 	- we do not sell kegs, only 0.5 liter beers
 	- kegs are used only as a supply for the pub
 	- existing kegs: 10, 15, 20, 30, 50 liters
-	- at the moment, the pub has only one active keg
-	- scale is connected to the internet via wifi
-	- suppliers: baracek, maneo
-	- always prefer baracek supplier
+	- suppliers: baracek, maneo - always prefer baracek supplier
 	- pub is located in the small village call Veselice
-	- Veselice is a small village in Moravsky Kras in the Czech Republic
+	- Veselice is a village in Moravsky Kras in the Czech Republic
 	- the nearest town is Blansko
 	- Veselice is a feminine word in Czech language
 
