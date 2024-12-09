@@ -1,13 +1,4 @@
 tools:
-  - name: "special_beers"
-    description: "Sometimes the pub offers limited special beer. Usually different brand or some local brewery"
-    result: |
-      Current special beers offer from 4.12.2024 to 8.12.2024:
-      - Kozi Kabrón 12  - Starší z bratrů Kabrónů je dostupný pouze v čisté (filtrované) variantě. To z něj dělá jediné filtrované pivo v naší nabídce. Jde o tradiční český ležák, uvařený tradičním způsobem z tradičních surovin. Chutná špicově.
-      - Hořký Kozi 11 - Příjemně hořký škopek, který se dá lámat jeden za druhým. Tohle pivo rozhodně nemůže soutěžit v kategorii tradiční český ležák. Vaříme jej sice tradičně, ale s podílem (pro ležák) netradičního žitného sladu. Přichmeleno francouzským chmelem.
-      - Theodor Pilsner 11 - Ležák plzeňského typu. Pivo je vařeno podle tradičních receptur, podpořeno českými slady a chmely. Naše vlajková loď vám zpříjemní jakoukoli životní plavbu.
-    type: "text"
-
   - name: "watchtower_veselice"
     description: "Provide information about the watchtower in Veselice (rozhledna)"
     result: |

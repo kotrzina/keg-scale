@@ -467,3 +467,25 @@ func (ai *Ai) siestaMenuTool() tool {
 		},
 	}
 }
+
+func (ai *Ai) weatherTool() tool {
+	return tool{
+		Definition: anthropic.ToolDefinition{
+			Name:        "weather",
+			Description: "Provides current weather in Veselice. Json contains hourly forecast and contains temperature, participation, wind speed, cloudiness and wind direction. It also containers forecast for the next 3 days.",
+			InputSchema: jsonschema.Definition{
+				Type:       jsonschema.Object,
+				Properties: map[string]jsonschema.Definition{},
+				Required:   []string{},
+			},
+		},
+		Fn: func(_ string) (string, error) {
+			output, err := ProvideWeather()
+			if err != nil {
+				return "", fmt.Errorf("could not get weather: %w", err)
+			}
+
+			return output, nil
+		},
+	}
+}
