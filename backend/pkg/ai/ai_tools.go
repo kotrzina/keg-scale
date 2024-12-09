@@ -227,7 +227,7 @@ func (ai *Ai) suppliersTool() tool {
 	return tool{
 		Definition: anthropic.ToolDefinition{
 			Name:        "supplier_beer_price_list",
-			Description: "Provides beer prices (list) for the specific supplier. Response contains a json document with beer title and price. There might be multiple results for a single brand with various sizes and beer types! The structure is flat - it means there is no structure for brands and keg sizes. Title usually contains the size of the keg and the type of beer.",
+			Description: "Provides beer prices (list) for the specific supplier. Response contains a json document with beer title and price. There might be multiple results for a single brand with various sizes and beer types! The structure is flat - it means there is no structure for brands and keg sizes. Title usually contains the size of the keg and the type of beer. Always try to find all sizes and prices.",
 			InputSchema: jsonschema.Definition{
 				Type: jsonschema.Object,
 				Properties: map[string]jsonschema.Definition{
