@@ -100,6 +100,8 @@ func (wa *WhatsAppClient) RegisterEventHandler(handler EventHandler) {
 }
 
 func (wa *WhatsAppClient) eventHandler(evt interface{}) {
+	wa.logger.Infof("Received WhatsApp event: %v", evt)
+
 	switch v := evt.(type) {
 	case *events.Message:
 		wa.handleIncomingMessage(v)
