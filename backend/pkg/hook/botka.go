@@ -81,6 +81,11 @@ func (b *Botka) helpHandler() wa.EventHandler {
 	return wa.EventHandler{
 		MatchFunc: func(msg string) bool {
 			sanitized := b.sanitizeCommand(msg)
+
+			if len(sanitized) > 10 {
+				return false
+			}
+
 			return strings.HasPrefix(sanitized, "help") ||
 				strings.HasPrefix(sanitized, "napoveda") ||
 				strings.HasPrefix(sanitized, "pomoc")
@@ -103,6 +108,10 @@ func (b *Botka) helloHandler() wa.EventHandler {
 	return wa.EventHandler{
 		MatchFunc: func(msg string) bool {
 			sanitized := b.sanitizeCommand(msg)
+			if len(sanitized) > 7 {
+				return false
+			}
+
 			return strings.HasPrefix(sanitized, "hello") ||
 				strings.HasPrefix(sanitized, "hi") ||
 				strings.HasPrefix(sanitized, "ahoj") ||
@@ -124,6 +133,11 @@ func (b *Botka) pubHandler() wa.EventHandler {
 	return wa.EventHandler{
 		MatchFunc: func(msg string) bool {
 			sanitized := b.sanitizeCommand(msg)
+
+			if len(sanitized) > 8 {
+				return false
+			}
+
 			return strings.HasPrefix(sanitized, "pub") ||
 				strings.HasPrefix(sanitized, "hospoda")
 		},
@@ -146,6 +160,11 @@ func (b *Botka) kegHandler() wa.EventHandler {
 	return wa.EventHandler{
 		MatchFunc: func(msg string) bool {
 			sanitized := b.sanitizeCommand(msg)
+
+			if len(sanitized) > 6 {
+				return false
+			}
+
 			return strings.HasPrefix(sanitized, "becka") ||
 				strings.HasPrefix(sanitized, "keg")
 		},
@@ -174,7 +193,7 @@ func (b *Botka) kegHandler() wa.EventHandler {
 func (b *Botka) pricesHandler() wa.EventHandler {
 	return wa.EventHandler{
 		MatchFunc: func(msg string) bool {
-			return strings.HasPrefix(b.sanitizeCommand(msg), "cenik")
+			return b.sanitizeCommand(msg) == "cenik"
 		},
 		HandleFunc: func(from, msg string) error {
 			reply := "Ceník: \n" +
@@ -190,7 +209,7 @@ func (b *Botka) pricesHandler() wa.EventHandler {
 func (b *Botka) warehouseHandler() wa.EventHandler {
 	return wa.EventHandler{
 		MatchFunc: func(msg string) bool {
-			return strings.HasPrefix(b.sanitizeCommand(msg), "sklad")
+			return b.sanitizeCommand(msg) == "sklad"
 		},
 		HandleFunc: func(from, msg string) error {
 			s := b.scale.GetScale()
