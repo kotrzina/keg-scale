@@ -109,12 +109,21 @@ func (wa *WhatsAppClient) eventHandler(evt interface{}) {
 }
 
 func (wa *WhatsAppClient) handleIncomingMessage(msg *events.Message) {
-	if msg.Message.Conversation == nil {
+	text := ""
+	if msg.Message.ExtendedTextMessage != nil && msg.Message.ExtendedTextMessage.Text != nil {
+		text = *msg.Message.ExtendedTextMessage.Text
+	}
+
+	if msg.Message.Conversation != nil {
+		text = *msg.Message.Conversation
+	}
+
+	if text == "" {
+		wa.logger.Warnf("Received unknown/empty message: %v", msg)
 		return
 	}
-	text := *msg.Message.Conversation
-	from := msg.Info.MessageSource.Chat.User // we want to replay to the same chat
 
+	from := msg.Info.MessageSource.Chat.User // we want to replay to the same chat
 	wa.logger.Infof(
 		"received message in chat %s@%s from %s@%s: %s",
 		msg.Info.MessageSource.Chat.User,
