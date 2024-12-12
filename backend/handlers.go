@@ -233,9 +233,14 @@ func (hr *HandlerRepository) aiTestHandler() func(http.ResponseWriter, *http.Req
 
 		resp, err := hr.ai.GetResponse(data)
 		if err != nil {
-			hr.logger.Warnf("could not get response because %v", err)
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
+			hr.logger.Errorf("could not get response from AI: %v", err)
+			resp = ai.Response{
+				Text: "Teď bohužel nedokážu odpovědět. Zkus to prosím později.",
+				Cost: ai.Cost{
+					Input:  0,
+					Output: 0,
+				},
+			}
 		}
 
 		resp.Text = utils.UnwrapHTML(resp.Text)

@@ -284,7 +284,13 @@ func (b *Botka) aiHandler() wa.EventHandler {
 			response, err := b.ai.GetResponse(messages)
 			if err != nil {
 				b.logger.Errorf("could not get response from AI: %v", err)
-				return err
+				response = ai.Response{
+					Text: "Teď bohužel nedokážu odpovědět. Zkus to prosím později.",
+					Cost: ai.Cost{
+						Input:  0,
+						Output: 0,
+					},
+				}
 			}
 
 			b.storeConversation(from, msg, response.Text)
