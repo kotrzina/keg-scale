@@ -489,3 +489,25 @@ func (ai *Ai) weatherTool() tool {
 		},
 	}
 }
+
+func (ai *Ai) sdhEventsTool() tool {
+	return tool{
+		Definition: anthropic.ToolDefinition{
+			Name:        "sdh_events",
+			Description: "Provides news and events from the local fire department (SDH Veselice). The source is the website sdhveselice.cz.",
+			InputSchema: jsonschema.Definition{
+				Type:       jsonschema.Object,
+				Properties: map[string]jsonschema.Definition{},
+				Required:   []string{},
+			},
+		},
+		Fn: func(_ string) (string, error) {
+			output, err := ProvideSdhEvents()
+			if err != nil {
+				return "", fmt.Errorf("could not get sdh events: %w", err)
+			}
+
+			return output, nil
+		},
+	}
+}

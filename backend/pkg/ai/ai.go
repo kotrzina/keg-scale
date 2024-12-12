@@ -66,6 +66,7 @@ func NewAi(ctx context.Context, conf *config.Config, s *scale.Scale, m *promethe
 		ai.eventBlanskoTool(),
 		ai.siestaMenuTool(),
 		ai.weatherTool(),
+		ai.sdhEventsTool(),
 	}
 
 	staticTools, err := ai.staticTools()
