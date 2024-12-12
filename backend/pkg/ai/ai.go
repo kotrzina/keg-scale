@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
@@ -43,23 +44,17 @@ func NewAi(ctx context.Context, conf *config.Config, s *scale.Scale, m *promethe
 		logger:  l,
 	}
 
-	tools := []tool{
+	ai.tools = []tool{
 		ai.currentTimeTool(),
-
 		ai.isOpenTool(),
 		ai.pubOpenedAtTool(),
-
 		ai.currentKegTools(),
 		ai.beersLeftTool(),
 		ai.kegTappedAtTool(),
-
 		ai.warehouseTotalTool(),
 		ai.warehouseKegTool(),
-
 		ai.scaleWifiStrengthTool(),
-
 		ai.suppliersTool(),
-
 		ai.localNewsTool(),
 		ai.tennisTool(),
 		ai.lunchMenuTool(),
@@ -68,14 +63,6 @@ func NewAi(ctx context.Context, conf *config.Config, s *scale.Scale, m *promethe
 		ai.weatherTool(),
 		ai.sdhEventsTool(),
 	}
-
-	staticTools, err := ai.staticTools()
-	if err != nil {
-		l.Fatalf("could not load StaticConfig tools: %v", err)
-	}
-	tools = append(tools, staticTools...)
-
-	ai.tools = tools
 
 	return ai
 }
@@ -157,13 +144,21 @@ func (ai *Ai) GetResponse(history []ChatMessage) (Response, error) {
 		}
 	}
 
+	staticTools, err := ai.staticTools()
+	if err != nil {
+		ai.logger.Errorf("could not load StaticConfig tools: %v", err)
+		return output, fmt.Errorf("could not load StaticConfig tools: %w", err)
+	}
+
+	tools := slices.Concat(ai.tools, staticTools) // merge default and static tools
+
 	running := true
 	sem := 0
 	for running && sem < 10 {
 		sem++
 
-		requestTools := make([]anthropic.ToolDefinition, len(ai.tools))
-		for i, tool := range ai.tools {
+		requestTools := make([]anthropic.ToolDefinition, len(tools))
+		for i, tool := range tools {
 			requestTools[i] = tool.Definition
 		}
 		resp, err := ai.client.CreateMessages(ai.ctx, anthropic.MessagesRequest{
@@ -198,7 +193,7 @@ func (ai *Ai) GetResponse(history []ChatMessage) (Response, error) {
 			for _, content := range resp.Content {
 				requestedTool := content.MessageContentToolUse
 				if requestedTool != nil {
-					for _, aiTool := range ai.tools {
+					for _, aiTool := range tools {
 						if aiTool.Definition.Name == requestedTool.Name {
 							ai.logger.Infof("running tool %s", requestedTool.Name)
 							toolResponse, err := aiTool.Fn(string(requestedTool.Input))
