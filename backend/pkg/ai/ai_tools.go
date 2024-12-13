@@ -74,6 +74,28 @@ func (ai *Ai) pubOpenedAtTool() tool {
 	}
 }
 
+func (ai *Ai) pubClosedAtTool() tool {
+	return tool{
+		Definition: anthropic.ToolDefinition{
+			Name:        "pub_close_at",
+			Description: "Returns the date and time when the pub was closed last.",
+			InputSchema: jsonschema.Definition{
+				Type:       jsonschema.Object,
+				Properties: map[string]jsonschema.Definition{},
+				Required:   []string{""},
+			},
+		},
+		Fn: func(_ string) (string, error) {
+			data := ai.scale.GetScale()
+			if data.Pub.IsOpen {
+				return "The pub is open.", nil
+			}
+
+			return data.Pub.ClosedAt, nil
+		},
+	}
+}
+
 func (ai *Ai) currentKegTools() tool {
 	return tool{
 		Definition: anthropic.ToolDefinition{

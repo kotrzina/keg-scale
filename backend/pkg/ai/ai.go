@@ -48,6 +48,7 @@ func NewAi(ctx context.Context, conf *config.Config, s *scale.Scale, m *promethe
 		ai.currentTimeTool(),
 		ai.isOpenTool(),
 		ai.pubOpenedAtTool(),
+		ai.pubClosedAtTool(),
 		ai.currentKegTools(),
 		ai.beersLeftTool(),
 		ai.kegTappedAtTool(),
