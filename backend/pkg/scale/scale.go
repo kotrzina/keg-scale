@@ -386,6 +386,14 @@ func (s *Scale) tryNewKeg() error {
 		if s.candidateKeg > 0 && s.candidateKeg == keg {
 			// we have two measurements with the same keg - rekeg successful !!!
 
+			if s.activeKeg == 50 && keg == 10 {
+				// known bug - there is a conflict between 50l and 10l kegs
+				// when the 50l keg is empty, the weight is the same as full 10l keg
+				// we don't want to rekeg in this case because in many cases it's not true
+				s.logger.Warnf("Conflict between 50l and 10l kegs detected. Ignoring rekeg.")
+				return nil
+			}
+
 			if serr := s.addCurrentKegToTotal(); serr != nil {
 				return fmt.Errorf("could not add current keg to total: %w", serr)
 			}
