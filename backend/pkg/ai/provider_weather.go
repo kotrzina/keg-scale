@@ -2,26 +2,28 @@ package ai
 
 import (
 	"fmt"
-	"io"
-	"net/http"
-	"time"
+
+	"github.com/antchfx/htmlquery"
 )
 
 func ProvideWeather() (string, error) {
-	now := time.Now()
-	url := fmt.Sprintf("https://data.pocasi-data.cz/data/pocasi/v1/aladin/%d/%02d/%02d/06/100/337/dnes.json", now.Year(), int(now.Month()), now.Day())
+	const url = "https://www.yr.no/en/forecast/daily-table/2-3063044/Czech Republic/South Moravian/Blansko District/Veselice"
 
-	resp, err := http.DefaultClient.Get(url)
+	root, err := provideParsePage(url)
 	if err != nil {
-		return "", fmt.Errorf("could not get weather data: %w", err)
+		return "", fmt.Errorf("could not parse page: %w", err)
 	}
 
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
+	// find the weather
+	forecastXpath := "//div[@id='page-content']"
+	els, err := htmlquery.QueryAll(root, forecastXpath)
 	if err != nil {
-		return "", fmt.Errorf("could not read response body: %w", err)
+		return "", fmt.Errorf("could not parse weather data: %w", err)
 	}
 
-	return string(body), nil
+	if len(els) != 1 {
+		return "", fmt.Errorf("could not find weather data")
+	}
+
+	return removeUnwantedHTML(htmlquery.OutputHTML(els[0], false)), nil
 }
