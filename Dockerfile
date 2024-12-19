@@ -31,6 +31,4 @@ RUN chown nobody /app/keg-scale \
 
 USER nobody
 
-ENV GITHUB_SHA ${GITHUB_SHA}
-
 ENTRYPOINT ["/app/keg-scale"]
