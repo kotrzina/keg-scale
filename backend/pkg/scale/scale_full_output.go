@@ -63,8 +63,8 @@ func (s *Scale) GetScale() FullOutput {
 		LastUpdateDuration: durafmt.Parse(time.Since(s.lastOk).Round(time.Second)).LimitFirstN(2).Format(s.fmtUnits),
 		Pub: PubOutput{
 			IsOpen:   s.pub.isOpen,
-			OpenedAt: utils.FormatTime(s.pub.openedAt),
-			ClosedAt: utils.FormatTime(s.pub.closedAt),
+			OpenedAt: utils.FormatDate(s.pub.openedAt),
+			ClosedAt: utils.FormatDate(s.pub.closedAt),
 		},
 		ActiveKeg:         s.activeKeg,
 		ActiveKegAt:       s.activeKegAt,
