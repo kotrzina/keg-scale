@@ -47,7 +47,13 @@ function FieldChart(props) {
 
         let i = activeInterval
         if (i === DEFAULT_INTERVAL) {
-            i = props.chart[props.chart.length - 1].interval
+            // find first interval with data from the end
+            for (let j = props.chart.length - 1; j >= 0; j--) {
+                if (props.chart[j].values !== null && props.chart[j].values.length > 0) {
+                    i = props.chart[j].interval
+                    break
+                }
+            }
             setActiveInterval(i)
             return
         }
