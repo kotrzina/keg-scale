@@ -91,7 +91,22 @@ function FieldChart(props) {
             <Col xs={12} sm={12} md={12} lg={12} xl={12} xxl={12}>
                 <Toast style={{width: "100%"}}>
                     <Toast.Header closeButton={false}>
-                        <Row style={{width: "100%", textAlign: "center"}}>
+                        <Row style={{width: "100%", textAlign: "center", margin: 0}}>
+                            <Col md={1}>
+                                <strong>{ranges[activeInterval]}</strong>
+                            </Col>
+
+                            <Col md={9}>
+                                <FormRange
+                                    min={0}
+                                    max={ranges.length - 1}
+                                    value={activeInterval}
+                                    onChange={e => setActiveInterval(e.target.value)}
+                                    onMouseUp={e => onIntervalChanged(e.target.value)}
+                                    onTouchEnd={e => onIntervalChanged(e.target.value)}
+                                />
+                            </Col>
+
                             <Col md={2}>
                                 <strong>{props.title}</strong>&nbsp;&nbsp;
                                 <img
@@ -102,20 +117,6 @@ function FieldChart(props) {
                                     className="align-middle"
                                     alt="Loader"
                                 />
-                            </Col>
-
-                            <Col md={9}>
-                                <FormRange
-                                    min={0}
-                                    max={ranges.length - 1}
-                                    value={activeInterval}
-                                    onChange={e => setActiveInterval(e.target.value)}
-                                    onMouseUp={e => onIntervalChanged(e.target.value)}
-                                />
-                            </Col>
-
-                            <Col md={1}>
-                                {ranges[activeInterval]}
                             </Col>
                         </Row>
                     </Toast.Header>
