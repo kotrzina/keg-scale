@@ -7,6 +7,23 @@ import (
 	"github.com/kotrzina/keg-scale/pkg/utils"
 )
 
+// shouldSendOpen applies the rules for sending a message when the pub is open
+// we don't want to spam the group with messages
+// it could happen for example when the scale is restarted or lost Wi-Fi connection for a while
+func (s *Scale) shouldSendOpen() bool {
+	// send message only once in 12 hours
+	if time.Since(s.pub.openedAt) < 12*time.Hour {
+		return false
+	}
+
+	// send message only if the pub was closed for at least 3 hours
+	if time.Since(s.pub.closedAt) < 3*time.Hour {
+		return false
+	}
+
+	return true
+}
+
 // sendWhatsAppOpen sends a message to the WhatsApp group when the pub is open.
 // The call is asynchronous
 func (s *Scale) sendWhatsAppOpen() {

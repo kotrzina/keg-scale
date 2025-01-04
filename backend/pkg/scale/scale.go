@@ -346,18 +346,16 @@ func (s *Scale) updatePub(isOpen bool) {
 	}
 
 	if isOpen {
-		lastOpenAt := s.pub.openedAt
-		s.pub.openedAt = time.Now()
-		if err := s.store.SetOpenAt(s.pub.openedAt); err != nil {
-			s.logger.Errorf("Could not set open_at time: %v", err)
-		}
-
-		// send message only once in 12 hours
-		if time.Since(lastOpenAt) > 12*time.Hour {
+		if s.shouldSendOpen() {
 			s.makeEvent(EventOpen)
 			s.sendWhatsAppOpen() // async
 		} else {
-			s.logger.Warningf("Pub is open, but the opening message has been skipped. Diff: %s", time.Since(lastOpenAt).String())
+			s.logger.Warningf("Pub is open, but the opening message has been skipped. Diff: %s", time.Since(s.pub.openedAt).String())
+		}
+
+		s.pub.openedAt = time.Now()
+		if err := s.store.SetOpenAt(s.pub.openedAt); err != nil {
+			s.logger.Errorf("Could not set open_at time: %v", err)
 		}
 	} else {
 		s.pub.closedAt = time.Now().Add(-1 * okLimit)
