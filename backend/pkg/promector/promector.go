@@ -9,11 +9,9 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/kotrzina/keg-scale/pkg/config"
-	"github.com/kotrzina/keg-scale/pkg/scale"
 	"github.com/kotrzina/keg-scale/pkg/utils"
 	"github.com/sirupsen/logrus"
 )
@@ -23,12 +21,8 @@ import (
 type Promector struct {
 	config *config.Config
 
-	scale  *scale.Scale
 	logger *logrus.Logger
 	ctx    context.Context
-
-	mtx   sync.RWMutex
-	cache Charts
 }
 
 type Response struct {
@@ -41,139 +35,18 @@ type Response struct {
 	} `json:"data"`
 }
 
-func NewPromector(ctx context.Context, c *config.Config, s *scale.Scale, logger *logrus.Logger) *Promector {
-	prom := &Promector{
-		config: c,
-
-		scale:  s,
-		logger: logger,
-		ctx:    ctx,
-
-		mtx: sync.RWMutex{},
-		cache: Charts{
-			BeersLeft: []ChartInterval{},
-			ActiveKeg: []ChartInterval{},
-		},
-	}
-
-	prom.Refresh() // first download on start
-	// periodically download data
-	go func(prom *Promector) {
-		tick := time.NewTicker(90 * time.Second)
-		defer tick.Stop()
-		for {
-			select {
-			case <-prom.ctx.Done():
-				prom.logger.Debug("Promector downloading stopped")
-				return
-			case <-tick.C:
-				prom.Refresh()
-				prom.logger.Debug("Promector cache refreshed")
-			}
-		}
-	}(prom)
-
-	return prom
-}
-
 type RangeRecord struct {
 	Label string `json:"label"`
 	Value int    `json:"value"`
 }
 
-type ChartInterval struct {
-	Interval string        `json:"interval"`
-	Values   []RangeRecord `json:"values"`
-}
+func NewPromector(ctx context.Context, c *config.Config, logger *logrus.Logger) *Promector {
+	return &Promector{
+		ctx: ctx,
 
-type Charts struct {
-	BeersLeft []ChartInterval `json:"beers_left"`
-	ActiveKeg []ChartInterval `json:"active_keg"`
-}
-
-func (p *Promector) Refresh() {
-	type request struct {
-		key   string
-		query string
-		start time.Time
-		end   time.Time
-		step  time.Duration
+		config: c,
+		logger: logger,
 	}
-
-	now := time.Now()
-	step := 5 * time.Minute
-	requests := []request{
-		{"scale_active_keg_7d", "scale_active_keg", now.Add(-7 * 24 * time.Hour), now, step},
-		{"scale_active_keg_14d", "scale_active_keg", now.Add(-14 * 24 * time.Hour), now, step},
-		{"scale_beers_left_1h", "scale_beers_left", now.Add(-1 * time.Hour), now, step},
-		{"scale_beers_left_3h", "scale_beers_left", now.Add(-3 * time.Hour), now, step},
-		{"scale_beers_left_6h", "scale_beers_left", now.Add(-6 * time.Hour), now, step},
-		{"scale_beers_left_24h", "scale_beers_left", now.Add(-24 * time.Hour), now, step},
-	}
-
-	opening := p.scale.GetOpeningOutput()
-
-	if opening.IsOpen {
-		// chart for current session
-		// let's take 10 minutes before opening to now
-		// step is calculated based on open duration - we want to have approx 30 points in the chart
-		dataStart := opening.OpenedAt.Add(-10 * time.Minute)
-		requests = append(requests, request{"scale_beers_left_now", "scale_beers_left", dataStart, now, step})
-	} else {
-		// chart for last session
-		// let's take 10 minutes before opening to closing time plus 10 minutes
-		// step is calculated based on open duration - we want to have approx 14 points in the chart
-		timeStart := opening.OpenedAt.Add(-10 * time.Minute)
-		timeEnd := opening.ClosedAt.Add(10 * time.Minute)
-		requests = append(requests, request{"scale_beers_left_last", "scale_beers_left", timeStart, timeEnd, step})
-	}
-
-	wg := sync.WaitGroup{}
-	wg.Add(len(requests))
-	results := make(map[string][]RangeRecord, len(requests))
-	mapMux := sync.Mutex{}
-
-	for _, req := range requests {
-		go func(r request) {
-			defer wg.Done()
-			data, err := p.GetRangeData(r.query, r.start, r.end, r.step)
-			if err != nil {
-				p.logger.Errorf("could not get range data for %s: %v", r.query, err)
-				return
-			}
-
-			// safely write result to the map
-			mapMux.Lock()
-			defer mapMux.Unlock()
-			results[r.key] = data
-		}(req)
-	}
-
-	wg.Wait()
-
-	p.mtx.Lock()
-	defer p.mtx.Unlock()
-	p.cache = Charts{
-		BeersLeft: []ChartInterval{
-			{"1h", results["scale_beers_left_1h"]},
-			{"3h", results["scale_beers_left_3h"]},
-			{"6h", results["scale_beers_left_6h"]},
-			{"24h", results["scale_beers_left_24h"]},
-			{"now", results["scale_beers_left_now"]},
-			{"last", results["scale_beers_left_last"]},
-		},
-		ActiveKeg: []ChartInterval{
-			{"7d", results["scale_active_keg_7d"]},
-			{"14d", results["scale_active_keg_14d"]},
-		},
-	}
-}
-
-func (p *Promector) GetChartData() Charts {
-	p.mtx.RLock()
-	defer p.mtx.RUnlock()
-
-	return p.cache
 }
 
 func (p *Promector) GetRangeData(query string, start, end time.Time, step time.Duration) ([]RangeRecord, error) {
@@ -252,8 +125,17 @@ func (p *Promector) GetRangeData(query string, start, end time.Time, step time.D
 			return nil, fmt.Errorf("could not convert value to int: %w", e)
 		}
 
+		type labelFormatter func(time.Time) string
+		var labelFunc labelFormatter
+		labelFunc = utils.FormatTime
+		if step >= 1*time.Hour {
+			labelFunc = func(t time.Time) string {
+				return t.In(utils.GetTz()).Format("2.1.")
+			}
+		}
+
 		records[i] = RangeRecord{
-			Label: utils.FormatTime(t),
+			Label: labelFunc(t),
 			Value: v,
 		}
 
@@ -279,6 +161,8 @@ func formatStep(step time.Duration) string {
 	if strings.Contains(f, "h0m") {
 		f = strings.TrimSuffix(f, "0m")
 	}
+
+	fmt.Println(f)
 
 	return f
 }

@@ -12,16 +12,6 @@ import Chat from "./Chat";
 
 function Dashboard() {
 
-    const defaultEmptyChart = [{
-        interval: "NO_DATA",
-        values: [
-            {
-                label: "0",
-                value: 0
-            }
-        ]
-    }];
-
     const defaultScale = {
         scale: {
             is_ok: false,
@@ -64,11 +54,6 @@ function Dashboard() {
                 }
             ],
             warehouse_beer_left: 0,
-        },
-
-        charts: {
-            beers_left: defaultEmptyChart,
-            active_keg: defaultEmptyChart,
         }
     }
 
@@ -218,8 +203,8 @@ function Dashboard() {
                 </Field>
             </Row>
 
-            <FieldChart title={"Zbýva piva"} chart={data.charts.beers_left} loading={showSpinner} stepped={false}/>
-            <FieldChart title={"Aktivní bečka"} chart={data.charts.active_keg} loading={showSpinner} stepped={true}/>
+            <FieldChart title={"Zbýva piva"} metric={"scale_beers_left"} defaultRange="ted" stepped={false}/>
+            <FieldChart title={"Aktivní bečka"} metric={"scale_active_keg"} defaultRange="2w" stepped={true}/>
 
 
             <Row className={"mt-4"}></Row>

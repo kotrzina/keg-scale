@@ -49,6 +49,7 @@ func NewRouter(hr *HandlerRepository) *mux.Router {
 	router.Handle("/metrics", hr.metricsHandler())
 	router.HandleFunc("/api/scale/push", hr.scaleMessageHandler())
 	router.HandleFunc("/api/scale/dashboard", hr.scaleDashboardHandler())
+	router.HandleFunc("/api/scale/chart", hr.scaleChartHandler())
 	router.HandleFunc("/api/scale/warehouse", hr.scaleWarehouseHandler())
 	router.HandleFunc("/api/ai/test", hr.aiTestHandler())
 

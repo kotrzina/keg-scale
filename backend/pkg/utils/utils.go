@@ -26,11 +26,11 @@ func FormatDate(t time.Time) string {
 		return ""
 	}
 
-	return t.In(getTz()).Format("2006-01-02 15:04:05")
+	return t.In(GetTz()).Format("2006-01-02 15:04:05")
 }
 
 func FormatWeekday(t time.Time) string {
-	return t.In(getTz()).Weekday().String()
+	return t.In(GetTz()).Weekday().String()
 }
 
 func FormatDateShort(t time.Time) string {
@@ -38,7 +38,7 @@ func FormatDateShort(t time.Time) string {
 		return ""
 	}
 
-	return t.In(getTz()).Format("02. 01.")
+	return t.In(GetTz()).Format("02. 01.")
 }
 
 func FormatTime(t time.Time) string {
@@ -46,10 +46,10 @@ func FormatTime(t time.Time) string {
 		return ""
 	}
 
-	return t.In(getTz()).Format("15:04")
+	return t.In(GetTz()).Format("15:04")
 }
 
-func getTz() *time.Location {
+func GetTz() *time.Location {
 	tz, err := time.LoadLocation("Europe/Prague")
 	if err != nil {
 		os.Stderr.WriteString("Failed to load timezone: " + err.Error())

@@ -2,9 +2,13 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
+	"regexp"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/kotrzina/keg-scale/pkg/ai"
 	"github.com/kotrzina/keg-scale/pkg/config"
@@ -135,13 +139,11 @@ func (hr *HandlerRepository) scaleDashboardHandler() func(http.ResponseWriter, *
 		hr.scale.Recheck()
 
 		type output struct {
-			Scale  scale.FullOutput `json:"scale"`
-			Charts promector.Charts `json:"charts"`
+			Scale scale.FullOutput `json:"scale"`
 		}
 
 		data := output{
-			Scale:  hr.scale.GetScale(),
-			Charts: hr.promector.GetChartData(),
+			Scale: hr.scale.GetScale(),
 		}
 
 		res, err := json.Marshal(data)
@@ -269,4 +271,120 @@ func (hr *HandlerRepository) checkPassword() func(http.ResponseWriter, *http.Req
 
 		w.WriteHeader(http.StatusNoContent)
 	}
+}
+
+func (hr *HandlerRepository) scaleChartHandler() func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, req *http.Request) {
+		metric := req.URL.Query().Get("metric")
+		interval := req.URL.Query().Get("interval")
+
+		allowedMetrics := []string{
+			"scale_beers_left",
+			"scale_active_keg",
+		}
+		if !listContains(allowedMetrics, metric) {
+			http.Error(w, "Now allowed metric", http.StatusBadRequest)
+			return
+		}
+
+		var err error
+		var start time.Time
+		end := time.Now()
+
+		if strings.EqualFold(interval, "ted") {
+			// if open return current session
+			// if closed return last session
+			pub := hr.scale.GetOpeningOutput()
+			start = pub.OpenedAt.Add(-10 * time.Minute)
+			if !pub.IsOpen {
+				end = pub.ClosedAt.Add(10 * time.Minute)
+			}
+		} else {
+			d, err := parseCustomDuration(interval)
+			if err != nil {
+				http.Error(w, "could not parse interval", http.StatusBadRequest)
+				return
+			}
+
+			// older than 4 years
+			if d > 4*365*24*time.Hour {
+				http.Error(w, "Interval too long", http.StatusBadRequest)
+				return
+			}
+
+			start = end.Add(-d)
+		}
+
+		delta := end.Sub(start) // duration between start and end
+
+		// we want to set reasonable step for the delta
+		step := 5 * time.Minute
+		if delta > 7*24*time.Hour {
+			step = 1 * time.Hour
+		}
+		if delta > 30*24*time.Hour {
+			step = 24 * time.Hour
+		}
+
+		data, err := hr.promector.GetRangeData(metric, start, end, step)
+		if err != nil {
+			hr.logger.Errorf("could not get range data for %s: %v", metric, err)
+			http.Error(w, "could not get range data", http.StatusInternalServerError)
+			return
+		}
+
+		res, err := json.Marshal(data)
+		if err != nil {
+			http.Error(w, "Could not marshal data to JSON", http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		_, err = w.Write(res)
+		if err != nil {
+			hr.logger.Errorf("Could not write response: %v", err)
+		}
+	}
+}
+
+var reCustomDuration = regexp.MustCompile(`^(\d{1,2})([hdwmy])$`)
+
+// parseCustomDuration parses custom duration string
+// e.g. 1h, 2d, 3w, 4m, 5y
+// it supports units which are not supported by time.ParseDuration
+func parseCustomDuration(input string) (time.Duration, error) {
+	matches := reCustomDuration.FindStringSubmatch(input)
+	if len(matches) != 3 {
+		return 0, fmt.Errorf("could not parse custom duration: %s", input)
+	}
+
+	var duration time.Duration
+	switch matches[2] {
+	case "h":
+		duration = time.Hour
+	case "d":
+		duration = 24 * time.Hour
+	case "w":
+		duration = 7 * 24 * time.Hour
+	case "m":
+		duration = 30 * 24 * time.Hour
+	case "y":
+		duration = 365 * 24 * time.Hour
+	}
+
+	n, err := strconv.Atoi(matches[1])
+	if err != nil {
+		return 0, fmt.Errorf("could not parse custom duration: %s", input)
+	}
+
+	return time.Duration(n) * duration, nil
+}
+
+func listContains(arr []string, item string) bool {
+	for _, v := range arr {
+		if strings.EqualFold(v, item) {
+			return true
+		}
+	}
+	return false
 }
