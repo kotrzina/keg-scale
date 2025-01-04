@@ -20,6 +20,7 @@ type Config struct {
 	PrometheusURL      string
 	PrometheusUser     string
 	PrometheusPassword string
+	PrometheusOrg      string
 
 	DBString string
 
@@ -42,6 +43,7 @@ func NewConfig() *Config {
 		PrometheusURL:      getStringEnvDefault("PROMETHEUS_URL", "http://localhost:9090"),
 		PrometheusUser:     getStringEnvDefault("PROMETHEUS_USER", "test"),
 		PrometheusPassword: getStringEnvDefault("PROMETHEUS_PASSWORD", "test"),
+		PrometheusOrg:      getStringEnvDefault("PROMETHEUS_ORG", "test"),
 
 		DBString: getStringEnvDefault("DB_STRING", "host=localhost port=5432 user=postgres password=admin dbname=pub sslmode=disable"),
 

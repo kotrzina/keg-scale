@@ -191,8 +191,9 @@ func (p *Promector) GetRangeData(query string, start, end time.Time, step time.D
 	req.URL.RawQuery = q.Encode()
 
 	req.Header.Add("Authorization", getBaseAuth(p.config.PrometheusUser, p.config.PrometheusPassword))
+	req.Header.Add("X-Scope-OrgID", p.config.PrometheusOrg)
 	client := &http.Client{
-		Timeout: 10 * time.Second, // Set the timeout duration here
+		Timeout: 15 * time.Second, // Set the timeout duration here
 	}
 
 	response, err := client.Do(req)
