@@ -90,3 +90,9 @@ func removeUnwantedHTML(doc string) string {
 	doc = strings.TrimSpace(doc)
 	return doc
 }
+
+var reHref = regexp.MustCompile(`href=".*?"`)
+
+func removeHrefs(doc string) string {
+	return reHref.ReplaceAllString(doc, "")
+}

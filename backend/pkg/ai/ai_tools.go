@@ -533,3 +533,47 @@ func (ai *Ai) sdhEventsTool() tool {
 		},
 	}
 }
+
+func (ai *Ai) tableTennisResultsTool() tool {
+	return tool{
+		Definition: anthropic.ToolDefinition{
+			Name:        "table_tennis_results",
+			Description: "Provides matches schedule and results of the table tennis league.",
+			InputSchema: jsonschema.Definition{
+				Type:       jsonschema.Object,
+				Properties: map[string]jsonschema.Definition{},
+				Required:   []string{},
+			},
+		},
+		Fn: func(_ string) (string, error) {
+			output, err := ProvideTableTennisResults()
+			if err != nil {
+				return "", fmt.Errorf("could not get table tennis data: %w", err)
+			}
+
+			return output, nil
+		},
+	}
+}
+
+func (ai *Ai) tableTennisTableTool() tool {
+	return tool{
+		Definition: anthropic.ToolDefinition{
+			Name:        "table_tennis_league_table",
+			Description: "Provides leaderboard table of the tennis league.",
+			InputSchema: jsonschema.Definition{
+				Type:       jsonschema.Object,
+				Properties: map[string]jsonschema.Definition{},
+				Required:   []string{},
+			},
+		},
+		Fn: func(_ string) (string, error) {
+			output, err := ProvideTableTennisLeagueTable()
+			if err != nil {
+				return "", fmt.Errorf("could not get table tennis data: %w", err)
+			}
+
+			return output, nil
+		},
+	}
+}
