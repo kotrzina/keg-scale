@@ -99,6 +99,7 @@ ${msg}
 The answer will be brief and clear. Always in Czech language. No XML tags. Do not moralize guests.
 Czech synonyms for beer keg: bečka = sud = keg
 Preferred wording: hospoda, bečka.
+Always use exact data from the tools. Do not invent data. Do not use data from the past.
 For supplier price list try to find all keg sizes. If you can't find the price for a specific keg size, return a message that the price is not available.
 `
 
