@@ -65,6 +65,7 @@ func NewAi(ctx context.Context, conf *config.Config, s *scale.Scale, m *promethe
 		ai.sdhEventsTool(),
 		ai.tableTennisResultsTool(),
 		ai.tableTennisTableTool(),
+		ai.lesempolemRegisteredTool(),
 	}
 
 	return ai
@@ -90,6 +91,7 @@ Facts:
 	- Veselice is a feminine word in Czech language
 	- contact person for intimate questions (hookes, sex, private) is Radim Boháč
 	- there is a table tennis team representing Veselice in the district league (okresni soutez)
+	- we organize running competition called Lesempolem every year
 
 Generate a response to the following message:
 <message>

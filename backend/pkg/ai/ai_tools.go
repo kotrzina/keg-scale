@@ -577,3 +577,25 @@ func (ai *Ai) tableTennisTableTool() tool {
 		},
 	}
 }
+
+func (ai *Ai) lesempolemRegisteredTool() tool {
+	return tool{
+		Definition: anthropic.ToolDefinition{
+			Name:        "running_lesempolem_registered",
+			Description: "Provides list of registered runners for the Lesempolem run with going to happen on 2025-05-10",
+			InputSchema: jsonschema.Definition{
+				Type:       jsonschema.Object,
+				Properties: map[string]jsonschema.Definition{},
+				Required:   []string{},
+			},
+		},
+		Fn: func(_ string) (string, error) {
+			output, err := ProviderLesempolemRegistered()
+			if err != nil {
+				return "", fmt.Errorf("could not get lesempolem data: %w", err)
+			}
+
+			return output, nil
+		},
+	}
+}
