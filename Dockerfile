@@ -5,7 +5,7 @@ WORKDIR /app
 RUN go build -ldflags "-s -w" -v -o keg-scale .
 
 
-FROM node:18 AS  frontend
+FROM node:23 AS  frontend
 ADD frontend /app
 WORKDIR /app
 RUN yarn
