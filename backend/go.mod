@@ -6,6 +6,7 @@ toolchain go1.23.4
 
 require (
 	github.com/antchfx/htmlquery v1.3.4
+	github.com/apognu/gocal v0.9.1
 	github.com/gorilla/mux v1.8.1
 	github.com/hako/durafmt v0.0.0-20210608085754-5c1018a4e16b
 	github.com/joho/godotenv v1.5.1
@@ -27,6 +28,7 @@ require (
 
 require (
 	filippo.io/edwards25519 v1.1.0 // indirect
+	github.com/ChannelMeter/iso8601duration v0.0.0-20150204201828-8da3af7a2a61 // indirect
 	github.com/PuerkitoBio/goquery v1.10.1 // indirect
 	github.com/andybalholm/cascadia v1.3.3 // indirect
 	github.com/antchfx/xpath v1.3.3 // indirect

@@ -66,6 +66,8 @@ func NewAi(ctx context.Context, conf *config.Config, s *scale.Scale, m *promethe
 		ai.tableTennisResultsTool(),
 		ai.tableTennisTableTool(),
 		ai.lesempolemRegisteredTool(),
+		ai.musicConcertsTool(),
+		ai.pubCalendarTool(),
 	}
 
 	return ai

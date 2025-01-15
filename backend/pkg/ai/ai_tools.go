@@ -599,3 +599,47 @@ func (ai *Ai) lesempolemRegisteredTool() tool {
 		},
 	}
 }
+
+func (ai *Ai) musicConcertsTool() tool {
+	return tool{
+		Definition: anthropic.ToolDefinition{
+			Name:        "music_concerts",
+			Description: "Provides music concerts and festivals which might be interesting for the pub visitors",
+			InputSchema: jsonschema.Definition{
+				Type:       jsonschema.Object,
+				Properties: map[string]jsonschema.Definition{},
+				Required:   []string{},
+			},
+		},
+		Fn: func(_ string) (string, error) {
+			output, err := ProvideCalendar(ai.config.CalendarConcertsURL, time.Now().Add(-30*24*time.Hour), time.Now().Add(365*24*time.Hour))
+			if err != nil {
+				return "", fmt.Errorf("could not get concerts calendar data: %w", err)
+			}
+
+			return output, nil
+		},
+	}
+}
+
+func (ai *Ai) pubCalendarTool() tool {
+	return tool{
+		Definition: anthropic.ToolDefinition{
+			Name:        "pub_calendar",
+			Description: "Events in the pub calendar (e.g. birthdays, parties, tap sanitizations, special beer days, etc.)",
+			InputSchema: jsonschema.Definition{
+				Type:       jsonschema.Object,
+				Properties: map[string]jsonschema.Definition{},
+				Required:   []string{},
+			},
+		},
+		Fn: func(_ string) (string, error) {
+			output, err := ProvideCalendar(ai.config.CalendarPubURL, time.Now().Add(-60*24*time.Hour), time.Now().Add(365*24*time.Hour))
+			if err != nil {
+				return "", fmt.Errorf("could not get pub calendar data: %w", err)
+			}
+
+			return output, nil
+		},
+	}
+}
