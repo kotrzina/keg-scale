@@ -252,6 +252,18 @@ func (b *Botka) aiHandler() wa.EventHandler {
 			return true // always match as a backup command
 		},
 		HandleFunc: func(from, msg string) error {
+			err := b.whatsapp.SetTyping(from, true)
+			if err != nil {
+				b.logger.Warnf("could not set typing: %v", err)
+			}
+
+			defer func() {
+				err := b.whatsapp.SetTyping(from, false)
+				if err != nil {
+					b.logger.Warnf("could not unset typing: %v", err)
+				}
+			}()
+
 			conversation, err := b.storage.GetConversation(from)
 			if err != nil {
 				return fmt.Errorf("could not get conversation: %w", err)
