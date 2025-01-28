@@ -626,7 +626,7 @@ func (ai *Ai) pubCalendarTool() tool {
 	return tool{
 		Definition: anthropic.ToolDefinition{
 			Name:        "pub_calendar",
-			Description: "Events in the pub calendar (e.g. birthdays, parties, tap sanitizations, special beer days, etc.)",
+			Description: "Calendar of events related to the pub or Veselice village (e.g. birthdays, parties, events, tap sanitizations, special beer days, etc.)",
 			InputSchema: jsonschema.Definition{
 				Type:       jsonschema.Object,
 				Properties: map[string]jsonschema.Definition{},
