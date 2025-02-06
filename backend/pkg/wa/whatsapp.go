@@ -138,6 +138,12 @@ func (wa *WhatsAppClient) handleIncomingMessage(msg *events.Message) {
 		text,
 	)
 
+	// ignore messages from open WhatsApp chat
+	if msg.Info.MessageSource.Chat.User == wa.config.WhatsAppOpenJid {
+		wa.logger.Infof("Ignoring message from %q", wa.config.WhatsAppOpenJid)
+		return
+	}
+
 	if len(text) > 500 {
 		wa.logger.Warnf("Message from %q is too long: %d", from, len(text))
 		return // do not process long messages
