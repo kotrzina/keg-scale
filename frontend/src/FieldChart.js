@@ -43,7 +43,7 @@ function FieldChart(props) {
     const [data, setData] = useState(defaultData);
     const [loading, setLoading] = useState(true);
 
-    const onIntervalChanged = useCallback(async (interval) => {
+    const reload = useCallback(async (interval) => {
         try {
             setLoading(true)
             const range = ranges[interval]
@@ -83,8 +83,19 @@ function FieldChart(props) {
         }
 
         setActiveInterval(index)
-        void onIntervalChanged(index)
-    }, [onIntervalChanged, props.defaultRange, ranges]);
+        void reload(index)
+    }, [reload, props.defaultRange, ranges]);
+
+    // reload data every 5 minutes
+    useEffect(() => {
+        const i = setInterval(() => {
+            void reload(activeInterval)
+        }, 1000 * 60 * 5)
+
+        return () => {
+            clearInterval(i)
+        }
+    }, [activeInterval, reload])
 
     return (
         <Row className={"mt-3"}>
@@ -102,8 +113,8 @@ function FieldChart(props) {
                                     max={ranges.length - 1}
                                     value={activeInterval}
                                     onChange={e => setActiveInterval(e.target.value)}
-                                    onMouseUp={e => onIntervalChanged(e.target.value)}
-                                    onTouchEnd={e => onIntervalChanged(e.target.value)}
+                                    onMouseUp={e => reload(e.target.value)}
+                                    onTouchEnd={e => reload(e.target.value)}
                                 />
                             </Col>
 
