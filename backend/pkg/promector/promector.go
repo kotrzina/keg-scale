@@ -162,7 +162,5 @@ func formatStep(step time.Duration) string {
 		f = strings.TrimSuffix(f, "0m")
 	}
 
-	fmt.Println(f)
-
 	return f
 }
