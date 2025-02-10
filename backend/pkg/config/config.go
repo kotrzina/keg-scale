@@ -26,6 +26,7 @@ type Config struct {
 
 	WhatsAppOpenJid string
 	AnthropicAPIKey string
+	OpenAiAPIKey    string
 
 	CalendarPubURL      string
 	CalendarConcertsURL string
@@ -52,6 +53,7 @@ func NewConfig() *Config {
 
 		WhatsAppOpenJid: getStringEnvDefault("WHATSAPP_OPEN_JID", ""),
 		AnthropicAPIKey: getStringEnvDefault("ANTHROPIC_API_KEY", ""),
+		OpenAiAPIKey:    getStringEnvDefault("OPENAI_API_KEY", ""),
 
 		CalendarPubURL:      getStringEnvDefault("CALENDAR_PUB_URL", ""),
 		CalendarConcertsURL: getStringEnvDefault("CALENDAR_CONCERTS_URL", ""),

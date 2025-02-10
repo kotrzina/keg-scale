@@ -17,6 +17,8 @@ type Monitor struct {
 
 	AnthropicInputTokens  *prometheus.CounterVec
 	AnthropicOutputTokens *prometheus.CounterVec
+	OpenAiInputTokens     *prometheus.CounterVec
+	OpenAiOutputTokens    *prometheus.CounterVec
 }
 
 // New creates a new Monitor
@@ -69,6 +71,16 @@ func New() *Monitor {
 			Name: "anthropic_output_tokens_total",
 			Help: "Number of output tokens processed by the AI",
 		}, []string{}),
+
+		OpenAiInputTokens: prometheus.NewCounterVec(prometheus.CounterOpts{
+			Name: "openai_input_tokens_total",
+			Help: "Number of input tokens processed by the Open AI",
+		}, []string{}),
+
+		OpenAiOutputTokens: prometheus.NewCounterVec(prometheus.CounterOpts{
+			Name: "openai_output_tokens_total",
+			Help: "Number of output tokens processed by the Open AI",
+		}, []string{}),
 	}
 
 	reg.MustRegister(
@@ -81,6 +93,8 @@ func New() *Monitor {
 		monitor.PubIsOpen,
 		monitor.AnthropicInputTokens,
 		monitor.AnthropicOutputTokens,
+		monitor.OpenAiInputTokens,
+		monitor.OpenAiOutputTokens,
 	)
 
 	return monitor

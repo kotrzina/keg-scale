@@ -3,26 +3,70 @@ package ai
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
+	"slices"
+	"strconv"
 	"time"
 
+	"github.com/kotrzina/keg-scale/pkg/config"
+	"github.com/kotrzina/keg-scale/pkg/scale"
 	"github.com/kotrzina/keg-scale/pkg/utils"
-	"github.com/liushuangls/go-anthropic/v2"
-	"github.com/liushuangls/go-anthropic/v2/jsonschema"
 	"github.com/mmcdole/gofeed"
+	"github.com/sirupsen/logrus"
+	"gopkg.in/yaml.v3"
 )
 
-func (ai *Ai) currentTimeTool() tool {
-	return tool{
-		Definition: anthropic.ToolDefinition{
-			Name:        "current_time",
-			Description: "Provides current day, date and time in Europe/Prague timezone",
-			InputSchema: jsonschema.Definition{
-				Type:       jsonschema.Object,
-				Properties: map[string]jsonschema.Definition{},
-				Required:   []string{""},
-			},
-		},
+type ToolFactory struct {
+	scale  *scale.Scale
+	config *config.Config
+	logger *logrus.Logger
+}
+
+func (tf *ToolFactory) GetTools() []Tool {
+	tools := []Tool{
+		tf.currentTimeTool(),
+		tf.isOpenTool(),
+		tf.pubOpenedAtTool(),
+		tf.pubClosedAtTool(),
+		tf.currentKegTools(),
+		tf.beersLeftTool(),
+		tf.kegTappedAtTool(),
+		tf.warehouseTotalTool(),
+		tf.warehouseKegTool(),
+		tf.scaleWifiStrengthTool(),
+		tf.suppliersTool(),
+		tf.localNewsTool(),
+		tf.tennisTool(),
+		tf.lunchMenuTool(),
+		tf.eventBlanskoTool(),
+		tf.siestaMenuTool(),
+		tf.weatherTool(),
+		tf.sdhEventsTool(),
+		tf.tableTennisResultsTool(),
+		tf.tableTennisTableTool(),
+		tf.lesempolemRegisteredTool(),
+		tf.musicConcertsTool(),
+		tf.pubCalendarTool(),
+	}
+
+	// concat with static tools
+	staticTools, err := tf.StaticTools()
+	if err != nil {
+		// ignore the error
+		// request will be handled without static tools
+		tf.logger.Errorf("could not get static tools: %v", err)
+	} else {
+		return slices.Concat(tools, staticTools)
+	}
+
+	return tools
+}
+
+func (tf *ToolFactory) currentTimeTool() Tool {
+	return Tool{
+		Name:        "current_time",
+		Description: "Provides current day, date and time in Europe/Prague timezone",
 		Fn: func(_ string) (string, error) {
 			now := time.Now()
 			return fmt.Sprintf("%s, %s", utils.FormatWeekday(now), utils.FormatDate(now)), nil
@@ -30,19 +74,12 @@ func (ai *Ai) currentTimeTool() tool {
 	}
 }
 
-func (ai *Ai) isOpenTool() tool {
-	return tool{
-		Definition: anthropic.ToolDefinition{
-			Name:        "is_pub_open",
-			Description: "Returns whether the pub is open or closed.",
-			InputSchema: jsonschema.Definition{
-				Type:       jsonschema.Object,
-				Properties: map[string]jsonschema.Definition{},
-				Required:   []string{""},
-			},
-		},
+func (tf *ToolFactory) isOpenTool() Tool {
+	return Tool{
+		Name:        "is_pub_open",
+		Description: "Returns whether the pub is open or closed.",
 		Fn: func(_ string) (string, error) {
-			data := ai.scale.GetScale()
+			data := tf.scale.GetScale()
 			if data.Pub.IsOpen {
 				return "The pub is open.", nil
 			}
@@ -52,19 +89,12 @@ func (ai *Ai) isOpenTool() tool {
 	}
 }
 
-func (ai *Ai) pubOpenedAtTool() tool {
-	return tool{
-		Definition: anthropic.ToolDefinition{
-			Name:        "pub_open_at",
-			Description: "Returns the date and time the pub was opened in Europe/Prague timezone.",
-			InputSchema: jsonschema.Definition{
-				Type:       jsonschema.Object,
-				Properties: map[string]jsonschema.Definition{},
-				Required:   []string{""},
-			},
-		},
+func (tf *ToolFactory) pubOpenedAtTool() Tool {
+	return Tool{
+		Name:        "pub_open_at",
+		Description: "Returns the date and time the pub was opened in Europe/Prague timezone.",
 		Fn: func(_ string) (string, error) {
-			data := ai.scale.GetScale()
+			data := tf.scale.GetScale()
 			if !data.Pub.IsOpen {
 				return "The pub is closed.", nil
 			}
@@ -74,19 +104,12 @@ func (ai *Ai) pubOpenedAtTool() tool {
 	}
 }
 
-func (ai *Ai) pubClosedAtTool() tool {
-	return tool{
-		Definition: anthropic.ToolDefinition{
-			Name:        "pub_close_at",
-			Description: "Returns the date and time when the pub was closed last.",
-			InputSchema: jsonschema.Definition{
-				Type:       jsonschema.Object,
-				Properties: map[string]jsonschema.Definition{},
-				Required:   []string{""},
-			},
-		},
+func (tf *ToolFactory) pubClosedAtTool() Tool {
+	return Tool{
+		Name:        "pub_close_at",
+		Description: "Returns the date and time when the pub was closed last.",
 		Fn: func(_ string) (string, error) {
-			data := ai.scale.GetScale()
+			data := tf.scale.GetScale()
 			if data.Pub.IsOpen {
 				return "The pub is open.", nil
 			}
@@ -96,19 +119,12 @@ func (ai *Ai) pubClosedAtTool() tool {
 	}
 }
 
-func (ai *Ai) currentKegTools() tool {
-	return tool{
-		Definition: anthropic.ToolDefinition{
-			Name:        "current_keg",
-			Description: "If there is an active keg, it provides its size in liters",
-			InputSchema: jsonschema.Definition{
-				Type:       jsonschema.Object,
-				Properties: map[string]jsonschema.Definition{},
-				Required:   []string{""},
-			},
-		},
+func (tf *ToolFactory) currentKegTools() Tool {
+	return Tool{
+		Name:        "current_keg",
+		Description: "If there is an active keg, it provides its size in liters",
 		Fn: func(_ string) (string, error) {
-			data := ai.scale.GetScale()
+			data := tf.scale.GetScale()
 			if data.ActiveKeg == 0 {
 				return "There is no active keg.", nil
 			}
@@ -120,19 +136,12 @@ func (ai *Ai) currentKegTools() tool {
 	}
 }
 
-func (ai *Ai) beersLeftTool() tool {
-	return tool{
-		Definition: anthropic.ToolDefinition{
-			Name:        "beers_left",
-			Description: "Returns the number of beers left in the active keg.",
-			InputSchema: jsonschema.Definition{
-				Type:       jsonschema.Object,
-				Properties: map[string]jsonschema.Definition{},
-				Required:   []string{""},
-			},
-		},
+func (tf *ToolFactory) beersLeftTool() Tool {
+	return Tool{
+		Name:        "beers_left",
+		Description: "Returns the number of beers left in the active keg.",
 		Fn: func(_ string) (string, error) {
-			data := ai.scale.GetScale()
+			data := tf.scale.GetScale()
 			if data.ActiveKeg == 0 {
 				return "There is no active keg.", nil
 			}
@@ -142,19 +151,12 @@ func (ai *Ai) beersLeftTool() tool {
 	}
 }
 
-func (ai *Ai) kegTappedAtTool() tool {
-	return tool{
-		Definition: anthropic.ToolDefinition{
-			Name:        "keg_tapped_at",
-			Description: "Returns the date and time the active keg was tapped in Europe/Prague timezone.",
-			InputSchema: jsonschema.Definition{
-				Type:       jsonschema.Object,
-				Properties: map[string]jsonschema.Definition{},
-				Required:   []string{""},
-			},
-		},
+func (tf *ToolFactory) kegTappedAtTool() Tool {
+	return Tool{
+		Name:        "keg_tapped_at",
+		Description: "Returns the date and time the active keg was tapped in Europe/Prague timezone.",
 		Fn: func(_ string) (string, error) {
-			data := ai.scale.GetScale()
+			data := tf.scale.GetScale()
 			if data.ActiveKeg == 0 {
 				return "There is no active keg.", nil
 			}
@@ -164,103 +166,92 @@ func (ai *Ai) kegTappedAtTool() tool {
 	}
 }
 
-func (ai *Ai) warehouseTotalTool() tool {
-	return tool{
-		Definition: anthropic.ToolDefinition{
-			Name:        "warehouse_total",
-			Description: "Returns the total number of beers in the warehouse",
-			InputSchema: jsonschema.Definition{
-				Type:       jsonschema.Object,
-				Properties: map[string]jsonschema.Definition{},
-				Required:   []string{""},
-			},
-		},
+func (tf *ToolFactory) warehouseTotalTool() Tool {
+	return Tool{
+		Name:        "warehouse_total",
+		Description: "Returns the total number of beers in the warehouse",
 		Fn: func(_ string) (string, error) {
-			data := ai.scale.GetScale()
+			data := tf.scale.GetScale()
 
 			return fmt.Sprintf("%d beers", data.WarehouseBeerLeft), nil
 		},
 	}
 }
 
-func (ai *Ai) warehouseKegTool() tool {
-	return tool{
-		Definition: anthropic.ToolDefinition{
-			Name:        "warehouse_kegs",
-			Description: "Returns amount of kegs in the warehouse for a specific keg size",
-			InputSchema: jsonschema.Definition{
-				Type: jsonschema.Object,
-				Properties: map[string]jsonschema.Definition{
-					"keg_size": {
-						Type:        jsonschema.Integer,
-						Enum:        []string{"10", "15", "20", "30", "50"},
-						Description: "The size of the keg in liters",
-					},
+func (tf *ToolFactory) warehouseKegTool() Tool {
+	return Tool{
+		Name:        "warehouse_kegs",
+		Description: "Returns amount of kegs in the warehouse for a specific keg size",
+		HasSchema:   true,
+		Schema: Property{
+			Type: SchemaTypeObject,
+			Properties: map[string]Property{
+				"keg_size": {
+					Type:        SchemaTypeString,
+					Enum:        []interface{}{"10", "15", "20", "30", "50"},
+					Description: "The size of the keg in liters",
 				},
-				Required: []string{"keg_size"},
 			},
+			Required: []string{"keg_size"},
 		},
 		Fn: func(input string) (string, error) {
-			scale := ai.scale.GetScale()
+			s := tf.scale.GetScale()
 
 			var data struct {
-				KegSize int `json:"keg_size"`
+				KegSize string `json:"keg_size"`
 			}
 
 			if err := json.Unmarshal([]byte(input), &data); err != nil {
 				return "", fmt.Errorf("error unmarshalling input: %w", err)
 			}
 
-			for _, keg := range scale.Warehouse {
-				if keg.Keg == data.KegSize {
+			kegSize, err := strconv.Atoi(data.KegSize)
+			if err != nil {
+				return "Invalid keg size", fmt.Errorf("invalid keg size: %w", err)
+			}
+
+			for _, keg := range s.Warehouse {
+				if keg.Keg == kegSize {
 					return fmt.Sprintf("%d", keg.Amount), nil
 				}
 			}
 
-			return "This keg size does not exist", fmt.Errorf("keg size %d does not exist", data.KegSize)
+			return "This keg size does not exist", fmt.Errorf("keg size %s does not exist", data.KegSize)
 		},
 	}
 }
 
-func (ai *Ai) scaleWifiStrengthTool() tool {
-	return tool{
-		Definition: anthropic.ToolDefinition{
-			Name:        "scale_wifi_strength",
-			Description: "Returns the wifi strength of the scale in dBm.",
-			InputSchema: jsonschema.Definition{
-				Type:       jsonschema.Object,
-				Properties: map[string]jsonschema.Definition{},
-				Required:   []string{""},
-			},
-		},
+func (tf *ToolFactory) scaleWifiStrengthTool() Tool {
+	return Tool{
+		Name:        "scale_wifi_strength",
+		Description: "Returns the wifi strength of the scale in dBm.",
 		Fn: func(_ string) (string, error) {
-			scale := ai.scale.GetScale()
+			s := tf.scale.GetScale()
 
-			if !scale.Pub.IsOpen {
+			if !s.Pub.IsOpen {
 				return "The pub is closed and scale is not working", nil
 			}
 
-			return fmt.Sprintf("%.2f dBm", scale.Rssi), nil
+			return fmt.Sprintf("%.2f dBm", s.Rssi), nil
 		},
 	}
 }
 
-func (ai *Ai) suppliersTool() tool {
-	return tool{
-		Definition: anthropic.ToolDefinition{
-			Name:        "supplier_beer_price_list",
-			Description: "Provides beer prices (list) for the specific supplier. Response contains a json document with beer title and price. There might be multiple results for a single brand with various sizes and beer types! The structure is flat - it means there is no structure for brands and keg sizes. Title usually contains the size of the keg and the type of beer. Always try to find all sizes and prices.",
-			InputSchema: jsonschema.Definition{
-				Type: jsonschema.Object,
-				Properties: map[string]jsonschema.Definition{
-					"supplier_name": {
-						Type:        jsonschema.String,
-						Enum:        []string{"baracek", "maneo"},
-						Description: "Supplier name",
-					},
+func (tf *ToolFactory) suppliersTool() Tool {
+	return Tool{
+		Name:        "supplier_beer_price_list",
+		Description: "Provides beer prices list for the specific supplier. Response contains a json document with beer title and price. There might be multiple results for a single brand with various sizes and beer types! The structure is flat - it means there is no structure for brands and keg sizes. Title usually contains the size of the keg and the type of beer. Always try to find all sizes and prices.",
+		HasSchema:   true,
+		Schema: Property{
+			Type: SchemaTypeObject,
+			Properties: map[string]Property{
+				"supplier_name": {
+					Type:        SchemaTypeString,
+					Enum:        []interface{}{"baracek", "maneo"},
+					Description: "Supplier name",
 				},
-				Required: []string{"supplier_name"},
 			},
+			Required: []string{"supplier_name"},
 		},
 		Fn: func(input string) (string, error) {
 			var data struct {
@@ -291,17 +282,10 @@ func (ai *Ai) suppliersTool() tool {
 	}
 }
 
-func (ai *Ai) localNewsTool() tool {
-	return tool{
-		Definition: anthropic.ToolDefinition{
-			Name:        "local_news_events",
-			Description: "Returns local news, events, announcements as a json. Source is the government website.",
-			InputSchema: jsonschema.Definition{
-				Type:       jsonschema.Object,
-				Properties: map[string]jsonschema.Definition{},
-				Required:   []string{""},
-			},
-		},
+func (tf *ToolFactory) localNewsTool() Tool {
+	return Tool{
+		Name:        "local_news_events",
+		Description: "Returns local news, events, announcements as a json. Source is the government website.",
 		Fn: func(_ string) (string, error) {
 			type Entry struct {
 				Title    string `json:"title"`
@@ -359,22 +343,21 @@ func (ai *Ai) localNewsTool() tool {
 	}
 }
 
-func (ai *Ai) tennisTool() tool {
-	return tool{
-		Definition: anthropic.ToolDefinition{
-			Name:        "tennis_results",
-			Description: "Results of the tennis tournament called Veselice Open. You can get results for every tournament separately. The result is a webpage with results. Page also contains links to the photo library.",
-			InputSchema: jsonschema.Definition{
-				Type: jsonschema.Object,
-				Properties: map[string]jsonschema.Definition{
-					"tournament_name": {
-						Type:        jsonschema.Integer,
-						Enum:        []string{"2023-debl", "2024-singl"},
-						Description: "The name of the tournament. Usually the year and type of the tournament.",
-					},
+func (tf *ToolFactory) tennisTool() Tool {
+	return Tool{
+		Name:        "tennis_results",
+		Description: "Results of the tennis tournament called Veselice Open. You can get results for every tournament separately. The result is a webpage with results. Page also contains links to the photo library.",
+		HasSchema:   true,
+		Schema: Property{
+			Type: SchemaTypeObject,
+			Properties: map[string]Property{
+				"tournament_name": {
+					Type:        SchemaTypeString,
+					Enum:        []interface{}{"2023-debl", "2024-singl"},
+					Description: "The name of the tournament. Usually the year and type of the tournament.",
 				},
-				Required: []string{"tournament_name"},
 			},
+			Required: []string{"tournament_name"},
 		},
 		Fn: func(input string) (string, error) {
 			var i struct {
@@ -397,22 +380,21 @@ func (ai *Ai) tennisTool() tool {
 	}
 }
 
-func (ai *Ai) lunchMenuTool() tool {
-	return tool{
-		Definition: anthropic.ToolDefinition{
-			Name:        "lunch_menu",
-			Description: "Provides lunch menu for the restaurants nearby (Restaurace Obůrka, Hotel Broušek, Penzion U Hrabenky). The result is a webpage with the menu. The page might be outdated for current week. Restaurants usually provide unique meals for each day. They also might have some meals for the whole week.",
-			InputSchema: jsonschema.Definition{
-				Type: jsonschema.Object,
-				Properties: map[string]jsonschema.Definition{
-					"restaurant_name": {
-						Type:        jsonschema.Integer,
-						Enum:        []string{"oburka", "brousek", "hrabenka"},
-						Description: "The name of the restaurant",
-					},
+func (tf *ToolFactory) lunchMenuTool() Tool {
+	return Tool{
+		Name:        "lunch_menu",
+		Description: "Provides lunch menu for the restaurants nearby (Restaurace Obůrka, Hotel Broušek, Penzion U Hrabenky). The result is a webpage with the menu. The page might be outdated for current week. Restaurants usually provide unique meals for each day. They also might have some meals for the whole week.",
+		HasSchema:   true,
+		Schema: Property{
+			Type: SchemaTypeObject,
+			Properties: map[string]Property{
+				"restaurant_name": {
+					Type:        SchemaTypeString,
+					Enum:        []interface{}{"oburka", "brousek", "hrabenka"},
+					Description: "The name of the restaurant",
 				},
-				Required: []string{"restaurant_name"},
 			},
+			Required: []string{"restaurant_name"},
 		},
 		Fn: func(input string) (string, error) {
 			var i struct {
@@ -446,17 +428,10 @@ func (ai *Ai) lunchMenuTool() tool {
 	}
 }
 
-func (ai *Ai) eventBlanskoTool() tool {
-	return tool{
-		Definition: anthropic.ToolDefinition{
-			Name:        "events_blansko",
-			Description: "Provides culture events in Blansko. Tool returns json structure. The source is the website akceblansko.cz. Includes timetable of the cinema, concerts, etc. Make sure to check exact dates for events and provide exact event names/movies",
-			InputSchema: jsonschema.Definition{
-				Type:       jsonschema.Object,
-				Properties: map[string]jsonschema.Definition{},
-				Required:   []string{},
-			},
-		},
+func (tf *ToolFactory) eventBlanskoTool() Tool {
+	return Tool{
+		Name:        "events_blansko",
+		Description: "Provides culture events in Blansko. Tool returns json structure. The source is the website akceblansko.cz. Includes timetable of the cinema, concerts, etc. Make sure to check exact dates for events and provide exact event names/movies",
 		Fn: func(_ string) (string, error) {
 			data, err := ProvideEventsBlansko()
 			if err != nil {
@@ -468,17 +443,10 @@ func (ai *Ai) eventBlanskoTool() tool {
 	}
 }
 
-func (ai *Ai) siestaMenuTool() tool {
-	return tool{
-		Definition: anthropic.ToolDefinition{
-			Name:        "siesta_pizza",
-			Description: "Provides pizza menu from Siesta Pizza. The Siesta is usually used for the pizza delivery in our pub. Pizza is always 32 cm.",
-			InputSchema: jsonschema.Definition{
-				Type:       jsonschema.Object,
-				Properties: map[string]jsonschema.Definition{},
-				Required:   []string{},
-			},
-		},
+func (tf *ToolFactory) siestaMenuTool() Tool {
+	return Tool{
+		Name:        "siesta_pizza",
+		Description: "Provides pizza menu from Siesta Pizza. The Siesta is usually used for the pizza delivery in our pub. Pizza is always 32 cm.",
 		Fn: func(_ string) (string, error) {
 			output, err := ProvideSiestaMenu()
 			if err != nil {
@@ -490,17 +458,10 @@ func (ai *Ai) siestaMenuTool() tool {
 	}
 }
 
-func (ai *Ai) weatherTool() tool {
-	return tool{
-		Definition: anthropic.ToolDefinition{
-			Name:        "weather",
-			Description: "Provides current weather in Veselice. Json contains hourly forecast and contains temperature, participation, wind speed, cloudiness and wind direction. It also containers forecast for the next 3 days.",
-			InputSchema: jsonschema.Definition{
-				Type:       jsonschema.Object,
-				Properties: map[string]jsonschema.Definition{},
-				Required:   []string{},
-			},
-		},
+func (tf *ToolFactory) weatherTool() Tool {
+	return Tool{
+		Name:        "weather",
+		Description: "Provides current weather in Veselice. Json contains hourly forecast and contains temperature, participation, wind speed, cloudiness and wind direction. It also containers forecast for the next 3 days.",
 		Fn: func(_ string) (string, error) {
 			output, err := ProvideWeather()
 			if err != nil {
@@ -512,17 +473,10 @@ func (ai *Ai) weatherTool() tool {
 	}
 }
 
-func (ai *Ai) sdhEventsTool() tool {
-	return tool{
-		Definition: anthropic.ToolDefinition{
-			Name:        "sdh_events",
-			Description: "Provides news and events from the local fire department (SDH Veselice). The source is the website sdhveselice.cz.",
-			InputSchema: jsonschema.Definition{
-				Type:       jsonschema.Object,
-				Properties: map[string]jsonschema.Definition{},
-				Required:   []string{},
-			},
-		},
+func (tf *ToolFactory) sdhEventsTool() Tool {
+	return Tool{
+		Name:        "sdh_events",
+		Description: "Provides news and events from the local fire department (SDH Veselice). The source is the website sdhveselice.cz.",
 		Fn: func(_ string) (string, error) {
 			output, err := ProvideSdhEvents()
 			if err != nil {
@@ -534,17 +488,10 @@ func (ai *Ai) sdhEventsTool() tool {
 	}
 }
 
-func (ai *Ai) tableTennisResultsTool() tool {
-	return tool{
-		Definition: anthropic.ToolDefinition{
-			Name:        "table_tennis_results",
-			Description: "Provides matches schedule and results of the table tennis league.",
-			InputSchema: jsonschema.Definition{
-				Type:       jsonschema.Object,
-				Properties: map[string]jsonschema.Definition{},
-				Required:   []string{},
-			},
-		},
+func (tf *ToolFactory) tableTennisResultsTool() Tool {
+	return Tool{
+		Name:        "table_tennis_results",
+		Description: "Provides matches schedule and results of the table tennis league.",
 		Fn: func(_ string) (string, error) {
 			output, err := ProvideTableTennisResults()
 			if err != nil {
@@ -556,17 +503,10 @@ func (ai *Ai) tableTennisResultsTool() tool {
 	}
 }
 
-func (ai *Ai) tableTennisTableTool() tool {
-	return tool{
-		Definition: anthropic.ToolDefinition{
-			Name:        "table_tennis_league_table",
-			Description: "Provides leaderboard table of the tennis league.",
-			InputSchema: jsonschema.Definition{
-				Type:       jsonschema.Object,
-				Properties: map[string]jsonschema.Definition{},
-				Required:   []string{},
-			},
-		},
+func (tf *ToolFactory) tableTennisTableTool() Tool {
+	return Tool{
+		Name:        "table_tennis_league_table",
+		Description: "Provides leaderboard table of the tennis league.",
 		Fn: func(_ string) (string, error) {
 			output, err := ProvideTableTennisLeagueTable()
 			if err != nil {
@@ -578,17 +518,10 @@ func (ai *Ai) tableTennisTableTool() tool {
 	}
 }
 
-func (ai *Ai) lesempolemRegisteredTool() tool {
-	return tool{
-		Definition: anthropic.ToolDefinition{
-			Name:        "running_lesempolem_registered",
-			Description: "Provides list of registered runners for the Lesempolem run with going to happen on 2025-05-10",
-			InputSchema: jsonschema.Definition{
-				Type:       jsonschema.Object,
-				Properties: map[string]jsonschema.Definition{},
-				Required:   []string{},
-			},
-		},
+func (tf *ToolFactory) lesempolemRegisteredTool() Tool {
+	return Tool{
+		Name:        "running_lesempolem_registered",
+		Description: "Provides list of registered runners for the Lesempolem run with going to happen on 2025-05-10",
 		Fn: func(_ string) (string, error) {
 			output, err := ProviderLesempolemRegistered()
 			if err != nil {
@@ -600,19 +533,12 @@ func (ai *Ai) lesempolemRegisteredTool() tool {
 	}
 }
 
-func (ai *Ai) musicConcertsTool() tool {
-	return tool{
-		Definition: anthropic.ToolDefinition{
-			Name:        "music_concerts",
-			Description: "Provides music concerts and festivals which might be interesting for the pub visitors",
-			InputSchema: jsonschema.Definition{
-				Type:       jsonschema.Object,
-				Properties: map[string]jsonschema.Definition{},
-				Required:   []string{},
-			},
-		},
+func (tf *ToolFactory) musicConcertsTool() Tool {
+	return Tool{
+		Name:        "music_concerts",
+		Description: "Provides music concerts and festivals which might be interesting for the pub visitors",
 		Fn: func(_ string) (string, error) {
-			output, err := ProvideCalendar(ai.config.CalendarConcertsURL, time.Now().Add(-30*24*time.Hour), time.Now().Add(365*24*time.Hour))
+			output, err := ProvideCalendar(tf.config.CalendarConcertsURL, time.Now().Add(-30*24*time.Hour), time.Now().Add(365*24*time.Hour))
 			if err != nil {
 				return "", fmt.Errorf("could not get concerts calendar data: %w", err)
 			}
@@ -622,19 +548,12 @@ func (ai *Ai) musicConcertsTool() tool {
 	}
 }
 
-func (ai *Ai) pubCalendarTool() tool {
-	return tool{
-		Definition: anthropic.ToolDefinition{
-			Name:        "pub_calendar",
-			Description: "Calendar of events related to the pub or Veselice village (e.g. birthdays, parties, events, tap sanitizations, special beer days, etc.)",
-			InputSchema: jsonschema.Definition{
-				Type:       jsonschema.Object,
-				Properties: map[string]jsonschema.Definition{},
-				Required:   []string{},
-			},
-		},
+func (tf *ToolFactory) pubCalendarTool() Tool {
+	return Tool{
+		Name:        "pub_calendar",
+		Description: "Calendar of events related to the pub or Veselice village (e.g. birthdays, parties, events, tap sanitizations, special beer days, etc.)",
 		Fn: func(_ string) (string, error) {
-			output, err := ProvideCalendar(ai.config.CalendarPubURL, time.Now().Add(-60*24*time.Hour), time.Now().Add(365*24*time.Hour))
+			output, err := ProvideCalendar(tf.config.CalendarPubURL, time.Now().Add(-60*24*time.Hour), time.Now().Add(365*24*time.Hour))
 			if err != nil {
 				return "", fmt.Errorf("could not get pub calendar data: %w", err)
 			}
@@ -642,4 +561,46 @@ func (ai *Ai) pubCalendarTool() tool {
 			return output, nil
 		},
 	}
+}
+
+type StaticConfig struct {
+	Tools []struct {
+		Name        string `yaml:"name"`
+		Type        string `yaml:"type"`
+		Description string `yaml:"description"`
+		Result      string `yaml:"result"`
+	} `yaml:"tools"`
+}
+
+func (tf *ToolFactory) StaticTools() ([]Tool, error) {
+	url := "https://static.kozak.in/pub-ai/static.yml"
+	resp, err := http.DefaultClient.Get(url)
+	if err != nil {
+		return nil, fmt.Errorf("could not get static tools: %w", err)
+	}
+
+	defer resp.Body.Close()
+
+	staticContent, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("could not read response body: %w", err)
+	}
+
+	var sConfig StaticConfig
+	if err := yaml.Unmarshal(staticContent, &sConfig); err != nil {
+		return nil, fmt.Errorf("could not unmarshal StaticConfig content: %w", err)
+	}
+
+	tools := make([]Tool, len(sConfig.Tools))
+	for i, t := range sConfig.Tools {
+		tools[i] = Tool{
+			Name:        t.Name,
+			Description: t.Description,
+			Fn: func(_ string) (string, error) {
+				return t.Result, nil
+			},
+		}
+	}
+
+	return tools, nil
 }

@@ -2,77 +2,16 @@ package ai
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"slices"
-	"strings"
-	"time"
 
 	"github.com/kotrzina/keg-scale/pkg/config"
 	"github.com/kotrzina/keg-scale/pkg/prometheus"
 	"github.com/kotrzina/keg-scale/pkg/scale"
-	"github.com/kotrzina/keg-scale/pkg/utils"
-	"github.com/liushuangls/go-anthropic/v2"
 	"github.com/sirupsen/logrus"
 )
 
-type Ai struct {
-	client *anthropic.Client
-
-	config  *config.Config
-	monitor *prometheus.Monitor
-	scale   *scale.Scale
-	ctx     context.Context
-	logger  *logrus.Logger
-
-	tools []tool
-}
-
-type tool struct {
-	Definition anthropic.ToolDefinition
-	Fn         func(input string) (string, error)
-}
-
-func NewAi(ctx context.Context, conf *config.Config, s *scale.Scale, m *prometheus.Monitor, l *logrus.Logger) *Ai {
-	ai := &Ai{
-		client: anthropic.NewClient(conf.AnthropicAPIKey),
-
-		config:  conf,
-		monitor: m,
-		scale:   s,
-		ctx:     ctx,
-		logger:  l,
-	}
-
-	ai.tools = []tool{
-		ai.currentTimeTool(),
-		ai.isOpenTool(),
-		ai.pubOpenedAtTool(),
-		ai.pubClosedAtTool(),
-		ai.currentKegTools(),
-		ai.beersLeftTool(),
-		ai.kegTappedAtTool(),
-		ai.warehouseTotalTool(),
-		ai.warehouseKegTool(),
-		ai.scaleWifiStrengthTool(),
-		ai.suppliersTool(),
-		ai.localNewsTool(),
-		ai.tennisTool(),
-		ai.lunchMenuTool(),
-		ai.eventBlanskoTool(),
-		ai.siestaMenuTool(),
-		ai.weatherTool(),
-		ai.sdhEventsTool(),
-		ai.tableTennisResultsTool(),
-		ai.tableTennisTableTool(),
-		ai.lesempolemRegisteredTool(),
-		ai.musicConcertsTool(),
-		ai.pubCalendarTool(),
-	}
-
-	return ai
-}
-
+// Prompt is the most important part of the AI. It is the soul of the bot.
+// Mr. Botka lives here
 const Prompt = `
 You are a bot in a pub. Your name is <name>Pan Botka</name> (Mr. Botka in English).
 The pub has a keg scale connected to the internet via wifi. 
@@ -102,10 +41,36 @@ ${msg}
 
 The answer will be brief and clear. Always in Czech language. No XML tags. Do not moralize guests.
 Czech synonyms for beer keg: bečka = sud = keg
-Preferred wording: hospoda, bečka.
-Always use exact data from the tools. Do not invent data. Do not use data from the past.
-For supplier price list try to find all keg sizes. If you can't find the price for a specific keg size, return a message that the price is not available.
+Preferred wording: hospoda, bečka. 
+Provide only verified and up-to-date information. If unsure, use the appropriate tool instead of making assumptions.
 `
+
+type Provider interface {
+	GetResponse(history []ChatMessage) (Response, error)
+}
+
+type Ai struct {
+	providers map[string]Provider
+}
+
+func NewAi(ctx context.Context, conf *config.Config, s *scale.Scale, m *prometheus.Monitor, l *logrus.Logger) *Ai {
+	return &Ai{
+		providers: map[string]Provider{
+			"openai":    NewOpenAi(ctx, conf, s, m, l),
+			"anthropic": NewAnthropic(ctx, conf, s, m, l),
+		},
+	}
+}
+
+func (ai *Ai) GetResponse(history []ChatMessage) (Response, error) {
+	const providerName = "anthropic"
+	p, ok := ai.providers[providerName]
+	if !ok {
+		return Response{}, fmt.Errorf("unknown provider: %s", providerName)
+	}
+
+	return p.GetResponse(history)
+}
 
 type ChatMessage struct {
 	Text string `json:"text"`
@@ -122,127 +87,47 @@ type Cost struct {
 	Output int `json:"output"`
 }
 
-const Me = "me" // user
+type SchemaType uint8
 
-func (ai *Ai) GetResponse(history []ChatMessage) (Response, error) {
-	output := Response{
-		Text: "",
-		Cost: Cost{
-			Input:  0,
-			Output: 0,
-		},
-	}
+const (
+	SchemaTypeObject SchemaType = iota
+	SchemaTypeArray
+	SchemaTypeBoolean
+	SchemaTypeInteger
+	SchemaTypeString
+)
 
-	if len(history) == 0 {
-		return output, errors.New("no messages")
-	}
+type Tool struct {
+	Name        string
+	Description string
+	HasSchema   bool
+	Schema      Property
 
-	messages := make([]anthropic.Message, len(history))
-	for i, message := range history {
-		switch {
-		case message.From == Me && i == 0:
-			// first message from user is special
-			// we want to use full Prompt
-			m := strings.ReplaceAll(Prompt, "${msg}", message.Text)
-			m = strings.ReplaceAll(m, "${datetime}", utils.FormatDate(time.Now()))
-			messages[i] = anthropic.NewUserTextMessage(m)
-		case message.From == Me:
-			// all other messages from user
-			messages[i] = anthropic.NewUserTextMessage(message.Text)
-		default:
-			// replies from assistant
-			messages[i] = anthropic.NewAssistantTextMessage(message.Text)
-		}
-	}
-
-	staticTools, err := ai.staticTools()
-	if err != nil {
-		ai.logger.Errorf("could not load StaticConfig tools: %v", err)
-		return output, fmt.Errorf("could not load StaticConfig tools: %w", err)
-	}
-
-	tools := slices.Concat(ai.tools, staticTools) // merge default and static tools
-
-	running := true
-	sem := 0
-	for running && sem < 10 {
-		sem++
-
-		requestTools := make([]anthropic.ToolDefinition, len(tools))
-		for i, tool := range tools {
-			requestTools[i] = tool.Definition
-		}
-		resp, err := ai.client.CreateMessages(ai.ctx, anthropic.MessagesRequest{
-			Model:     anthropic.ModelClaude3Dot5SonnetLatest,
-			Messages:  messages,
-			MaxTokens: 1000,
-			Tools:     requestTools,
-		})
-		if err != nil {
-			var e *anthropic.APIError
-			if errors.As(err, &e) {
-				return output, fmt.Errorf("messages error, type: %s, message: %s", e.Type, e.Message)
-			}
-
-			return output, fmt.Errorf("messages error: %w", err)
-		}
-
-		messages = append(messages, anthropic.Message{
-			Role:    anthropic.RoleAssistant,
-			Content: resp.Content,
-		})
-
-		// solve all requested tools from the response and push results back to the messages
-		if resp.StopReason == anthropic.MessagesStopReasonToolUse {
-			// combined response for all tools
-			toolsResponse := anthropic.Message{
-				Role:    anthropic.RoleUser,
-				Content: []anthropic.MessageContent{},
-			}
-
-			// find all requested tool to solve
-			for _, content := range resp.Content {
-				requestedTool := content.MessageContentToolUse
-				if requestedTool != nil {
-					for _, aiTool := range tools {
-						if aiTool.Definition.Name == requestedTool.Name {
-							ai.logger.Infof("running tool %s", requestedTool.Name)
-							toolResponse, err := aiTool.Fn(string(requestedTool.Input))
-							if err != nil {
-								return output, fmt.Errorf("error running tool %s: %w", requestedTool.Name, err)
-							}
-							toolsResponse.Content = append(
-								toolsResponse.Content,
-								anthropic.NewToolResultMessageContent(requestedTool.ID, toolResponse, err != nil),
-							)
-						}
-					}
-				}
-			}
-
-			messages = append(messages, toolsResponse)
-		}
-
-		if resp.StopReason != anthropic.MessagesStopReasonToolUse {
-			running = false
-		}
-
-		if len(resp.Content) > 0 {
-			output.Text = resp.Content[len(resp.Content)-1].GetText()
-		}
-
-		output.Cost.Output += resp.Usage.OutputTokens
-		output.Cost.Input += resp.Usage.InputTokens
-
-		ai.monitor.AnthropicInputTokens.WithLabelValues().Add(float64(resp.Usage.InputTokens))
-		ai.monitor.AnthropicOutputTokens.WithLabelValues().Add(float64(resp.Usage.OutputTokens))
-
-		ai.logger.WithField("billing", "input").Infof("Anthropic input tokens: %d", resp.Usage.InputTokens)
-		ai.logger.WithField("billing", "output").Infof("Anthropic output tokens: %d", resp.Usage.OutputTokens)
-	}
-
-	if output.Text == "" {
-		output.Text = "Nemohu odpovědět na tuto otázku."
-	}
-	return output, nil
+	Fn func(string) (string, error)
 }
+
+type Property struct {
+	Type        SchemaType
+	Description string
+	Properties  map[string]Property
+	Enum        []interface{} // depends on the type
+	Required    []string
+}
+
+// GetEnumAsStrings returns the Enum field as a slice of strings.
+// it is useful for services which does support strings only (like Anthropic)
+// basically we convert all values to strings
+func (d *Property) GetEnumAsStrings() []string {
+	if d.Enum == nil {
+		return nil
+	}
+
+	ret := make([]string, len(d.Enum))
+	for i, v := range d.Enum {
+		ret[i] = fmt.Sprint(v)
+	}
+
+	return ret
+}
+
+const Me = "me" // user

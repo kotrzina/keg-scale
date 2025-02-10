@@ -14,6 +14,7 @@ require (
 	github.com/lib/pq v1.10.9
 	github.com/liushuangls/go-anthropic/v2 v2.13.0
 	github.com/mmcdole/gofeed v1.3.0
+	github.com/openai/openai-go v0.1.0-alpha.56
 	github.com/prometheus/client_golang v1.20.5
 	github.com/redis/go-redis/v9 v9.7.0
 	github.com/sirupsen/logrus v1.9.3
@@ -53,6 +54,10 @@ require (
 	github.com/prometheus/common v0.61.0 // indirect
 	github.com/prometheus/procfs v0.15.1 // indirect
 	github.com/rs/zerolog v1.33.0 // indirect
+	github.com/tidwall/gjson v1.14.4 // indirect
+	github.com/tidwall/match v1.1.1 // indirect
+	github.com/tidwall/pretty v1.2.1 // indirect
+	github.com/tidwall/sjson v1.2.5 // indirect
 	go.mau.fi/libsignal v0.1.1 // indirect
 	go.mau.fi/util v0.8.3 // indirect
 	golang.org/x/crypto v0.31.0 // indirect
