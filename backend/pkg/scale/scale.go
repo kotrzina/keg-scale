@@ -420,6 +420,10 @@ func (s *Scale) tryNewKeg() error {
 			if serr := s.store.SetActiveKegAt(s.activeKegAt); serr != nil {
 				return fmt.Errorf("could not store active_keg_at: %w", serr)
 			}
+			s.beersLeft = CalcBeersLeft(s.activeKeg, s.weight)
+			if serr := s.store.SetBeersLeft(s.beersLeft); serr != nil {
+				return fmt.Errorf("could not store beers_left: %w", serr)
+			}
 
 			s.isLow = false
 			if serr := s.store.SetIsLow(false); serr != nil {
