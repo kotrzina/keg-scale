@@ -114,8 +114,7 @@ func (hr *HandlerRepository) activeKegHandler() func(http.ResponseWriter, *http.
 		}
 
 		switch data.Keg {
-		case 10, 15, 20, 30, 50:
-			// all is well
+		case 0, 10, 15, 20, 30, 50: // all is well
 		default:
 			http.Error(w, "Invalid keg size", http.StatusBadRequest)
 			return

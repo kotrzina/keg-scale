@@ -236,11 +236,7 @@ func (s *Scale) AddMeasurement(weight float64) error {
 		}
 	}
 
-	// publish new values for prometheus
-	s.monitor.Weight.WithLabelValues().Set(s.weight)
-	s.monitor.BeersLeft.WithLabelValues().Set(float64(s.beersLeft))
-	s.monitor.ActiveKeg.WithLabelValues().Set(float64(s.activeKeg))
-	s.monitor.BeersTotal.WithLabelValues().Add(float64(s.getBeersTotal()))
+	s.updateMetrics()
 
 	return nil
 }
@@ -293,12 +289,31 @@ func (s *Scale) SetActiveKeg(keg int) error {
 	defer s.mux.Unlock()
 
 	s.isLow = false
-	if err := s.store.SetIsLow(false); err != nil {
-		return err
+
+	// manually empty the keg
+	if keg == 0 {
+		s.isLow = true // enable rekeg
+		s.beersLeft = 0
+		if serr := s.store.SetBeersLeft(s.beersLeft); serr != nil {
+			return fmt.Errorf("could not store beers_left: %w", serr)
+		}
+		if serr := s.addCurrentKegToTotal(); serr != nil {
+			return fmt.Errorf("could not add current keg to total: %w", serr)
+		}
 	}
 
 	s.activeKeg = keg
-	return s.store.SetActiveKeg(keg)
+	if err := s.store.SetActiveKeg(s.activeKeg); err != nil {
+		return err
+	}
+
+	if err := s.store.SetIsLow(s.isLow); err != nil {
+		return err
+	}
+
+	s.updateMetrics()
+
+	return nil
 }
 
 func (s *Scale) IncreaseWarehouse(keg int) error {
@@ -462,4 +477,12 @@ func (s *Scale) addCurrentKegToTotal() error {
 	}
 
 	return nil
+}
+
+// updateMetrics updates beer/keg related metrics for prometheus
+func (s *Scale) updateMetrics() {
+	s.monitor.Weight.WithLabelValues().Set(s.weight)
+	s.monitor.BeersLeft.WithLabelValues().Set(float64(s.beersLeft))
+	s.monitor.ActiveKeg.WithLabelValues().Set(float64(s.activeKeg))
+	s.monitor.BeersTotal.WithLabelValues().Add(float64(s.getBeersTotal()))
 }

@@ -10,7 +10,7 @@ function Keg(props) {
     const [showError, setShowError] = React.useState(false)
     const [apiPassword, isApiReady] = useApiPassword()
 
-    const kegs = [10, 15, 20, 30, 50]
+    const kegs = [0, 10, 15, 20, 30, 50]
 
     async function switchKeg(size) {
 
