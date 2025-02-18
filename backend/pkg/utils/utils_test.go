@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -25,7 +26,8 @@ func TestStrip(t *testing.T) {
 }
 
 func TestGetOkJson(t *testing.T) {
-	got := GetOkJSON()
+	got, err := json.Marshal(GetOk())
+	assert.Nil(t, err)
 	assert.Contains(t, string(got), "ok")
 }
 

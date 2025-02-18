@@ -58,8 +58,12 @@ func GetTz() *time.Location {
 	return tz
 }
 
-func GetOkJSON() []byte {
-	return []byte(`{"is_ok":true}`)
+type Ok struct {
+	IsOk bool `json:"is_ok"`
+}
+
+func GetOk() Ok {
+	return Ok{IsOk: true}
 }
 
 func FormatBeer(n int) string {

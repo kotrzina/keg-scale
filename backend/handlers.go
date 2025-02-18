@@ -127,9 +127,9 @@ func (hr *HandlerRepository) activeKegHandler() func(http.ResponseWriter, *http.
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		_, err = w.Write(utils.GetOkJSON())
-		if err != nil {
+		if err = json.NewEncoder(w).Encode(utils.GetOk()); err != nil {
 			hr.logger.Errorf("Could not write response: %v", err)
+			w.WriteHeader(http.StatusInternalServerError)
 		}
 	}
 }
@@ -146,16 +146,10 @@ func (hr *HandlerRepository) scaleDashboardHandler() func(http.ResponseWriter, *
 			Scale: hr.scale.GetScale(),
 		}
 
-		res, err := json.Marshal(data)
-		if err != nil {
-			http.Error(w, "Could not marshal data to JSON", http.StatusInternalServerError)
-			return
-		}
-
 		w.Header().Set("Content-Type", "application/json")
-		_, err = w.Write(res)
-		if err != nil {
+		if err := json.NewEncoder(w).Encode(data); err != nil {
 			hr.logger.Errorf("Could not write response: %v", err)
+			w.WriteHeader(http.StatusInternalServerError)
 		}
 	}
 }
@@ -200,9 +194,9 @@ func (hr *HandlerRepository) scaleWarehouseHandler() func(http.ResponseWriter, *
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		_, err = w.Write(utils.GetOkJSON())
-		if err != nil {
+		if err = json.NewEncoder(w).Encode(utils.GetOk()); err != nil {
 			hr.logger.Errorf("Could not write response: %v", err)
+			w.WriteHeader(http.StatusInternalServerError)
 		}
 	}
 }
@@ -247,16 +241,10 @@ func (hr *HandlerRepository) aiTestHandler() func(http.ResponseWriter, *http.Req
 
 		resp.Text = utils.UnwrapHTML(resp.Text)
 
-		output, err := json.Marshal(resp)
-		if err != nil {
-			http.Error(w, "Could not marshal data", http.StatusInternalServerError)
-			return
-		}
-
 		w.Header().Set("Content-Type", "application/json")
-		_, err = w.Write(output)
-		if err != nil {
+		if err = json.NewEncoder(w).Encode(resp); err != nil {
 			hr.logger.Errorf("Could not write response: %v", err)
+			w.WriteHeader(http.StatusInternalServerError)
 		}
 	}
 }
@@ -333,16 +321,10 @@ func (hr *HandlerRepository) scaleChartHandler() func(http.ResponseWriter, *http
 			return
 		}
 
-		res, err := json.Marshal(data)
-		if err != nil {
-			http.Error(w, "Could not marshal data to JSON", http.StatusInternalServerError)
-			return
-		}
-
 		w.Header().Set("Content-Type", "application/json")
-		_, err = w.Write(res)
-		if err != nil {
+		if err = json.NewEncoder(w).Encode(data); err != nil {
 			hr.logger.Errorf("Could not write response: %v", err)
+			w.WriteHeader(http.StatusInternalServerError)
 		}
 	}
 }
