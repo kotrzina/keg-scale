@@ -33,6 +33,8 @@ type Scale struct {
 	lastOk time.Time
 	rssi   float64
 
+	events map[EventType][]Event
+
 	store    store.Storage
 	config   *config.Config
 	whatsapp *wa.WhatsAppClient
@@ -85,6 +87,8 @@ func New(
 		},
 
 		lastOk: time.Now().Add(-9999 * time.Hour),
+
+		events: map[EventType][]Event{},
 
 		store:    storage,
 		config:   conf,
@@ -269,7 +273,7 @@ func (s *Scale) Recheck() {
 
 	// we haven't received any data for [okLimit] minutes and pub is open
 	if !s.isOk() && s.pub.isOpen {
-		s.updatePub(false)
+		s.updatePub(false) // close the pub
 	}
 }
 
@@ -353,7 +357,6 @@ func (s *Scale) isOk() bool {
 
 // updatePub updates the pub state
 // opening or closing the pub
-// function is not thread safe
 func (s *Scale) updatePub(isOpen bool) {
 	s.pub.isOpen = isOpen
 	if err := s.store.SetIsOpen(isOpen); err != nil {
@@ -362,8 +365,7 @@ func (s *Scale) updatePub(isOpen bool) {
 
 	if isOpen {
 		if s.shouldSendOpen() {
-			s.makeEvent(EventOpen)
-			s.sendWhatsAppOpen() // async
+			s.dispatchEvent(EventOpen)
 		} else {
 			s.logger.Warningf("Pub is open, but the opening message has been skipped. Diff: %s", time.Since(s.pub.openedAt).String())
 		}
@@ -377,7 +379,7 @@ func (s *Scale) updatePub(isOpen bool) {
 		if err := s.store.SetCloseAt(s.pub.closedAt); err != nil {
 			s.logger.Errorf("Could not set close_at time: %v", err)
 		}
-		s.makeEvent(EventClose)
+		s.dispatchEvent(EventClose)
 	}
 
 	fIsOpen := 0.
@@ -444,7 +446,7 @@ func (s *Scale) tryNewKeg() error {
 				s.logger.Warnf("Keg %d is not available in the warehouse", keg)
 			}
 
-			s.makeEvent(EventNewKegTapped)
+			s.dispatchEvent(EventNewKegTapped)
 			s.logger.Infof("New keg (%d l) CONFIRMED with current value %.0f", keg, s.weight)
 		} else {
 			// new candidate keg
@@ -481,6 +483,23 @@ func (s *Scale) addCurrentKegToTotal() error {
 	}
 
 	return nil
+}
+
+// shouldSendOpen applies the rules for sending a message when the pub is open
+// we don't want to spam the group with messages
+// it could happen for example when the scale is restarted or lost Wi-Fi connection for a while
+func (s *Scale) shouldSendOpen() bool {
+	// send message only once in 12 hours
+	if time.Since(s.pub.openedAt) < 12*time.Hour {
+		return false
+	}
+
+	// send message only if the pub was closed for at least 3 hours
+	if time.Since(s.pub.closedAt) < 3*time.Hour {
+		return false
+	}
+
+	return true
 }
 
 // updateMetrics updates beer/keg related metrics for prometheus

@@ -74,7 +74,38 @@ func NewBotka(
 		client.RegisterEventHandler(w.aiHandler())
 	}
 
+	// send message when the pub is open
+	kegScale.RegisterEvent(scale.EventOpen, w.messageOpen)
+
 	return w
+}
+
+func (b *Botka) messageOpen(_ scale.EventType) error {
+	data := b.scale.GetScale()
+
+	msg := "Pivo! 🍺"
+	if data.ActiveKeg > 0 {
+		msg += fmt.Sprintf(
+			"\nMáme naraženou %dl bečku a zbývá v ní %d %s.",
+			data.ActiveKeg,
+			data.BeersLeft,
+			utils.FormatBeer(data.BeersLeft),
+		)
+	}
+	if data.WarehouseBeerLeft > 0 {
+		msg += fmt.Sprintf(
+			"\nVe skladu máme %d %s.",
+			data.WarehouseBeerLeft,
+			utils.FormatBeer(data.WarehouseBeerLeft),
+		)
+	}
+
+	err := b.whatsapp.SendText(b.config.WhatsAppOpenJid, msg)
+	if err != nil {
+		return fmt.Errorf("could not send Botka message: %w", err)
+	}
+
+	return nil
 }
 
 func (b *Botka) helpHandler() wa.EventHandler {
