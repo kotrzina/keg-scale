@@ -4,13 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
-	"time"
 
 	"github.com/kotrzina/keg-scale/pkg/config"
 	"github.com/kotrzina/keg-scale/pkg/prometheus"
 	"github.com/kotrzina/keg-scale/pkg/scale"
-	"github.com/kotrzina/keg-scale/pkg/utils"
 	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/option"
 	"github.com/sirupsen/logrus"
@@ -60,21 +57,16 @@ func (ai *OpenAi) GetResponse(history []ChatMessage) (Response, error) {
 	}
 
 	// always build a new param (list of messages for API)
-	messages := make([]openai.ChatCompletionMessageParamUnion, len(history))
+	messages := make([]openai.ChatCompletionMessageParamUnion, len(history)+1)
+	messages[0] = openai.SystemMessage(renderPrompt())
 	for i, message := range history {
 		switch {
-		case message.From == Me && i == 0:
-			// first message from user is special
-			// we want to use full Prompt
-			m := strings.ReplaceAll(Prompt, "${msg}", message.Text)
-			m = strings.ReplaceAll(m, "${datetime}", utils.FormatDate(time.Now()))
-			messages[i] = openai.UserMessage(m)
 		case message.From == Me:
 			// all other messages from user
-			messages[i] = openai.UserMessage(message.Text)
+			messages[i+1] = openai.UserMessage(message.Text)
 		default:
 			// replies from assistant
-			messages[i] = openai.AssistantMessage(message.Text)
+			messages[i+1] = openai.AssistantMessage(message.Text)
 		}
 	}
 

@@ -4,13 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
-	"time"
 
 	"github.com/kotrzina/keg-scale/pkg/config"
 	"github.com/kotrzina/keg-scale/pkg/prometheus"
 	"github.com/kotrzina/keg-scale/pkg/scale"
-	"github.com/kotrzina/keg-scale/pkg/utils"
 	"github.com/liushuangls/go-anthropic/v2"
 	"github.com/liushuangls/go-anthropic/v2/jsonschema"
 	"github.com/sirupsen/logrus"
@@ -60,12 +57,6 @@ func (ai *Anthropic) GetResponse(history []ChatMessage) (Response, error) {
 	messages := make([]anthropic.Message, len(history))
 	for i, message := range history {
 		switch {
-		case message.From == Me && i == 0:
-			// first message from user is special
-			// we want to use full Prompt
-			m := strings.ReplaceAll(Prompt, "${msg}", message.Text)
-			m = strings.ReplaceAll(m, "${datetime}", utils.FormatDate(time.Now()))
-			messages[i] = anthropic.NewUserTextMessage(m)
 		case message.From == Me:
 			// all other messages from user
 			messages[i] = anthropic.NewUserTextMessage(message.Text)
@@ -85,6 +76,7 @@ func (ai *Anthropic) GetResponse(history []ChatMessage) (Response, error) {
 
 		resp, err := ai.client.CreateMessages(ai.ctx, anthropic.MessagesRequest{
 			Model:     anthropic.ModelClaude3Dot5SonnetLatest,
+			System:    renderPrompt(),
 			Messages:  messages,
 			MaxTokens: 1000,
 			Tools:     toolDefinitions,

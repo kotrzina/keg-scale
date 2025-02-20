@@ -3,10 +3,13 @@ package ai
 import (
 	"context"
 	"fmt"
+	"strings"
+	"time"
 
 	"github.com/kotrzina/keg-scale/pkg/config"
 	"github.com/kotrzina/keg-scale/pkg/prometheus"
 	"github.com/kotrzina/keg-scale/pkg/scale"
+	"github.com/kotrzina/keg-scale/pkg/utils"
 	"github.com/sirupsen/logrus"
 )
 
@@ -34,11 +37,6 @@ Facts:
 	- we organize running competition called Lesempolem every year
 	- there is no waiter in the pub - the pub is self-service
 
-Generate a response to the following message:
-<message>
-${msg}
-</message>
-
 Answer requirements:
 	- the answer will be brief and clear
 	- always in Czech language
@@ -62,6 +60,12 @@ Language style rules:
 	- Preferred wording: hospoda, bečka, pivo, nealko, víno, kafe, čaj
 	- Veselice is a feminine word in Czech language
 `
+
+func renderPrompt() string {
+	renderedPrompt := strings.ReplaceAll(Prompt, "${datetime}", utils.FormatDate(time.Now()))
+
+	return renderedPrompt
+}
 
 type Provider interface {
 	GetResponse(history []ChatMessage) (Response, error)
