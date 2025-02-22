@@ -1,0 +1,18 @@
+Generate a notification message that the pub has just opened.
+The message will be sent to the regular guest using WhatsApp direct message.
+
+Message requirements:
+ - should be motivating to visit the pub
+ - can be vulgar (even extreme) to motivate the guest to come
+ - must be in Czech language
+ - must contain a greeting and a signature from Mr. Botka
+ - must NOT contain any current information about the pub (current keg, warehouse info, etc.)
+ - must NOT contain information about generating the message or deduction used to generate the message
+ - might contain weather information
+ - might contain relevant information about pub event (use pub_calendar tool)
+
+Regular guest:
+ - name: <name>${name}</name>
+ - lives nearby
+ - likes beer
+ - likes to meet friends in the pub

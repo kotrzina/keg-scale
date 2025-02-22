@@ -14,11 +14,18 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+const providerName = "anthropic"
+
 // prompt is the most important part of the AI. It is the soul of the bot.
 // Mr. Botka lives here
 //
-//go:embed ai.prompt
+//go:embed prompts/ai.prompt
 var prompt string
+
+// customOpenPrompt custom opening message prompt
+//
+//go:embed prompts/custom_open.prompt
+var customOpenPrompt string
 
 func renderPrompt() string {
 	renderedPrompt := strings.ReplaceAll(prompt, "${datetime}", utils.FormatDate(time.Now()))
@@ -44,13 +51,32 @@ func NewAi(ctx context.Context, conf *config.Config, s *scale.Scale, m *promethe
 }
 
 func (ai *Ai) GetResponse(history []ChatMessage) (Response, error) {
-	const providerName = "anthropic"
 	p, ok := ai.providers[providerName]
 	if !ok {
 		return Response{}, fmt.Errorf("unknown provider: %s", providerName)
 	}
 
 	return p.GetResponse(history)
+}
+
+// GenerateCustomOpenMessage generates a custom open message
+// for the user with the given name
+// Is creates a
+func (ai *Ai) GenerateCustomOpenMessage(name string) (string, error) {
+	firstMsg := strings.ReplaceAll(customOpenPrompt, "${name}", name)
+	messages := []ChatMessage{
+		{
+			From: Me,
+			Text: firstMsg,
+		},
+	}
+
+	resp, err := ai.GetResponse(messages)
+	if err != nil {
+		return "", fmt.Errorf("failed to generate open message for %s: %w", name, err)
+	}
+
+	return resp.Text, nil
 }
 
 type ChatMessage struct {

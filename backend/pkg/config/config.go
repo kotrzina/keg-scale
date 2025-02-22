@@ -4,7 +4,14 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 )
+
+// CustomMessage represents a option to send custom opening messages directly to the WhatsApp users
+type CustomMessage struct {
+	Name  string
+	Phone string
+}
 
 type Config struct {
 	Debug bool
@@ -24,9 +31,10 @@ type Config struct {
 
 	DBString string
 
-	WhatsAppOpenJid string
-	AnthropicAPIKey string
-	OpenAiAPIKey    string
+	WhatsAppOpenJid        string
+	WhatsAppCustomMessages []CustomMessage
+	AnthropicAPIKey        string
+	OpenAiAPIKey           string
 
 	CalendarPubURL      string
 	CalendarConcertsURL string
@@ -51,9 +59,10 @@ func NewConfig() *Config {
 
 		DBString: getStringEnvDefault("DB_STRING", "host=localhost port=5432 user=postgres password=admin dbname=pub sslmode=disable"),
 
-		WhatsAppOpenJid: getStringEnvDefault("WHATSAPP_OPEN_JID", ""),
-		AnthropicAPIKey: getStringEnvDefault("ANTHROPIC_API_KEY", ""),
-		OpenAiAPIKey:    getStringEnvDefault("OPENAI_API_KEY", ""),
+		WhatsAppOpenJid:        getStringEnvDefault("WHATSAPP_OPEN_JID", ""),
+		WhatsAppCustomMessages: parseCustomMessages(getStringEnvDefault("WHATSAPP_CUSTOM_MESSAGES", "")),
+		AnthropicAPIKey:        getStringEnvDefault("ANTHROPIC_API_KEY", ""),
+		OpenAiAPIKey:           getStringEnvDefault("OPENAI_API_KEY", ""),
 
 		CalendarPubURL:      getStringEnvDefault("CALENDAR_PUB_URL", ""),
 		CalendarConcertsURL: getStringEnvDefault("CALENDAR_CONCERTS_URL", ""),
@@ -89,4 +98,22 @@ func getIntEnvDefault(key string, defaultValue int) int {
 
 	fmt.Printf("Using default value for %s\n", key)
 	return defaultValue
+}
+
+func parseCustomMessages(envString string) []CustomMessage {
+	messages := strings.Split(envString, ",")
+
+	customMessages := make([]CustomMessage, 0, len(messages))
+	for _, message := range messages {
+		parts := strings.Split(message, ":")
+		if len(parts) != 2 {
+			fmt.Printf("Invalid custom message: %s\n", message)
+			continue
+		}
+		customMessages = append(customMessages, CustomMessage{
+			Name:  parts[0],
+			Phone: parts[1],
+		})
+	}
+	return customMessages
 }

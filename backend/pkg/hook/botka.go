@@ -61,8 +61,11 @@ func NewBotka(
 		client.RegisterEventHandler(w.aiHandler())
 	}
 
-	// send message when the pub is open
+	// send messages when the pub is open
 	kegScale.RegisterEvent(scale.EventOpen, w.messageOpen)
+	if len(conf.WhatsAppCustomMessages) > 0 {
+		kegScale.RegisterEvent(scale.EventOpen, w.messageOpenCustom)
+	}
 
 	return w
 }
@@ -90,6 +93,22 @@ func (b *Botka) messageOpen(_ scale.EventType) error {
 	err := b.whatsapp.SendText(b.config.WhatsAppOpenJid, msg)
 	if err != nil {
 		return fmt.Errorf("could not send Botka message: %w", err)
+	}
+
+	return nil
+}
+
+func (b *Botka) messageOpenCustom(_ scale.EventType) error {
+	for _, user := range b.config.WhatsAppCustomMessages {
+		msg, err := b.ai.GenerateCustomOpenMessage(user.Name)
+		if err != nil {
+			return fmt.Errorf("could not generate custom open message: %w", err)
+		}
+
+		err = b.whatsapp.SendText(user.Phone, msg)
+		if err != nil {
+			return fmt.Errorf("could not send Botka open custom message: %w", err)
+		}
 	}
 
 	return nil
