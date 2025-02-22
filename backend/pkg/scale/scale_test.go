@@ -9,7 +9,6 @@ import (
 	"github.com/kotrzina/keg-scale/pkg/config"
 	"github.com/kotrzina/keg-scale/pkg/prometheus"
 	"github.com/kotrzina/keg-scale/pkg/store"
-	"github.com/kotrzina/keg-scale/pkg/wa"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
@@ -28,7 +27,6 @@ func createScaleWithMeasurements(t *testing.T, weights ...float64) *Scale {
 		prometheus.New(),
 		&store.FakeStore{},
 		config.NewConfig(),
-		&wa.WhatsAppClient{},
 		logger,
 	)
 	for _, weight := range weights {

@@ -42,7 +42,7 @@ func main() {
 	monitor := prometheus.New()
 	prometheusCollector := promector.NewPromector(ctx, conf, logger)
 	storage := store.NewRedisStore(ctx, conf)
-	kegScale := scale.New(ctx, monitor, storage, conf, whatsapp, logger)
+	kegScale := scale.New(ctx, monitor, storage, conf, logger)
 	intelligence := ai.NewAi(ctx, conf, kegScale, monitor, logger)
 	_ = hook.NewBotka(whatsapp, kegScale, intelligence, conf, storage, logger)
 

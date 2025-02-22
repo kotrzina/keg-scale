@@ -10,7 +10,6 @@ import (
 	"github.com/kotrzina/keg-scale/pkg/config"
 	"github.com/kotrzina/keg-scale/pkg/prometheus"
 	"github.com/kotrzina/keg-scale/pkg/store"
-	"github.com/kotrzina/keg-scale/pkg/wa"
 	"github.com/sirupsen/logrus"
 )
 
@@ -37,7 +36,6 @@ type Scale struct {
 
 	store    store.Storage
 	config   *config.Config
-	whatsapp *wa.WhatsAppClient
 	logger   *logrus.Logger
 	ctx      context.Context
 	fmtUnits durafmt.Units
@@ -58,7 +56,6 @@ func New(
 	monitor *prometheus.Monitor,
 	storage store.Storage,
 	conf *config.Config,
-	whatsapp *wa.WhatsAppClient,
 	logger *logrus.Logger,
 ) *Scale {
 	fmtUnits, err := durafmt.DefaultUnitsCoder.Decode(localizationUnits)
@@ -92,7 +89,6 @@ func New(
 
 		store:    storage,
 		config:   conf,
-		whatsapp: whatsapp,
 		logger:   logger,
 		ctx:      ctx,
 		fmtUnits: fmtUnits,
