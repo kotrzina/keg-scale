@@ -30,19 +30,6 @@ type Botka struct {
 	logger *logrus.Logger
 }
 
-type BotkaBrain struct {
-	Weight      float64
-	BeerLeft    int
-	ActiveKeg   int
-	ActiveKegAt time.Time
-
-	IsOpen   bool
-	OpenedAt time.Time
-
-	Warehouse      map[int]int // keys 10, 15, 20, 30, 50
-	WarehouseTotal int
-}
-
 func NewBotka(
 	client *wa.WhatsAppClient,
 	kegScale *scale.Scale,
