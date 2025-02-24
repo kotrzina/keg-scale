@@ -12,7 +12,7 @@ require (
 	github.com/joho/godotenv v1.5.1
 	github.com/kozaktomas/diacritics v0.0.0-20240813054239-69e1feaff414
 	github.com/lib/pq v1.10.9
-	github.com/liushuangls/go-anthropic/v2 v2.13.0
+	github.com/liushuangls/go-anthropic/v2 v2.13.1
 	github.com/mmcdole/gofeed v1.3.0
 	github.com/openai/openai-go v0.1.0-alpha.56
 	github.com/prometheus/client_golang v1.20.5
