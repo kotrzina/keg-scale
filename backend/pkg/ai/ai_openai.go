@@ -80,7 +80,7 @@ func (ai *OpenAi) GetResponse(history []ChatMessage) (Response, error) {
 
 	running := true
 	sem := 0
-	for running && sem < 3 {
+	for running && sem < 7 {
 		sem++
 
 		running = false

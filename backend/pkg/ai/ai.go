@@ -14,7 +14,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const providerName = "anthropic"
+const providerName = "openai"
 
 // prompt is the most important part of the AI. It is the soul of the bot.
 // Mr. Botka lives here
@@ -26,6 +26,11 @@ var prompt string
 //
 //go:embed prompts/custom_open.prompt
 var customOpenPrompt string
+
+// customGeneralMessage general opening message prompt
+//
+//go:embed prompts/general_open.prompt
+var customGeneralMessage string
 
 func renderPrompt() string {
 	renderedPrompt := strings.ReplaceAll(prompt, "${datetime}", utils.FormatDate(time.Now()))
@@ -57,6 +62,23 @@ func (ai *Ai) GetResponse(history []ChatMessage) (Response, error) {
 	}
 
 	return p.GetResponse(history)
+}
+
+// GenerateGeneralOpenMessage generates a message for group WhatsApp chat
+func (ai *Ai) GenerateGeneralOpenMessage() (string, error) {
+	messages := []ChatMessage{
+		{
+			From: Me,
+			Text: customGeneralMessage,
+		},
+	}
+
+	resp, err := ai.GetResponse(messages)
+	if err != nil {
+		return "", fmt.Errorf("failed to generate open message %w", err)
+	}
+
+	return resp.Text, nil
 }
 
 // GenerateCustomOpenMessage generates a custom open message

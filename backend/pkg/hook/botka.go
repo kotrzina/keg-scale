@@ -73,24 +73,30 @@ func NewBotka(
 func (b *Botka) messageOpen(_ scale.EventType) error {
 	data := b.scale.GetScale()
 
-	msg := "Pivo! 🍺"
-	if data.ActiveKeg > 0 {
-		msg += fmt.Sprintf(
-			"\nMáme naraženou %dl bečku a zbývá v ní %d %s.",
-			data.ActiveKeg,
-			data.BeersLeft,
-			utils.FormatBeer(data.BeersLeft),
-		)
-	}
-	if data.WarehouseBeerLeft > 0 {
-		msg += fmt.Sprintf(
-			"\nVe skladu máme %d %s.",
-			data.WarehouseBeerLeft,
-			utils.FormatBeer(data.WarehouseBeerLeft),
-		)
+	msg, err := b.ai.GenerateGeneralOpenMessage()
+	if err != nil {
+		b.logger.Errorf("could not generate general open message: %v", err)
+
+		// backup message
+		msg = "Pivo! 🍺"
+		if data.ActiveKeg > 0 {
+			msg += fmt.Sprintf(
+				"\nMáme naraženou %dl bečku a zbývá v ní %d %s.",
+				data.ActiveKeg,
+				data.BeersLeft,
+				utils.FormatBeer(data.BeersLeft),
+			)
+		}
+		if data.WarehouseBeerLeft > 0 {
+			msg += fmt.Sprintf(
+				"\nVe skladu máme %d %s.",
+				data.WarehouseBeerLeft,
+				utils.FormatBeer(data.WarehouseBeerLeft),
+			)
+		}
 	}
 
-	err := b.whatsapp.SendText(b.config.WhatsAppOpenJid, msg)
+	err = b.whatsapp.SendText(b.config.WhatsAppOpenJid, msg)
 	if err != nil {
 		return fmt.Errorf("could not send Botka message: %w", err)
 	}
