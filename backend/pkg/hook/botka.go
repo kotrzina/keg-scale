@@ -336,7 +336,7 @@ func (b *Botka) aiHandler() wa.EventHandler {
 				From: ai.Me,
 			})
 
-			response, err := b.ai.GetResponse(messages)
+			response, err := b.ai.GetResponse(messages, ai.ModelQualityMedium)
 			if err != nil {
 				b.logger.Errorf("could not get response from AI: %v", err)
 				response = ai.Response{

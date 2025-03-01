@@ -43,7 +43,20 @@ func NewOpenAi(ctx context.Context, conf *config.Config, s *scale.Scale, m *prom
 	}
 }
 
-func (ai *OpenAi) GetResponse(history []ChatMessage) (Response, error) {
+func (ai *OpenAi) GetQuality(quality ModelQuality) string {
+	switch quality {
+	case ModelQualityLow:
+		return openai.ChatModelGPT4oMini
+	case ModelQualityMedium:
+		return openai.ChatModelGPT4oMini
+	case ModelQualityHigh:
+		return openai.ChatModelGPT4o
+	default:
+		return openai.ChatModelGPT4oMini
+	}
+}
+
+func (ai *OpenAi) GetResponse(history []ChatMessage, quality ModelQuality) (Response, error) {
 	output := Response{
 		Text: "",
 		Cost: Cost{
@@ -55,6 +68,8 @@ func (ai *OpenAi) GetResponse(history []ChatMessage) (Response, error) {
 	if len(history) == 0 {
 		return output, errors.New("no messages")
 	}
+
+	model := ai.GetQuality(quality)
 
 	// always build a new param (list of messages for API)
 	messages := make([]openai.ChatCompletionMessageParamUnion, len(history)+1)
@@ -74,13 +89,13 @@ func (ai *OpenAi) GetResponse(history []ChatMessage) (Response, error) {
 
 	param := openai.ChatCompletionNewParams{
 		Messages: openai.F(messages),
-		Model:    openai.F(openai.ChatModelGPT4oMini),
+		Model:    openai.F(model),
 		Tools:    openai.F(ai.convertTools(tools)),
 	}
 
 	running := true
 	sem := 0
-	for running && sem < 7 {
+	for running && sem < safetyLoopLimit {
 		sem++
 
 		running = false

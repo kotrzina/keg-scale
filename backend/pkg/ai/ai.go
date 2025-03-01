@@ -16,6 +16,16 @@ import (
 
 const providerName = "openai"
 
+const safetyLoopLimit = 10
+
+type ModelQuality uint8
+
+const (
+	ModelQualityLow ModelQuality = iota
+	ModelQualityMedium
+	ModelQualityHigh
+)
+
 // prompt is the most important part of the AI. It is the soul of the bot.
 // Mr. Botka lives here
 //
@@ -39,7 +49,8 @@ func renderPrompt() string {
 }
 
 type Provider interface {
-	GetResponse(history []ChatMessage) (Response, error)
+	GetResponse(history []ChatMessage, quality ModelQuality) (Response, error)
+	GetQuality(quality ModelQuality) string
 }
 
 type Ai struct {
@@ -55,13 +66,13 @@ func NewAi(ctx context.Context, conf *config.Config, s *scale.Scale, m *promethe
 	}
 }
 
-func (ai *Ai) GetResponse(history []ChatMessage) (Response, error) {
+func (ai *Ai) GetResponse(history []ChatMessage, quality ModelQuality) (Response, error) {
 	p, ok := ai.providers[providerName]
 	if !ok {
 		return Response{}, fmt.Errorf("unknown provider: %s", providerName)
 	}
 
-	return p.GetResponse(history)
+	return p.GetResponse(history, quality)
 }
 
 // GenerateGeneralOpenMessage generates a message for group WhatsApp chat
@@ -73,7 +84,7 @@ func (ai *Ai) GenerateGeneralOpenMessage() (string, error) {
 		},
 	}
 
-	resp, err := ai.GetResponse(messages)
+	resp, err := ai.GetResponse(messages, ModelQualityHigh)
 	if err != nil {
 		return "", fmt.Errorf("failed to generate open message %w", err)
 	}
@@ -93,7 +104,7 @@ func (ai *Ai) GenerateCustomOpenMessage(name string) (string, error) {
 		},
 	}
 
-	resp, err := ai.GetResponse(messages)
+	resp, err := ai.GetResponse(messages, ModelQualityMedium)
 	if err != nil {
 		return "", fmt.Errorf("failed to generate open message for %s: %w", name, err)
 	}

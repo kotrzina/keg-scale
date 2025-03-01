@@ -41,7 +41,12 @@ func NewAnthropic(ctx context.Context, conf *config.Config, s *scale.Scale, m *p
 	}
 }
 
-func (ai *Anthropic) GetResponse(history []ChatMessage) (Response, error) {
+func (ai *Anthropic) GetQuality(_ ModelQuality) string {
+	// we use sonnet only
+	return string(anthropic.ModelClaude3Dot5SonnetLatest)
+}
+
+func (ai *Anthropic) GetResponse(history []ChatMessage, quality ModelQuality) (Response, error) {
 	output := Response{
 		Text: "",
 		Cost: Cost{
@@ -53,6 +58,8 @@ func (ai *Anthropic) GetResponse(history []ChatMessage) (Response, error) {
 	if len(history) == 0 {
 		return output, errors.New("no messages")
 	}
+
+	model := ai.GetQuality(quality)
 
 	messages := make([]anthropic.Message, len(history))
 	for i, message := range history {
@@ -71,11 +78,11 @@ func (ai *Anthropic) GetResponse(history []ChatMessage) (Response, error) {
 
 	running := true
 	sem := 0
-	for running && sem < 3 {
+	for running && sem < safetyLoopLimit {
 		sem++
 
 		resp, err := ai.client.CreateMessages(ai.ctx, anthropic.MessagesRequest{
-			Model:     anthropic.ModelClaude3Dot5SonnetLatest,
+			Model:     anthropic.Model(model),
 			System:    renderPrompt(),
 			Messages:  messages,
 			MaxTokens: 1000,
