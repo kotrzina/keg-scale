@@ -491,7 +491,7 @@ func (tf *ToolFactory) sdhEventsTool() Tool {
 func (tf *ToolFactory) tableTennisResultsTool() Tool {
 	return Tool{
 		Name:        "table_tennis_results",
-		Description: "Provides matches schedule and results of the table tennis league.",
+		Description: "Provides matches schedule and results of the table tennis league. The name of our team is Pinec Veselice.",
 		Fn: func(_ string) (string, error) {
 			output, err := ProvideTableTennisResults()
 			if err != nil {
@@ -506,7 +506,7 @@ func (tf *ToolFactory) tableTennisResultsTool() Tool {
 func (tf *ToolFactory) tableTennisTableTool() Tool {
 	return Tool{
 		Name:        "table_tennis_league_table",
-		Description: "Provides leaderboard table of the tennis league.",
+		Description: "Provides leaderboard table of the table tennis league.",
 		Fn: func(_ string) (string, error) {
 			output, err := ProvideTableTennisLeagueTable()
 			if err != nil {
