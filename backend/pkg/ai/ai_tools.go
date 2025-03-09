@@ -553,7 +553,7 @@ func (tf *ToolFactory) pubCalendarTool() Tool {
 		Name:        "pub_calendar",
 		Description: "Calendar of events related to the pub or Veselice village (e.g. birthdays, parties, events, tap sanitizations, special beer days, etc.)",
 		Fn: func(_ string) (string, error) {
-			output, err := ProvideCalendar(tf.config.CalendarPubURL, time.Now().Add(-60*24*time.Hour), time.Now().Add(365*24*time.Hour))
+			output, err := ProvideCalendar(tf.config.CalendarPubURL, time.Now().Add(-1*24*time.Hour), time.Now().Add(30*24*time.Hour))
 			if err != nil {
 				return "", fmt.Errorf("could not get pub calendar data: %w", err)
 			}
