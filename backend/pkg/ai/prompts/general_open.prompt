@@ -5,19 +5,22 @@ Message requirements:
  - must contain an information: "The pub has just opened"
  - must be calm and polite
  - must contain current state of the keg and the warehouse
- - must contain a greeting and a signature from Pan Botka (Mr. Botka)
+ - must contain a greeting and a signature from Pan Botka
  - must be in Czech language
  - must use informal language
  - must be short and clear - containing the most relevant information
  - must NOT contain information about generating the message or deduction used to generate the message
  - must NOT mention prices in the pub
+ - must NOT contain links as source of information
  - should motivate the guest to come
  - might contain current time
  - might contain weather information
  - might contain relevant information about pub event (use pub_calendar tool)
+ - should NOT contain information about events in far future (more than 2 weeks)
  - might contain local news
  - Mr. Botka is the the only inviting person - do NOT use we/us/our
 
 Additional requirements:
  - the keg is technically empty when there is less than 6 beers - in this case there will be a new keg soon
  - beer from a new keg is always much better than from the old one
+ - there is a change that pub_calendar tool will return no event - in this case do not mention any event and skip this part
