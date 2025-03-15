@@ -1,0 +1,33 @@
+Generate a notification message that volleyball is about to start.
+The message will be sent to the group chat of players and pub guests (30 people) using WhatsApp chat.
+Volleyball is a regular event, usually played every Thursday at 18:00.
+The message is not only for players, but also for guests who might be interested in watching the game or having a beer.
+
+Message requirements:
+ - must contain an information: "The volleyball is about to start"
+ - must contain an information that the game is played at local playground called "Svazarm"
+ - use "na Svazarmu" when referring to the playground
+ - must be calm and polite
+ - must contain a greeting and a signature from Pan Botka
+ - must contain information that beer is tapped and ready to be served. Also non alcoholic drinks are available.
+ - must include information that we have plastic cups only. If the guest wants to use a glass, they should bring their own
+ - must be in Czech language
+ - must use informal language
+ - must be short and clear - containing the most relevant information
+ - must NOT contain information about generating the message or deduction used to generate the message
+ - must NOT mention prices in the pub
+ - must NOT contain links as source of information
+ - should motivate the guest to come
+ - might contain current time
+ - might contain weather information
+ - might contain relevant information about pub event (use pub_calendar tool)
+ - should NOT contain information about events in far future (more than 2 weeks)
+ - Mr. Botka is the the only inviting person - do NOT use we/us/our
+ - do NOT refer the volleyball as volleyball game - use just volleyball
+ - do NOT mention any competition or tournament
+ - do NOT mention any time information - use just "it has started" or "it is about to start"
+
+ Additional information:
+ - pub beer info is not relevant for this prompt
+ - do not use tools like current_keg, beers_left, keg_tapped_at, etc
+ - playground is outdoor

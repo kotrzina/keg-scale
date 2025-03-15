@@ -36,6 +36,8 @@ type Config struct {
 	AnthropicAPIKey        string
 	OpenAiAPIKey           string
 
+	CommandVolleyball string
+
 	CalendarPubURL      string
 	CalendarConcertsURL string
 }
@@ -63,6 +65,8 @@ func NewConfig() *Config {
 		WhatsAppCustomMessages: parseCustomMessages(getStringEnvDefault("WHATSAPP_CUSTOM_MESSAGES", "")),
 		AnthropicAPIKey:        getStringEnvDefault("ANTHROPIC_API_KEY", ""),
 		OpenAiAPIKey:           getStringEnvDefault("OPENAI_API_KEY", ""),
+
+		CommandVolleyball: getStringEnvDefault("COMMAND_VOLLEYBALL", ""),
 
 		CalendarPubURL:      getStringEnvDefault("CALENDAR_PUB_URL", ""),
 		CalendarConcertsURL: getStringEnvDefault("CALENDAR_CONCERTS_URL", ""),

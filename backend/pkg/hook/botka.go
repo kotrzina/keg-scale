@@ -58,6 +58,7 @@ func NewBotka(
 		client.RegisterEventHandler(w.pricesHandler())
 		client.RegisterEventHandler(w.warehouseHandler())
 		client.RegisterEventHandler(w.resetHandler())
+		client.RegisterEventHandler(w.volleyballHandler())
 		client.RegisterEventHandler(w.aiHandler())
 	}
 
@@ -285,6 +286,37 @@ func (b *Botka) resetHandler() wa.EventHandler {
 			}
 
 			return b.whatsapp.SendText(from, reply)
+		},
+	}
+}
+
+func (b *Botka) volleyballHandler() wa.EventHandler {
+	return wa.EventHandler{
+		MatchFunc: func(msg string) bool {
+			if b.config.CommandVolleyball == "" {
+				return false // ignore if the command is not set
+			}
+
+			return strings.EqualFold(msg, fmt.Sprintf("!%s", b.config.CommandVolleyball)) // e.g. !volleyball
+		},
+		HandleFunc: func(from, _ string) error {
+			reply := "Rozkaz kapitáne! 🏐🏐\n\nHned vygeneruji zprávu o volejbalu a pošlu ji do skupiny Hospoda."
+			err := b.whatsapp.SendText(from, reply)
+			if err != nil {
+				return fmt.Errorf("could not send message: %w", err)
+			}
+
+			msg, err := b.ai.GenerateVolleyballMessage()
+			if err != nil {
+				return fmt.Errorf("could not generate volleyball message: %w", err)
+			}
+
+			err = b.whatsapp.SendText(b.config.WhatsAppOpenJid, msg)
+			if err != nil {
+				return fmt.Errorf("could not send volleyball message to group chat: %w", err)
+			}
+
+			return nil
 		},
 	}
 }

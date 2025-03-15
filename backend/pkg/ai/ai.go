@@ -42,6 +42,9 @@ var customOpenPrompt string
 //go:embed prompts/general_open.prompt
 var customGeneralMessage string
 
+//go:embed prompts/volleyball.prompt
+var volleyballMessage string
+
 func renderPrompt() string {
 	renderedPrompt := strings.ReplaceAll(prompt, "${datetime}", utils.FormatDate(time.Now()))
 
@@ -94,7 +97,6 @@ func (ai *Ai) GenerateGeneralOpenMessage() (string, error) {
 
 // GenerateCustomOpenMessage generates a custom open message
 // for the user with the given name
-// Is creates a
 func (ai *Ai) GenerateCustomOpenMessage(name string) (string, error) {
 	firstMsg := strings.ReplaceAll(customOpenPrompt, "${name}", name)
 	messages := []ChatMessage{
@@ -107,6 +109,23 @@ func (ai *Ai) GenerateCustomOpenMessage(name string) (string, error) {
 	resp, err := ai.GetResponse(messages, ModelQualityMedium)
 	if err != nil {
 		return "", fmt.Errorf("failed to generate open message for %s: %w", name, err)
+	}
+
+	return resp.Text, nil
+}
+
+// GenerateVolleyballMessage generates a volleyball message
+func (ai *Ai) GenerateVolleyballMessage() (string, error) {
+	messages := []ChatMessage{
+		{
+			From: Me,
+			Text: volleyballMessage,
+		},
+	}
+
+	resp, err := ai.GetResponse(messages, ModelQualityHigh)
+	if err != nil {
+		return "", fmt.Errorf("failed to generate volleyball message: %w", err)
 	}
 
 	return resp.Text, nil
