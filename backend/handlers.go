@@ -299,14 +299,14 @@ func (hr *HandlerRepository) scaleChartHandler() func(http.ResponseWriter, *http
 				return
 			}
 
-			start = end.Add(-d)
+			start = end.Add(-d).Round(time.Hour)
 		}
 
 		delta := end.Sub(start) // duration between start and end
 
 		// we want to set reasonable step for the delta
 		step := 5 * time.Minute
-		if delta > 7*24*time.Hour {
+		if delta > 2*24*time.Hour {
 			step = 1 * time.Hour
 		}
 		if delta > 30*24*time.Hour {
