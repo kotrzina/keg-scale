@@ -491,7 +491,7 @@ func (tf *ToolFactory) sdhEventsTool() Tool {
 func (tf *ToolFactory) tableTennisResultsTool() Tool {
 	return Tool{
 		Name:        "table_tennis_results",
-		Description: "Provides matches schedule and results of the table tennis league. The name of our team is Pinec Veselice.",
+		Description: "Provides matches schedule and results of the table tennis league. The name of our team is Pinec Veselice. Table tennis team has 4 players and match has 16 single matches and 2 double matches. It means that a winner needs at least 10 points.",
 		Fn: func(_ string) (string, error) {
 			output, err := ProvideTableTennisResults()
 			if err != nil {
@@ -506,7 +506,7 @@ func (tf *ToolFactory) tableTennisResultsTool() Tool {
 func (tf *ToolFactory) tableTennisTableTool() Tool {
 	return Tool{
 		Name:        "table_tennis_league_table",
-		Description: "Provides leaderboard table of the table tennis league.",
+		Description: "Provides leaderboard table of the table tennis league with our team Pinec Veselice. The table contains team names, matches played, wins, draws, losses, points, and sets. The table is usually updated after each match.",
 		Fn: func(_ string) (string, error) {
 			output, err := ProvideTableTennisLeagueTable()
 			if err != nil {
