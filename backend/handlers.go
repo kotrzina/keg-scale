@@ -226,7 +226,7 @@ func (hr *HandlerRepository) aiTestHandler() func(http.ResponseWriter, *http.Req
 			return
 		}
 
-		resp, err := hr.ai.GetResponse(data, ai.ModelQualityMedium)
+		resp, err := hr.ai.GetResponse(data, ai.ModelQualityHigh)
 		if err != nil {
 			hr.logger.Errorf("could not get response from AI: %v", err)
 			resp = ai.Response{

@@ -37,6 +37,7 @@ Important rule: Never invent additional information that is not directly in the 
  - event dates
  - table tennis team results
  - lunch menu or any other food
+ - when subject is not specified, use local context (e.g. local table tenis team - Pinec Veselice, local playground - Svazarm)
 
 Language style rules:
  - Czech synonyms for beer keg: bečka = sud = keg
