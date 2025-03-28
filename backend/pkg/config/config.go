@@ -13,6 +13,14 @@ type CustomMessage struct {
 	Phone string
 }
 
+// BotkaCommands represents secret commands that can be used in the WhatsApp chat
+// they starts with ! and the body of message needs to be exactly the same as the one defined here
+type BotkaCommands struct {
+	Help       string
+	Volleyball string
+	NoMessage  string
+}
+
 type Config struct {
 	Debug bool
 
@@ -36,7 +44,7 @@ type Config struct {
 	AnthropicAPIKey        string
 	OpenAiAPIKey           string
 
-	CommandVolleyball string
+	Commands BotkaCommands
 
 	CalendarPubURL      string
 	CalendarConcertsURL string
@@ -66,7 +74,7 @@ func NewConfig() *Config {
 		AnthropicAPIKey:        getStringEnvDefault("ANTHROPIC_API_KEY", ""),
 		OpenAiAPIKey:           getStringEnvDefault("OPENAI_API_KEY", ""),
 
-		CommandVolleyball: getStringEnvDefault("COMMAND_VOLLEYBALL", ""),
+		Commands: parseBotkaCommands(os.Getenv("BOTKA_COMMANDS")),
 
 		CalendarPubURL:      getStringEnvDefault("CALENDAR_PUB_URL", ""),
 		CalendarConcertsURL: getStringEnvDefault("CALENDAR_CONCERTS_URL", ""),
@@ -120,4 +128,25 @@ func parseCustomMessages(envString string) []CustomMessage {
 		})
 	}
 	return customMessages
+}
+
+func parseBotkaCommands(input string) BotkaCommands {
+	rawCommands := strings.Split(input, ",")
+	commands := make(map[string]string, len(rawCommands))
+
+	for _, rawCommand := range rawCommands {
+		command := strings.Split(rawCommand, ":")
+		if len(command) != 2 {
+			fmt.Printf("Invalid botka command: %s\n", rawCommand)
+			continue
+		}
+
+		commands[command[0]] = command[1]
+	}
+
+	return BotkaCommands{
+		Help:       commands["help"],
+		Volleyball: commands["volleyball"],
+		NoMessage:  commands["no_message"],
+	}
 }

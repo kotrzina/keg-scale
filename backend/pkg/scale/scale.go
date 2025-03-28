@@ -346,6 +346,16 @@ func (s *Scale) DecreaseWarehouse(keg int) error {
 	return nil
 }
 
+// ResetOpenAt resets the open_at time for the pub
+// it might be useful for force message skipping
+// it basically says that the pub was opened right now
+func (s *Scale) ResetOpenAt() {
+	s.mux.Lock()
+	defer s.mux.Unlock()
+
+	s.pub.openedAt = time.Now()
+}
+
 // isOk returns true if the scale is ok based on the last update time
 func (s *Scale) isOk() bool {
 	return time.Since(s.lastOk) < okLimit

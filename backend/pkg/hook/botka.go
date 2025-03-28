@@ -58,7 +58,11 @@ func NewBotka(
 		client.RegisterEventHandler(w.pricesHandler())
 		client.RegisterEventHandler(w.warehouseHandler())
 		client.RegisterEventHandler(w.resetHandler())
+
+		client.RegisterEventHandler(w.secretHelpHandler())
 		client.RegisterEventHandler(w.volleyballHandler())
+		client.RegisterEventHandler(w.noMessageHandler())
+
 		client.RegisterEventHandler(w.aiHandler())
 	}
 
@@ -290,14 +294,35 @@ func (b *Botka) resetHandler() wa.EventHandler {
 	}
 }
 
+func (b *Botka) secretHelpHandler() wa.EventHandler {
+	return wa.EventHandler{
+		MatchFunc: func(msg string) bool {
+			return checkSecretCommand(msg, b.config.Commands.Help)
+		},
+		HandleFunc: func(from, _ string) error {
+			sb := strings.Builder{}
+
+			sb.WriteString("*Příkazy:*\n")
+			sb.WriteString(fmt.Sprintf("*!%s* - nápověda\n", b.config.Commands.Help))
+			sb.WriteString(fmt.Sprintf("*!%s* - zpráva do skupiny hospoda\n", b.config.Commands.Volleyball))
+			sb.WriteString(fmt.Sprintf("*!%s* - neposílej dnes zprávu o otevření hospody\n", b.config.Commands.NoMessage))
+
+			sb.WriteString("\nPříkazy musí být napsané přesně tak, jak jsou zde uvedeny.")
+
+			err := b.whatsapp.SendText(from, sb.String())
+			if err != nil {
+				return fmt.Errorf("could not send message: %w", err)
+			}
+
+			return nil
+		},
+	}
+}
+
 func (b *Botka) volleyballHandler() wa.EventHandler {
 	return wa.EventHandler{
 		MatchFunc: func(msg string) bool {
-			if b.config.CommandVolleyball == "" {
-				return false // ignore if the command is not set
-			}
-
-			return strings.EqualFold(msg, fmt.Sprintf("!%s", b.config.CommandVolleyball)) // e.g. !volleyball
+			return checkSecretCommand(msg, b.config.Commands.Volleyball)
 		},
 		HandleFunc: func(from, _ string) error {
 			reply := "Rozkaz kapitáne! 🏐🏐\n\nHned vygeneruji zprávu o volejbalu a pošlu ji do skupiny Hospoda."
@@ -314,6 +339,26 @@ func (b *Botka) volleyballHandler() wa.EventHandler {
 			err = b.whatsapp.SendText(b.config.WhatsAppOpenJid, msg)
 			if err != nil {
 				return fmt.Errorf("could not send volleyball message to group chat: %w", err)
+			}
+
+			return nil
+		},
+	}
+}
+
+func (b *Botka) noMessageHandler() wa.EventHandler {
+	return wa.EventHandler{
+		MatchFunc: func(msg string) bool {
+			return checkSecretCommand(msg, b.config.Commands.NoMessage)
+		},
+		HandleFunc: func(from, _ string) error {
+			b.scale.ResetOpenAt()
+			b.logger.Infof("%s requested no message open", from)
+
+			reply := "Rozumím, dneska na tajňačku!! 🤫🤫"
+			err := b.whatsapp.SendText(from, reply)
+			if err != nil {
+				return fmt.Errorf("could not send message: %w", err)
 			}
 
 			return nil
@@ -425,4 +470,14 @@ func mapUser(author store.ConversationMessageAuthor) string {
 	}
 
 	return "bot"
+}
+
+// checkSecretCommand checks if the message is a secret command
+// secret commands are defined in the configuration
+func checkSecretCommand(msg, command string) bool {
+	if command == "" {
+		return false // ignore if the command is not set
+	}
+
+	return strings.EqualFold(msg, fmt.Sprintf("!%s", command))
 }

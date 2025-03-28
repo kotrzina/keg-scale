@@ -21,3 +21,11 @@ func TestParseCustomMessagesEmpty(t *testing.T) {
 
 	assert.Equal(t, 0, len(contacts))
 }
+
+func TestParseCustomMessagesInvalid(t *testing.T) {
+	commands := parseBotkaCommands("help:sos,volleyball:vqq123,no_message:taj333")
+
+	assert.Equal(t, "sos", commands.Help)
+	assert.Equal(t, "vqq123", commands.Volleyball)
+	assert.Equal(t, "taj333", commands.NoMessage)
+}
