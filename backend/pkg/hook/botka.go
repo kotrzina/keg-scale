@@ -303,11 +303,10 @@ func (b *Botka) secretHelpHandler() wa.EventHandler {
 			sb := strings.Builder{}
 
 			sb.WriteString("*Příkazy:*\n")
-			sb.WriteString(fmt.Sprintf("*!%s* - nápověda\n", b.config.Commands.Help))
-			sb.WriteString(fmt.Sprintf("*!%s* - zpráva do skupiny hospoda\n", b.config.Commands.Volleyball))
+			sb.WriteString(fmt.Sprintf("*!%s* - volejbal zpráva do skupiny hospoda\n", b.config.Commands.Volleyball))
 			sb.WriteString(fmt.Sprintf("*!%s* - neposílej dnes zprávu o otevření hospody\n", b.config.Commands.NoMessage))
 
-			sb.WriteString("\nPříkazy musí být napsané přesně tak, jak jsou zde uvedeny.")
+			sb.WriteString("\nPříkaz musí být napsaný přesně tak, jak je zde uveden.")
 
 			err := b.whatsapp.SendText(from, sb.String())
 			if err != nil {
