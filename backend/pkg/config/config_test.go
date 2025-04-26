@@ -9,7 +9,7 @@ import (
 func TestParseCustomMessagesWithData(t *testing.T) {
 	contacts := parseCustomMessages("George:12345,not-valid,Thomas:6789023")
 
-	assert.Equal(t, 2, len(contacts))
+	assert.Len(t, contacts, 2)
 	assert.Equal(t, "George", contacts[0].Name)
 	assert.Equal(t, "12345", contacts[0].Phone)
 	assert.Equal(t, "Thomas", contacts[1].Name)
@@ -19,7 +19,7 @@ func TestParseCustomMessagesWithData(t *testing.T) {
 func TestParseCustomMessagesEmpty(t *testing.T) {
 	contacts := parseCustomMessages("")
 
-	assert.Equal(t, 0, len(contacts))
+	assert.Empty(t, contacts)
 }
 
 func TestParseCustomMessagesInvalid(t *testing.T) {

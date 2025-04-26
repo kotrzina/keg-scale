@@ -15,7 +15,7 @@ func ProvideCalendar(url string, start, end time.Time) (string, error) {
 		return "", fmt.Errorf("could not get calendar: %w", err)
 	}
 	if resp.Body == nil {
-		defer resp.Body.Close()
+		defer resp.Body.Close() //nolint: errcheck
 	}
 
 	calendar := gocal.NewParser(resp.Body)

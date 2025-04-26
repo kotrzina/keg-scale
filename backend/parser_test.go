@@ -3,7 +3,7 @@ package main
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestScale_ParseScaleMessage(t *testing.T) {
@@ -23,7 +23,7 @@ func TestScale_ParseScaleMessage(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.raw, func(t *testing.T) {
 			parsed, err := ParseScaleMessage(test.raw)
-			assert.Nil(t, err)
+			require.NoError(t, err)
 
 			if test.parsed.MessageID != parsed.MessageID {
 				t.Errorf("Expected MessageID to be %d, got %d", test.parsed.MessageID, parsed.MessageID)

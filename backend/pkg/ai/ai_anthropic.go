@@ -63,8 +63,8 @@ func (ai *Anthropic) GetResponse(history []ChatMessage, quality ModelQuality) (R
 
 	messages := make([]anthropic.Message, len(history))
 	for i, message := range history {
-		switch {
-		case message.From == Me:
+		switch message.From {
+		case Me:
 			// all other messages from user
 			messages[i] = anthropic.NewUserTextMessage(message.Text)
 		default:

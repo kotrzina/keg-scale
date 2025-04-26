@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestStrip(t *testing.T) {
@@ -27,8 +27,8 @@ func TestStrip(t *testing.T) {
 
 func TestGetOkJson(t *testing.T) {
 	got, err := json.Marshal(GetOk())
-	assert.Nil(t, err)
-	assert.Contains(t, string(got), "ok")
+	require.NoError(t, err)
+	require.Contains(t, string(got), "ok")
 }
 
 func TestFormatBeer(t *testing.T) {

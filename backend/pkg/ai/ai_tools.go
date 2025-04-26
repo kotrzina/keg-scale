@@ -305,7 +305,7 @@ func (tf *ToolFactory) localNewsTool() Tool {
 			if err != nil {
 				return "", fmt.Errorf("could not get rss feed: %w", err)
 			}
-			defer resp.Body.Close()
+			defer resp.Body.Close() //nolint: errcheck
 
 			fp := gofeed.NewParser()
 			feed, err := fp.Parse(resp.Body)
@@ -579,7 +579,7 @@ func (tf *ToolFactory) StaticTools() ([]Tool, error) {
 		return nil, fmt.Errorf("could not get static tools: %w", err)
 	}
 
-	defer resp.Body.Close()
+	defer resp.Body.Close() //nolint: errcheck
 
 	staticContent, err := io.ReadAll(resp.Body)
 	if err != nil {

@@ -118,7 +118,7 @@ func (provider *BaracekProvider) getParserForPage(url string) (*html.Node, error
 		return nil, fmt.Errorf("could not get response from Baracek: %w", err)
 	}
 
-	defer resp.Body.Close()
+	defer resp.Body.Close() //nolint: errcheck
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {

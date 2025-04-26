@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestCalcBeersLeft(t *testing.T) {
@@ -94,7 +95,7 @@ func TestGuessNewKegSize(t *testing.T) {
 
 	for _, tc := range testcases {
 		keg, err := GuessNewKegSize(tc.weight)
-		assert.Nil(t, err)
-		assert.Equal(t, tc.keg, keg, "Expected keg to be %d, got %d", tc.keg, keg)
+		require.NoError(t, err)
+		require.Equal(t, tc.keg, keg, "Expected keg to be %d, got %d", tc.keg, keg)
 	}
 }

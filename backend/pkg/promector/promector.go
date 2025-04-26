@@ -74,6 +74,8 @@ func (p *Promector) GetRangeData(query string, start, end time.Time, step time.D
 		return nil, fmt.Errorf("could not get value from prometheus: %w", err)
 	}
 
+	defer response.Body.Close() //nolint: errcheck
+
 	if response.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("unexpected status code: %d", response.StatusCode)
 	}

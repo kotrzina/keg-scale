@@ -18,7 +18,7 @@ func ProvideTennisData(name string) (string, error) {
 		return "", fmt.Errorf("could not get response from Baracek: %w", err)
 	}
 
-	defer resp.Body.Close()
+	defer resp.Body.Close() //nolint: errcheck
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {

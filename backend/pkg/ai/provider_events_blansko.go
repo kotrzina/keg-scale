@@ -26,7 +26,7 @@ func ProvideEventsBlansko() (string, error) {
 		return "", fmt.Errorf("could not get response from akceblansko: %w", err)
 	}
 
-	defer resp.Body.Close()
+	defer resp.Body.Close() //nolint: errcheck
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -54,7 +54,7 @@ func ProvideEventsBlansko() (string, error) {
 	xpathPlace := "//span[contains(@class, 'place-name')]"
 	xpathDate := "//div[contains(@class, 'card-eventDate')]"
 	events := make([]BkEvent, len(els))
-	for _, el := range els {
+	for i, el := range els {
 		title, err := htmlquery.QueryAll(el, xpathTitle)
 		if err != nil {
 			return "", fmt.Errorf("could not parse title from Baracek: %w", err)
@@ -75,12 +75,12 @@ func ProvideEventsBlansko() (string, error) {
 			return "", fmt.Errorf("could not parse date from akceblansko: %w", err)
 		}
 
-		events = append(events, BkEvent{
+		events[i] = BkEvent{
 			Title:    strings.TrimSuffix(removeUnwantedHTML(htmlquery.InnerText(title[0])), " kino"),
 			Category: removeUnwantedHTML(htmlquery.InnerText(category[0])),
 			Place:    removeUnwantedHTML(htmlquery.InnerText(place[0])),
 			Date:     removeUnwantedHTML(htmlquery.InnerText(date[0])),
-		})
+		}
 	}
 
 	output, err := json.Marshal(events)

@@ -36,6 +36,8 @@ func (provider *ManeoProvider) GetItems() ([]BeerItem, error) {
 		}
 	}
 
+	defer resp.Body.Close() //nolint: errcheck
+
 	if err != nil {
 		return nil, fmt.Errorf("could not get response from Maneo: %w", err)
 	}

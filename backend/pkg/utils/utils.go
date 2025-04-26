@@ -52,7 +52,7 @@ func FormatTime(t time.Time) string {
 func GetTz() *time.Location {
 	tz, err := time.LoadLocation("Europe/Prague")
 	if err != nil {
-		os.Stderr.WriteString("Failed to load timezone: " + err.Error())
+		_, _ = os.Stderr.WriteString("Failed to load timezone: " + err.Error())
 		os.Exit(1)
 	}
 	return tz

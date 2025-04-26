@@ -15,10 +15,11 @@ import (
 
 func TestScale_AddMeasurement(t *testing.T) {
 	s := createScaleWithMeasurements(t, []float64{10, 3, 20, 30, 40, 81, 50, 60}...)
-	assert.Equal(t, 60000.0, s.weight)
+	assert.InEpsilon(t, 60000.0, s.weight, 0.000001)
 }
 
 func createScaleWithMeasurements(t *testing.T, weights ...float64) *Scale {
+	t.Helper()
 	logger := logrus.New()
 	var buf bytes.Buffer
 	logger.SetOutput(&buf)
@@ -30,7 +31,7 @@ func createScaleWithMeasurements(t *testing.T, weights ...float64) *Scale {
 		logger,
 	)
 	for _, weight := range weights {
-		assert.Nil(t, s.AddMeasurement(weight*1000))
+		assert.NoError(t, s.AddMeasurement(weight*1000))
 	}
 	return s
 }

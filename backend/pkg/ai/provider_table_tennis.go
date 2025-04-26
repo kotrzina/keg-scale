@@ -107,7 +107,7 @@ func providerTableTennisPage(url string) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("could not get response for init request: %w", err)
 	}
-	defer initResp.Body.Close()
+	defer initResp.Body.Close() //nolint: errcheck
 
 	realReq, err := http.NewRequest(http.MethodGet, url+"?nuser=1", http.NoBody)
 	if err != nil {
@@ -120,7 +120,7 @@ func providerTableTennisPage(url string) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("could not get response from page: %w", err)
 	}
-	defer realResp.Body.Close()
+	defer realResp.Body.Close() //nolint: errcheck
 
 	body, err := io.ReadAll(realResp.Body)
 	if err != nil {

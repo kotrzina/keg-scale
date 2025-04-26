@@ -88,8 +88,9 @@ func reactRedirect(server http.Handler, dir string) http.Handler {
 // StartServer starts HTTP server
 func StartServer(router *mux.Router, port int, logger *logrus.Logger) *http.Server {
 	srv := &http.Server{
-		Addr:    fmt.Sprintf(":%d", port),
-		Handler: router,
+		Addr:              fmt.Sprintf(":%d", port),
+		Handler:           router,
+		ReadHeaderTimeout: 5 * time.Second,
 	}
 
 	go func() {

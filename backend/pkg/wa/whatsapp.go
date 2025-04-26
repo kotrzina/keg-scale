@@ -112,6 +112,7 @@ func (wa *WhatsAppClient) RegisterEventHandler(handler EventHandler) {
 func (wa *WhatsAppClient) eventHandler(evt interface{}) {
 	wa.logger.Infof("Received WhatsApp event: %v", evt)
 
+	//nolint: gocritic
 	switch v := evt.(type) {
 	case *events.Message:
 		wa.handleIncomingMessage(v)
@@ -121,7 +122,7 @@ func (wa *WhatsAppClient) eventHandler(evt interface{}) {
 func (wa *WhatsAppClient) handleIncomingMessage(msg *events.Message) {
 	text := ""
 	if msg.Message.ExtendedTextMessage != nil && msg.Message.ExtendedTextMessage.Text != nil {
-		text = *msg.Message.ExtendedTextMessage.Text
+		text = msg.Message.ExtendedTextMessage.GetText()
 	}
 
 	if msg.Message.Conversation != nil {
@@ -133,18 +134,18 @@ func (wa *WhatsAppClient) handleIncomingMessage(msg *events.Message) {
 		return
 	}
 
-	from := msg.Info.MessageSource.Chat.User // we want to replay to the same chat
+	from := msg.Info.Chat.User // we want to replay to the same chat
 	wa.logger.Infof(
 		"received message in chat %s@%s from %s@%s: %s",
-		msg.Info.MessageSource.Chat.User,
-		msg.Info.MessageSource.Chat.Server,
-		msg.Info.MessageSource.Sender.User,
-		msg.Info.MessageSource.Sender.Server,
+		msg.Info.Chat.User,
+		msg.Info.Chat.Server,
+		msg.Info.Sender.User,
+		msg.Info.Sender.Server,
 		text,
 	)
 
 	// ignore messages from open WhatsApp chat
-	if msg.Info.MessageSource.Chat.User == wa.config.WhatsAppOpenJid {
+	if msg.Info.Chat.User == wa.config.WhatsAppOpenJid {
 		wa.logger.Infof("Ignoring message from %q", wa.config.WhatsAppOpenJid)
 		return
 	}
@@ -219,7 +220,7 @@ func (wa *WhatsAppClient) SendImage(to, caption, imagePath string) error {
 		return fmt.Errorf("WhatsAppClient is not ready")
 	}
 
-	imageBytes, err := os.ReadFile(imagePath)
+	imageBytes, err := os.ReadFile(imagePath) //nolint: gosec
 	if err != nil {
 		return fmt.Errorf("failed to read image: %w", err)
 	}

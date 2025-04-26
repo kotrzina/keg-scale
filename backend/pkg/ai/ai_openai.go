@@ -70,8 +70,8 @@ func (ai *OpenAi) GetResponse(history []ChatMessage, quality ModelQuality) (Resp
 	messages := make([]openai.ChatCompletionMessageParamUnion, len(history)+1)
 	messages[0] = openai.SystemMessage(renderPrompt())
 	for i, message := range history {
-		switch {
-		case message.From == Me:
+		switch message.From {
+		case Me:
 			// all other messages from user
 			messages[i+1] = openai.UserMessage(message.Text)
 		default:
@@ -162,7 +162,7 @@ func (ai *OpenAi) convertTools(tools []Tool) []openai.ChatCompletionToolParam {
 }
 
 func (ai *OpenAi) convertField(v Property) map[string]interface{} {
-	t := ""
+	var t string
 	switch v.Type {
 	case SchemaTypeObject:
 		t = "object"
