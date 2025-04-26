@@ -38,6 +38,13 @@ func main() {
 
 	whatsapp := wa.New(ctx, conf, logger)
 	defer whatsapp.Close()
+	go func() {
+		// make WhatsApp ready after n seconds
+		// we want to process all undelivered messages and ignore them
+		// for situations when the bot is not ready (offline or not logged in)
+		time.Sleep(15 * time.Second)
+		whatsapp.MakeReady()
+	}()
 
 	monitor := prometheus.New()
 	prometheusCollector := promector.NewPromector(ctx, conf, logger)

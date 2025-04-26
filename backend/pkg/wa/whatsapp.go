@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"sync"
 
 	"github.com/kotrzina/keg-scale/pkg/config"
 	"github.com/sirupsen/logrus"
@@ -19,12 +20,14 @@ import (
 
 type WhatsAppClient struct {
 	client   *whatsmeow.Client
+	ready    bool // true if client is ready to send messages
 	store    *store.Device
 	handlers []EventHandler
 
-	config *config.Config
-	ctx    context.Context
-	logger *logrus.Logger
+	config   *config.Config
+	ctx      context.Context
+	readyMtx sync.RWMutex
+	logger   *logrus.Logger
 }
 
 type EventMatchFunc func(msg string) bool
@@ -88,12 +91,14 @@ func New(ctx context.Context, conf *config.Config, logger *logrus.Logger) *Whats
 
 	wa := &WhatsAppClient{
 		client:   client,
+		ready:    false,
 		store:    deviceStore,
 		handlers: []EventHandler{},
 
-		config: conf,
-		ctx:    ctx,
-		logger: logger,
+		config:   conf,
+		ctx:      ctx,
+		readyMtx: sync.RWMutex{},
+		logger:   logger,
 	}
 
 	client.AddEventHandler(wa.eventHandler)
@@ -164,6 +169,10 @@ func (wa *WhatsAppClient) handleIncomingMessage(msg *events.Message) {
 }
 
 func (wa *WhatsAppClient) SetTyping(to string, typing bool) error {
+	if !wa.IsReady() {
+		return fmt.Errorf("WhatsAppClient is not ready")
+	}
+
 	state := types.ChatPresencePaused
 	if typing {
 		state = types.ChatPresenceComposing
@@ -206,9 +215,8 @@ func (wa *WhatsAppClient) SendLocation(to string, loc Location) error {
 }
 
 func (wa *WhatsAppClient) SendImage(to, caption, imagePath string) error {
-	if !wa.client.IsConnected() {
-		wa.logger.Errorf("Not connected to WhatsAppClient")
-		return fmt.Errorf("not connected to WhatsAppClient")
+	if !wa.IsReady() {
+		return fmt.Errorf("WhatsAppClient is not ready")
 	}
 
 	imageBytes, err := os.ReadFile(imagePath)
@@ -264,9 +272,8 @@ func (wa *WhatsAppClient) buildJid(user string) types.JID {
 }
 
 func (wa *WhatsAppClient) send(to string, msg *waE2E.Message) error {
-	if !wa.client.IsConnected() {
-		wa.logger.Errorf("Not connected to WhatsAppClient")
-		return fmt.Errorf("not connected to WhatsAppClient")
+	if !wa.IsReady() {
+		return fmt.Errorf("WhatsAppClient is not ready")
 	}
 
 	resp, err := wa.client.SendMessage(wa.ctx, wa.buildJid(to), msg)
@@ -276,4 +283,27 @@ func (wa *WhatsAppClient) send(to string, msg *waE2E.Message) error {
 
 	wa.logger.Infof("Message sent: %s", resp.ID)
 	return err
+}
+
+func (wa *WhatsAppClient) MakeReady() {
+	wa.readyMtx.Lock()
+	defer wa.readyMtx.Unlock()
+
+	wa.ready = true
+	wa.logger.Infof("WhatsAppClient is ready")
+}
+
+func (wa *WhatsAppClient) IsReady() bool {
+	if !wa.client.IsConnected() {
+		wa.logger.Errorf("Not connected to WhatsAppClient")
+	}
+
+	wa.readyMtx.RLock()
+	defer wa.readyMtx.RUnlock()
+
+	if !wa.ready {
+		wa.logger.Info("WhatsAppClient is not ready")
+	}
+
+	return wa.ready
 }
