@@ -9,6 +9,7 @@ import (
 
 	"github.com/kotrzina/keg-scale/pkg/config"
 	"github.com/sirupsen/logrus"
+	"github.com/skip2/go-qrcode"
 	"go.mau.fi/whatsmeow"
 	"go.mau.fi/whatsmeow/proto/waE2E"
 	"go.mau.fi/whatsmeow/store"
@@ -23,6 +24,7 @@ type WhatsAppClient struct {
 	ready    bool // true if client is ready to send messages
 	store    *store.Device
 	handlers []EventHandler
+	qrCode   *string // QR code for pairing
 
 	config   *config.Config
 	ctx      context.Context
@@ -52,6 +54,9 @@ func New(ctx context.Context, conf *config.Config, logger *logrus.Logger) *Whats
 		logger.Fatalf("Failed to get device: %v", err)
 	}
 
+	emptyString := ""
+	qrCode := &emptyString
+
 	client := whatsmeow.NewClient(deviceStore, customLogger)
 
 	if client.Store.ID == nil {
@@ -69,6 +74,7 @@ func New(ctx context.Context, conf *config.Config, logger *logrus.Logger) *Whats
 			for evt := range qrChan {
 				if evt.Event == "code" {
 					logger.Infof("QR code: %s", evt.Code)
+					*qrCode = evt.Code
 				} else {
 					logger.Infof("Login event: %s", evt.Event)
 				}
@@ -94,6 +100,7 @@ func New(ctx context.Context, conf *config.Config, logger *logrus.Logger) *Whats
 		ready:    false,
 		store:    deviceStore,
 		handlers: []EventHandler{},
+		qrCode:   qrCode,
 
 		config:   conf,
 		ctx:      ctx,
@@ -307,4 +314,33 @@ func (wa *WhatsAppClient) IsReady() bool {
 	}
 
 	return wa.ready
+}
+
+func (wa *WhatsAppClient) QrCodeImageHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	auth := r.URL.Query().Get("auth")
+	if auth != wa.config.AuthToken {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	if wa.qrCode == nil || *wa.qrCode == "" {
+		http.Error(w, "QR code not available", http.StatusNotFound)
+		return
+	}
+
+	png, err := qrcode.Encode(*wa.qrCode, qrcode.Highest, 1024)
+
+	if err != nil {
+		http.Error(w, "Failed to generate QR code", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "image/png")
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write(png)
 }

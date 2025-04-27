@@ -18,6 +18,7 @@ require (
 	github.com/prometheus/client_golang v1.20.5
 	github.com/redis/go-redis/v9 v9.7.0
 	github.com/sirupsen/logrus v1.9.3
+	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
 	github.com/stretchr/testify v1.10.0
 	go.mau.fi/whatsmeow v0.0.0-20250104105216-918c879fcd19
 	golang.org/x/net v0.33.0

@@ -16,6 +16,7 @@ import (
 	"github.com/kotrzina/keg-scale/pkg/prometheus"
 	"github.com/kotrzina/keg-scale/pkg/scale"
 	"github.com/kotrzina/keg-scale/pkg/utils"
+	"github.com/kotrzina/keg-scale/pkg/wa"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
 )
@@ -27,6 +28,7 @@ type HandlerRepository struct {
 	config    *config.Config
 	monitor   *prometheus.Monitor
 	logger    *logrus.Logger
+	wa        *wa.WhatsAppClient
 }
 
 func (hr *HandlerRepository) scaleMessageHandler() func(http.ResponseWriter, *http.Request) {

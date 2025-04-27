@@ -60,6 +60,7 @@ func main() {
 		config:    conf,
 		monitor:   monitor,
 		logger:    logger,
+		wa:        whatsapp,
 	})
 
 	srv := StartServer(router, 8080, logger)

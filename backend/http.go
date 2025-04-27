@@ -56,6 +56,7 @@ func NewRouter(hr *HandlerRepository) *mux.Router {
 	router.HandleFunc("/api/check/password", hr.checkPassword())
 
 	router.HandleFunc("/api/pub/active_keg", hr.activeKegHandler())
+	router.HandleFunc("/api/wa/qr", hr.wa.QrCodeImageHandler)
 
 	// frontend
 	dir := hr.config.FrontendPath
