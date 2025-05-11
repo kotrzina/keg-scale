@@ -75,7 +75,10 @@ func NewBotka(
 	return w
 }
 
+// nolint: govet // temporary
 func (b *Botka) messageOpen(_ scale.EventType) error {
+	return nil
+
 	data := b.scale.GetScale()
 
 	msg, err := b.ai.GenerateGeneralOpenMessage()
