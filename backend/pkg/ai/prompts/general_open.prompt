@@ -22,5 +22,4 @@ Message requirements:
 
 Additional requirements:
  - the keg is technically empty when there is less than 6 beers - in this case there will be a new keg soon
- - beer from a new keg is always much better than from the old one
  - there is a change that pub_calendar tool will return no event - in this case do not mention any event and skip this part
