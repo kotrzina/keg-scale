@@ -14,7 +14,7 @@ import (
 )
 
 type OpenAi struct {
-	client       *openai.Client
+	client       openai.Client
 	toolsFactory *ToolFactory
 
 	config  *config.Config
@@ -83,9 +83,9 @@ func (ai *OpenAi) GetResponse(history []ChatMessage, quality ModelQuality) (Resp
 	tools := ai.toolsFactory.GetTools()
 
 	param := openai.ChatCompletionNewParams{
-		Messages: openai.F(messages),
-		Model:    openai.F(model),
-		Tools:    openai.F(ai.convertTools(tools)),
+		Messages: messages,
+		Model:    model,
+		Tools:    ai.convertTools(tools),
 	}
 
 	running := true
@@ -100,7 +100,7 @@ func (ai *OpenAi) GetResponse(history []ChatMessage, quality ModelQuality) (Resp
 		}
 
 		// add response to the array of messages
-		param.Messages.Value = append(param.Messages.Value, resp.Choices[0].Message)
+		param.Messages = append(param.Messages, resp.Choices[0].Message.ToParam())
 
 		// check for tools and solve them
 		for _, toolCall := range resp.Choices[0].Message.ToolCalls {
@@ -112,7 +112,7 @@ func (ai *OpenAi) GetResponse(history []ChatMessage, quality ModelQuality) (Resp
 					if err != nil {
 						return output, fmt.Errorf("error running tool %s: %w", toolResp, err)
 					}
-					param.Messages.Value = append(param.Messages.Value, openai.ToolMessage(toolCall.ID, toolResp))
+					param.Messages = append(param.Messages, openai.ToolMessage(toolResp, toolCall.ID))
 				}
 			}
 		}
@@ -140,20 +140,18 @@ func (ai *OpenAi) convertTools(tools []Tool) []openai.ChatCompletionToolParam {
 	for i, t := range tools {
 		if t.HasSchema {
 			ret[i] = openai.ChatCompletionToolParam{
-				Type: openai.F(openai.ChatCompletionToolTypeFunction),
-				Function: openai.F(openai.FunctionDefinitionParam{
-					Name:        openai.String(t.Name),
+				Function: openai.FunctionDefinitionParam{
+					Name:        t.Name,
 					Description: openai.String(t.Description),
-					Parameters:  openai.F(openai.FunctionParameters(ai.convertField(t.Schema))),
-				}),
+					Parameters:  ai.convertField(t.Schema),
+				},
 			}
 		} else {
 			ret[i] = openai.ChatCompletionToolParam{
-				Type: openai.F(openai.ChatCompletionToolTypeFunction),
-				Function: openai.F(openai.FunctionDefinitionParam{
-					Name:        openai.String(t.Name),
+				Function: openai.FunctionDefinitionParam{
+					Name:        t.Name,
 					Description: openai.String(t.Description),
-				}),
+				},
 			}
 		}
 	}

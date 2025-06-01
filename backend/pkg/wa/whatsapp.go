@@ -43,13 +43,13 @@ type EventHandler struct {
 
 func New(ctx context.Context, conf *config.Config, logger *logrus.Logger) *WhatsAppClient {
 	customLogger := createLogger(logger)
-	container, err := sqlstore.New("postgres", conf.DBString, customLogger)
+	container, err := sqlstore.New(ctx, "postgres", conf.DBString, customLogger)
 	if err != nil {
 		logger.Fatalf("Failed to create container: %v", err)
 	}
 
 	// If you want multiple sessions, remember their JIDs and use .GetDevice(jid) or .GetAllDevices() instead.
-	deviceStore, err := container.GetFirstDevice()
+	deviceStore, err := container.GetFirstDevice(ctx)
 	if err != nil {
 		logger.Fatalf("Failed to get device: %v", err)
 	}
