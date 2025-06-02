@@ -1,5 +1,5 @@
 FROM golang:1.24 AS backend
-ENV CGO_ENABLED 0
+ENV CGO_ENABLED=0
 ADD backend /app
 WORKDIR /app
 RUN go build -ldflags "-s -w" -v -o keg-scale .
@@ -21,7 +21,7 @@ RUN apk update && \
 WORKDIR /app
 
 ADD Dockerfile /Dockerfile
-ENV FRONTEND_PATH /app/frontend/
+ENV FRONTEND_PATH=/app/frontend/
 
 COPY --from=backend /app/keg-scale /app/keg-scale
 COPY --from=frontend /app/build/ /app/frontend/
