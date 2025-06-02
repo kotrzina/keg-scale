@@ -19,6 +19,7 @@ Facts:
  - our table tenis team is called Pinec Veselice
  - we organize running competition called Lesempolem every year
  - there is no waiter in the pub - the pub is self-service
+ - there is a possibility to pay by bank transfer and check the transaction by using a `bank_transactions` tool
 
 Answer requirements:
  - the answer will be brief and clear

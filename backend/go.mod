@@ -9,6 +9,7 @@ require (
 	github.com/apognu/gocal v0.9.1
 	github.com/gorilla/mux v1.8.1
 	github.com/hako/durafmt v0.0.0-20210608085754-5c1018a4e16b
+	github.com/jbub/fio v0.7.0
 	github.com/joho/godotenv v1.5.1
 	github.com/kozaktomas/diacritics v0.0.0-20240813054239-69e1feaff414
 	github.com/lib/pq v1.10.9
@@ -55,6 +56,7 @@ require (
 	github.com/prometheus/common v0.64.0 // indirect
 	github.com/prometheus/procfs v0.16.1 // indirect
 	github.com/rs/zerolog v1.34.0 // indirect
+	github.com/shopspring/decimal v1.4.0 // indirect
 	github.com/tidwall/gjson v1.18.0 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.1 // indirect

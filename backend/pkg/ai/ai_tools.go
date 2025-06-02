@@ -48,6 +48,7 @@ func (tf *ToolFactory) GetTools() []Tool {
 		tf.lesempolemRegisteredTool(),
 		tf.musicConcertsTool(),
 		tf.pubCalendarTool(),
+		tf.bankTransactions(),
 	}
 
 	// concat with static tools
@@ -559,6 +560,16 @@ func (tf *ToolFactory) pubCalendarTool() Tool {
 			}
 
 			return output, nil
+		},
+	}
+}
+
+func (tf *ToolFactory) bankTransactions() Tool {
+	return Tool{
+		Name:        "bank_transactions",
+		Description: "Provides bank transactions for the last 14 days. The result is a json document with transactions. The source is the Fio bank API.",
+		Fn: func(_ string) (string, error) {
+			return ProvideFioTransactions(tf.config.FioToken)
 		},
 	}
 }

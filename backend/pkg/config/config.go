@@ -44,6 +44,8 @@ type Config struct {
 	AnthropicAPIKey        string
 	OpenAiAPIKey           string
 
+	FioToken string
+
 	Commands BotkaCommands
 
 	CalendarPubURL      string
@@ -73,6 +75,8 @@ func NewConfig() *Config {
 		WhatsAppCustomMessages: parseCustomMessages(getStringEnvDefault("WHATSAPP_CUSTOM_MESSAGES", "")),
 		AnthropicAPIKey:        getStringEnvDefault("ANTHROPIC_API_KEY", ""),
 		OpenAiAPIKey:           getStringEnvDefault("OPENAI_API_KEY", ""),
+
+		FioToken: getStringEnvDefault("FIO_TOKEN", ""),
 
 		Commands: parseBotkaCommands(os.Getenv("BOTKA_COMMANDS")),
 
