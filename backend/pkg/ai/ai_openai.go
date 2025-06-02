@@ -45,10 +45,10 @@ func NewOpenAi(ctx context.Context, conf *config.Config, s *scale.Scale, m *prom
 
 func (ai *OpenAi) GetQuality(quality ModelQuality) string {
 	if quality == ModelQualityHigh {
-		return openai.ChatModelGPT4o
+		return openai.ChatModelGPT4_1
 	}
 
-	return openai.ChatModelGPT4oMini
+	return openai.ChatModelGPT4_1Mini
 }
 
 func (ai *OpenAi) GetResponse(history []ChatMessage, quality ModelQuality) (Response, error) {
