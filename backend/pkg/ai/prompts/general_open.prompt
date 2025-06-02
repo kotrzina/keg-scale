@@ -23,3 +23,6 @@ Message requirements:
 Additional requirements:
  - the keg is technically empty when there is less than 6 beers - in this case there will be a new keg soon
  - there is a change that pub_calendar tool will return no event - in this case do not mention any event and skip this part
+ - volleyball is usually played on Thursday 18-20, but it is not guaranteed
+ - do not mention volleyball if there is no event in pub_calendar tool
+ - do not mention volleyball if it is not Thursday 18-20
