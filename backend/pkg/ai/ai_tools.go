@@ -48,7 +48,8 @@ func (tf *ToolFactory) GetTools() []Tool {
 		tf.lesempolemRegisteredTool(),
 		tf.musicConcertsTool(),
 		tf.pubCalendarTool(),
-		tf.bankTransactions(),
+		tf.bankTransactionsTool(),
+		tf.bankBalanceTool(),
 	}
 
 	// concat with static tools
@@ -564,12 +565,34 @@ func (tf *ToolFactory) pubCalendarTool() Tool {
 	}
 }
 
-func (tf *ToolFactory) bankTransactions() Tool {
+func (tf *ToolFactory) bankTransactionsTool() Tool {
 	return Tool{
 		Name:        "bank_transactions",
 		Description: "Provides bank transactions for the last 14 days. The result is a json document with transactions. The source is the Fio bank API.",
 		Fn: func(_ string) (string, error) {
-			return ProvideFioTransactions(tf.config.FioToken)
+			s := tf.scale.GetScale()
+			output, err := json.Marshal(s.BankTransactions)
+			if err != nil {
+				return "", fmt.Errorf("could not marshal bank transactions: %w", err)
+			}
+
+			return fmt.Sprintf("Transactions in JSON format:\n\n```json\n%s\n```", string(output)), nil
+		},
+	}
+}
+
+func (tf *ToolFactory) bankBalanceTool() Tool {
+	return Tool{
+		Name:        "bank_balance",
+		Description: "Provides current bank balance. The result is a json document with the balance. The source is the Fio bank API.",
+		Fn: func(_ string) (string, error) {
+			s := tf.scale.GetScale()
+			output, err := json.Marshal(s.BankBalance)
+			if err != nil {
+				return "", fmt.Errorf("could not marshal bank balance: %w", err)
+			}
+
+			return fmt.Sprintf("Bank balance in JSON format:\n\n```json\n%s\n```", string(output)), nil
 		},
 	}
 }

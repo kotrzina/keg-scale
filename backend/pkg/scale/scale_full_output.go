@@ -36,6 +36,9 @@ type FullOutput struct {
 	IsLow              bool            `json:"is_low"`
 	Warehouse          []WarehouseItem `json:"warehouse"`
 	WarehouseBeerLeft  int             `json:"warehouse_beer_left"`
+
+	BankBalance      BalanceOutput       `json:"bank_balance"`
+	BankTransactions []TransactionOutput `json:"bank_transactions"`
 }
 
 func (s *Scale) GetScale() FullOutput {
@@ -49,6 +52,10 @@ func (s *Scale) GetScale() FullOutput {
 		{Keg: 30, Amount: s.warehouse[3]},
 		{Keg: 50, Amount: s.warehouse[4]},
 	}
+
+	// Copy the transactions
+	bt := make([]TransactionOutput, len(s.bank.transactions))
+	copy(bt, s.bank.transactions)
 
 	output := FullOutput{
 		IsOk:               s.isOk(),
@@ -71,6 +78,8 @@ func (s *Scale) GetScale() FullOutput {
 		IsLow:             s.isLow,
 		Warehouse:         warehouse,
 		WarehouseBeerLeft: GetWarehouseBeersLeft(s.warehouse),
+		BankBalance:       s.bank.balance,
+		BankTransactions:  bt,
 	}
 
 	return output

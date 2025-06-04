@@ -7,9 +7,11 @@ import (
 	"time"
 
 	"github.com/hako/durafmt"
+	"github.com/jbub/fio"
 	"github.com/kotrzina/keg-scale/pkg/config"
 	"github.com/kotrzina/keg-scale/pkg/prometheus"
 	"github.com/kotrzina/keg-scale/pkg/store"
+	"github.com/kotrzina/keg-scale/pkg/utils"
 	"github.com/sirupsen/logrus"
 )
 
@@ -27,7 +29,8 @@ type Scale struct {
 	isLow        bool      // is the keg low and needs to be replaced soon
 	warehouse    [5]int    // warehouse of kegs [10l, 15l, 20l, 30l, 50l]
 
-	pub pub
+	pub  pub
+	bank *bank
 
 	lastOk time.Time
 	rssi   float64
@@ -45,6 +48,16 @@ type pub struct {
 	isOpen   bool
 	openedAt time.Time
 	closedAt time.Time
+}
+
+type bank struct {
+	client *fio.Client
+
+	lastUpdate   time.Time
+	transactions []TransactionOutput
+	balance      BalanceOutput
+
+	refreshMtx sync.Mutex // only one refresh at a time
 }
 
 const okLimit = 10 * time.Minute
@@ -83,6 +96,12 @@ func New(
 			closedAt: time.Now().Add(-9999 * time.Hour),
 		},
 
+		bank: &bank{
+			client:     fio.NewClient(conf.FioToken, nil),
+			lastUpdate: time.Now().Add(-9999 * time.Hour),
+			refreshMtx: sync.Mutex{},
+		},
+
 		lastOk: time.Now().Add(-9999 * time.Hour),
 
 		events: map[EventType][]Event{},
@@ -110,6 +129,28 @@ func New(
 			}
 		}
 	}(s)
+
+	// initial bank data refresh
+	if err = s.BankRefresh(ctx, true); err != nil {
+		s.logger.Errorf("Could not initianly refresh bank data: %v", err)
+	}
+
+	// periodically refresh bank data
+	go func(ctx context.Context, s *Scale) {
+		ticker := time.NewTicker(15 * time.Second)
+		for {
+			select {
+			case <-ticker.C:
+				if err = s.BankRefresh(ctx, false); err != nil {
+					s.logger.Errorf("Could not refresh bank data: %v", err)
+				}
+			case <-ctx.Done():
+				s.logger.Infof("Bank refresh stopped")
+				return
+			}
+
+		}
+	}(ctx, s)
 
 	return s
 }
@@ -271,6 +312,72 @@ func (s *Scale) Recheck() {
 	if !s.isOk() && s.pub.isOpen {
 		s.updatePub(false) // close the pub
 	}
+}
+
+// BankRefresh refreshes the bank transactions and balance
+func (s *Scale) BankRefresh(ctx context.Context, force bool) error {
+	s.bank.refreshMtx.Lock()
+	defer s.bank.refreshMtx.Unlock()
+
+	if !s.shouldRefreshBank(s.bank.lastUpdate, force) {
+		return nil // no need to refresh
+	}
+
+	s.bank.lastUpdate = time.Now()
+
+	opts := fio.ByPeriodOptions{
+		DateFrom: time.Now().Add(-14 * 24 * time.Hour),
+		DateTo:   time.Now(),
+	}
+
+	resp, err := s.bank.client.Transactions.ByPeriod(ctx, opts)
+	if err != nil {
+		return fmt.Errorf("unable to retrieve transactions: %w", err)
+	}
+
+	balance := BalanceOutput{
+		AccountID: resp.Info.AccountID,
+		BankID:    resp.Info.BankID,
+		Currency:  resp.Info.Currency,
+		IBAN:      resp.Info.IBAN,
+		BIC:       resp.Info.BIC,
+		Balance:   resp.Info.ClosingBalance,
+	}
+
+	transactions := make([]TransactionOutput, len(resp.Transactions))
+	for i, t := range resp.Transactions {
+		transactions[i] = TransactionOutput{
+			ID:                 t.ID,
+			Date:               t.Date,
+			Amount:             t.Amount,
+			Currency:           t.Currency,
+			Account:            t.Account,
+			AccountName:        t.AccountName,
+			BankName:           t.BankName,
+			BankCode:           t.BankCode,
+			ConstantSymbol:     t.ConstantSymbol,
+			VariableSymbol:     t.VariableSymbol,
+			SpecificSymbol:     t.SpecificSymbol,
+			UserIdentification: t.UserIdentification,
+			RecipientMessage:   t.RecipientMessage,
+			Type:               t.Type,
+			Specification:      t.Specification,
+			Comment:            t.Comment,
+			BIC:                t.BIC,
+			OrderID:            t.OrderID,
+			PayerReference:     t.PayerReference,
+		}
+	}
+
+	s.logger.Info("Bank transactions refreshed")
+
+	s.mux.Lock()
+	defer s.mux.Unlock()
+
+	s.bank.balance = balance
+	s.bank.transactions = transactions
+
+	return nil
 }
 
 // SetRssi sets the RSSI value of the WiFi signal
@@ -514,4 +621,26 @@ func (s *Scale) updateMetrics() {
 	s.monitor.BeersLeft.WithLabelValues().Set(float64(s.beersLeft))
 	s.monitor.ActiveKeg.WithLabelValues().Set(float64(s.activeKeg))
 	s.monitor.BeersTotal.WithLabelValues().Add(float64(s.getBeersTotal()))
+}
+
+func (s *Scale) shouldRefreshBank(lastRefresh time.Time, force bool) bool {
+	if force {
+		return true
+	}
+
+	now := time.Now().In(utils.GetTz())
+
+	// refresh every 5 minutes between 20:00 and 24:00
+	// refresh every 15 minutes the rest of the time
+	if now.Hour() >= 19 && now.Hour() <= 24 {
+		if lastRefresh.Add(5 * time.Minute).After(now) {
+			return false
+		}
+	} else {
+		if lastRefresh.Add(15 * time.Minute).After(now) {
+			return false
+		}
+	}
+
+	return true
 }
