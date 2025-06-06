@@ -9,6 +9,7 @@ import Pivo from "./Pivo";
 import Field from "./Field";
 import FieldChart from "./FieldChart";
 import Chat from "./Chat";
+import useApiPassword from "./useApiPassword";
 
 function Dashboard() {
 
@@ -54,10 +55,24 @@ function Dashboard() {
                 }
             ],
             warehouse_beer_left: 0,
-        }
+            bank_balance: {
+                balance: "0"
+            },
+            bank_transactions: [
+                {
+                    date: "",
+                    amount: "",
+                    account_name: "",
+                    bank_name: "",
+                    bank_code: "",
+                    recipient_message: "",
+                    comment: "",
+                }
+            ],
+        },
     }
 
-
+    const [apiPassword] = useApiPassword()
     const [data, setData] = useState(defaultScale);
     const [showKeg, setShowKeg] = useState(false);
     const [showWarehouse, setShowWarehouse] = useState(false);
@@ -78,13 +93,18 @@ function Dashboard() {
             clearInterval(interval)
         }
         // eslint-disable-next-line
-    }, []);
+    }, [apiPassword]);
 
     async function refresh() {
         setShowSpinner(true)
         try {
-            const url = buildUrl("/api/scale/dashboard")
-            const res = await fetch(url)
+            const request = new Request(buildUrl("/api/scale/dashboard"), {
+                method: "GET",
+                headers: {
+                    "Authorization": apiPassword,
+                },
+            });
+            const res = await fetch(request)
             const data = await res.json()
             setData(data)
         } catch {
@@ -200,6 +220,16 @@ function Dashboard() {
                     hidden={!data.scale.is_ok}
                 >
                     {data.scale.rssi}&nbsp;db
+                </Field>
+
+                <Field
+                    title={"Banka"}
+                    info={"před " + data.scale.last_update_duration}
+                    variant={"green"}
+                    loading={showSpinner}
+                    hidden={!data.scale.bank_balance.balance}
+                >
+                    {data.scale.bank_balance.balance}&nbsp;CZK
                 </Field>
             </Row>
 

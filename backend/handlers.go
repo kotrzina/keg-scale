@@ -18,6 +18,7 @@ import (
 	"github.com/kotrzina/keg-scale/pkg/utils"
 	"github.com/kotrzina/keg-scale/pkg/wa"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/shopspring/decimal"
 	"github.com/sirupsen/logrus"
 )
 
@@ -136,7 +137,7 @@ func (hr *HandlerRepository) activeKegHandler() func(http.ResponseWriter, *http.
 }
 
 func (hr *HandlerRepository) scaleDashboardHandler() func(http.ResponseWriter, *http.Request) {
-	return func(w http.ResponseWriter, _ *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
 		hr.scale.Recheck()
 
 		type output struct {
@@ -145,6 +146,15 @@ func (hr *HandlerRepository) scaleDashboardHandler() func(http.ResponseWriter, *
 
 		data := output{
 			Scale: hr.scale.GetScale(),
+		}
+
+		// remove sensitive data if unauthorized
+		auth := r.Header.Get("Authorization")
+		if auth != hr.config.Password {
+			data.Scale.BankBalance = scale.BalanceOutput{
+				Balance: decimal.NewFromInt(0),
+			}
+			data.Scale.BankTransactions = []scale.TransactionOutput{}
 		}
 
 		w.Header().Set("Content-Type", "application/json")
