@@ -491,7 +491,7 @@ func (s *Scale) updatePub(isOpen bool) {
 
 	if isOpen {
 		if s.shouldSendOpen() {
-			s.DispatchEvent(EventOpen)
+			s.dispatchEvent(EventOpen)
 		} else {
 			s.logger.Warningf("Pub is open, but the opening message has been skipped. Diff: %s", time.Since(s.pub.openedAt).String())
 		}
@@ -505,7 +505,7 @@ func (s *Scale) updatePub(isOpen bool) {
 		if err := s.store.SetCloseAt(s.pub.closedAt); err != nil {
 			s.logger.Errorf("Could not set close_at time: %v", err)
 		}
-		s.DispatchEvent(EventClose)
+		s.dispatchEvent(EventClose)
 	}
 
 	fIsOpen := 0.
@@ -572,7 +572,7 @@ func (s *Scale) tryNewKeg() error {
 				s.logger.Warnf("Keg %d is not available in the warehouse", keg)
 			}
 
-			s.DispatchEvent(EventNewKegTapped)
+			s.dispatchEvent(EventNewKegTapped)
 			s.logger.Infof("New keg (%d l) CONFIRMED with current value %.0f", keg, s.weight)
 		} else {
 			// new candidate keg
