@@ -25,7 +25,7 @@ func (s *Scale) RegisterEvent(eventType EventType, callback Event) {
 	}
 }
 
-func (s *Scale) dispatchEvent(event EventType) {
+func (s *Scale) DispatchEvent(event EventType) {
 	go func() {
 		// log event to storage
 		eventString := fmt.Sprintf("%s AT %s", event, time.Now().Format(time.RFC3339))

@@ -17,6 +17,7 @@ type CustomMessage struct {
 // they starts with ! and the body of message needs to be exactly the same as the one defined here
 type BotkaCommands struct {
 	Help       string
+	Open       string
 	Volleyball string
 	NoMessage  string
 }
@@ -150,6 +151,7 @@ func parseBotkaCommands(input string) BotkaCommands {
 
 	return BotkaCommands{
 		Help:       commands["help"],
+		Open:       commands["open"],
 		Volleyball: commands["volleyball"],
 		NoMessage:  commands["no_message"],
 	}

@@ -463,6 +463,19 @@ func (s *Scale) ResetOpenAt() {
 	s.pub.openedAt = time.Now()
 }
 
+// ForceOpen forces the pub to be open
+func (s *Scale) ForceOpen() error {
+	s.mux.Lock()
+	defer s.mux.Unlock()
+
+	if s.pub.isOpen {
+		return fmt.Errorf("already open")
+	}
+
+	s.updatePub(true)
+	return nil
+}
+
 // isOk returns true if the scale is ok based on the last update time
 func (s *Scale) isOk() bool {
 	return time.Since(s.lastOk) < okLimit
@@ -478,7 +491,7 @@ func (s *Scale) updatePub(isOpen bool) {
 
 	if isOpen {
 		if s.shouldSendOpen() {
-			s.dispatchEvent(EventOpen)
+			s.DispatchEvent(EventOpen)
 		} else {
 			s.logger.Warningf("Pub is open, but the opening message has been skipped. Diff: %s", time.Since(s.pub.openedAt).String())
 		}
@@ -492,7 +505,7 @@ func (s *Scale) updatePub(isOpen bool) {
 		if err := s.store.SetCloseAt(s.pub.closedAt); err != nil {
 			s.logger.Errorf("Could not set close_at time: %v", err)
 		}
-		s.dispatchEvent(EventClose)
+		s.DispatchEvent(EventClose)
 	}
 
 	fIsOpen := 0.
@@ -559,7 +572,7 @@ func (s *Scale) tryNewKeg() error {
 				s.logger.Warnf("Keg %d is not available in the warehouse", keg)
 			}
 
-			s.dispatchEvent(EventNewKegTapped)
+			s.DispatchEvent(EventNewKegTapped)
 			s.logger.Infof("New keg (%d l) CONFIRMED with current value %.0f", keg, s.weight)
 		} else {
 			// new candidate keg

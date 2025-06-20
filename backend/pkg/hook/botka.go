@@ -60,6 +60,7 @@ func NewBotka(
 		client.RegisterEventHandler(w.resetHandler())
 
 		client.RegisterEventHandler(w.secretHelpHandler())
+		client.RegisterEventHandler(w.openHandler())
 		client.RegisterEventHandler(w.volleyballHandler())
 		client.RegisterEventHandler(w.noMessageHandler())
 
@@ -77,13 +78,12 @@ func NewBotka(
 
 // nolint: govet // temporary
 func (b *Botka) messageOpen(_ scale.EventType) error {
-	data := b.scale.GetScale()
-
 	msg, err := b.ai.GenerateGeneralOpenMessage()
 	if err != nil {
 		b.logger.Errorf("could not generate general open message: %v", err)
 
 		// backup message
+		data := b.scale.GetScale()
 		msg = "Pivo! 🍺"
 		if data.ActiveKeg > 0 {
 			msg += fmt.Sprintf(
@@ -304,12 +304,36 @@ func (b *Botka) secretHelpHandler() wa.EventHandler {
 			sb := strings.Builder{}
 
 			sb.WriteString("*Příkazy:*\n")
+			sb.WriteString(fmt.Sprintf("*!%s* - otevři hospodu\n", b.config.Commands.Open))
 			sb.WriteString(fmt.Sprintf("*!%s* - volejbal zpráva do skupiny hospoda\n", b.config.Commands.Volleyball))
 			sb.WriteString(fmt.Sprintf("*!%s* - neposílej dnes zprávu o otevření hospody\n", b.config.Commands.NoMessage))
 
 			sb.WriteString("\nPříkaz musí být napsaný přesně tak, jak je zde uveden.")
 
 			err := b.whatsapp.SendText(from, sb.String())
+			if err != nil {
+				return fmt.Errorf("could not send message: %w", err)
+			}
+
+			return nil
+		},
+	}
+}
+
+func (b *Botka) openHandler() wa.EventHandler {
+	return wa.EventHandler{
+		MatchFunc: func(msg string) bool {
+			return checkSecretCommand(msg, b.config.Commands.Open)
+		},
+		HandleFunc: func(from, _ string) error {
+			reply := "Jasnňačka! Otevírám hospodu. 🍻"
+
+			if err := b.scale.ForceOpen(); err != nil {
+				b.logger.Infof("could not open pub: %v", err)
+				reply = "Něco se pokazilo, hospodu se nepodařilo otevřít. Zkus to prosím znovu později."
+			}
+
+			err := b.whatsapp.SendText(from, reply)
 			if err != nil {
 				return fmt.Errorf("could not send message: %w", err)
 			}
