@@ -294,7 +294,7 @@ func (s *Scale) Ping() {
 	defer s.mux.Unlock()
 
 	if !s.pub.isOpen {
-		s.updatePub(true)
+		s.updatePub(true, false)
 	}
 
 	s.lastOk = now
@@ -310,7 +310,7 @@ func (s *Scale) Recheck() {
 
 	// we haven't received any data for [okLimit] minutes and pub is open
 	if !s.isOk() && s.pub.isOpen {
-		s.updatePub(false) // close the pub
+		s.updatePub(false, false) // close the pub
 	}
 }
 
@@ -472,7 +472,7 @@ func (s *Scale) ForceOpen() error {
 		return fmt.Errorf("already open")
 	}
 
-	s.updatePub(true)
+	s.updatePub(true, true)
 	return nil
 }
 
@@ -483,14 +483,14 @@ func (s *Scale) isOk() bool {
 
 // updatePub updates the pub state
 // opening or closing the pub
-func (s *Scale) updatePub(isOpen bool) {
+func (s *Scale) updatePub(isOpen, forceEvent bool) {
 	s.pub.isOpen = isOpen
 	if err := s.store.SetIsOpen(isOpen); err != nil {
 		s.logger.Errorf("Could not set is_open flag: %v", err)
 	}
 
 	if isOpen {
-		if s.shouldSendOpen() {
+		if forceEvent || s.shouldSendOpen() {
 			s.dispatchEvent(EventOpen)
 		} else {
 			s.logger.Warningf("Pub is open, but the opening message has been skipped. Diff: %s", time.Since(s.pub.openedAt).String())
