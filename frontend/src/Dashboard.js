@@ -10,6 +10,7 @@ import Field from "./Field";
 import FieldChart from "./FieldChart";
 import Chat from "./Chat";
 import useApiPassword from "./useApiPassword";
+import Bank from "./Bank";
 
 function Dashboard() {
 
@@ -67,6 +68,7 @@ function Dashboard() {
                     bank_code: "",
                     recipient_message: "",
                     comment: "",
+                    user_identification: "",
                 }
             ],
         },
@@ -75,6 +77,7 @@ function Dashboard() {
     const [apiPassword] = useApiPassword()
     const [data, setData] = useState(defaultScale);
     const [showKeg, setShowKeg] = useState(false);
+    const [showBank, setShowBank] = useState(false);
     const [showWarehouse, setShowWarehouse] = useState(false);
     const [showChat, setShowChat] = useState(false);
     const [showSpinner, setShowSpinner] = useState(false);
@@ -125,11 +128,16 @@ function Dashboard() {
                 showChat={() => {
                     setShowChat(true)
                 }}
+                showBank={() => {
+                    setShowBank(true)
+                }}
             />
 
             <Warehouse warehouse={data.scale.warehouse} showCanvas={showWarehouse} setShowCanvas={setShowWarehouse}
                        refresh={refresh}/>
             <Keg keg={data.scale.active_keg} showCanvas={showKeg} setShowCanvas={setShowKeg} refresh={refresh}/>
+            <Bank transactions={data.scale.bank_transactions} balance={data.scale.bank_balance} showCanvas={showBank}
+                  setShowCanvas={setShowBank} refresh={refresh}/>
             <Chat showCanvas={showChat} setShowCanvas={setShowChat}/>
 
             <Row md={12} style={{textAlign: "center", marginTop: "30px"}}>

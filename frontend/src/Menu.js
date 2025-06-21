@@ -27,6 +27,10 @@ function Menu(props) {
                             props.showChat()
                         }}>Chat</Nav.Link>
 
+                        <Nav.Link onClick={() => {
+                            props.showBank()
+                        }}>Banka</Nav.Link>
+
                     </Nav>
                 </Navbar.Collapse>
 
