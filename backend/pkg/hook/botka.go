@@ -2,10 +2,13 @@ package hook
 
 import (
 	"fmt"
+	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/dundee/qrpay"
 	"github.com/kotrzina/keg-scale/pkg/ai"
 	"github.com/kotrzina/keg-scale/pkg/config"
 	"github.com/kotrzina/keg-scale/pkg/scale"
@@ -56,6 +59,7 @@ func NewBotka(
 		client.RegisterEventHandler(w.pubHandler())
 		client.RegisterEventHandler(w.kegHandler())
 		client.RegisterEventHandler(w.pricesHandler())
+		client.RegisterEventHandler(w.qrPaymentHandler())
 		client.RegisterEventHandler(w.warehouseHandler())
 		client.RegisterEventHandler(w.resetHandler())
 
@@ -145,6 +149,7 @@ func (b *Botka) helpHandler() wa.EventHandler {
 				"/pub /hospoda - informace o hospodě \n" +
 				"/becka - informace o aktuální bečce \n" +
 				"/cenik - ceník \n" +
+				"/qr 275 - zaplať QR kódem \n" +
 				"/sklad - stav skladu\n" +
 				"/reset - Pan Botka zapomene všechno"
 			err := b.whatsapp.SendText(from, reply)
@@ -251,6 +256,46 @@ func (b *Botka) pricesHandler() wa.EventHandler {
 			b.storeConversation(from, msg, reply)
 			err := b.whatsapp.SendText(from, reply)
 			return err
+		},
+	}
+}
+
+func (b *Botka) qrPaymentHandler() wa.EventHandler {
+	return wa.EventHandler{
+		MatchFunc: func(msg string) bool {
+			return len(msg) < 10 && strings.HasPrefix(b.sanitizeCommand(msg), "qr")
+		},
+		HandleFunc: func(from, msg string) error {
+			if b.config.FioIban == "" {
+				return fmt.Errorf("fio IBAN is not configured")
+			}
+
+			payment := qrpay.NewSpaydPayment()
+			if err := payment.SetIBAN(b.config.FioIban); err != nil {
+				return fmt.Errorf("could not set IBAN: %w", err)
+			}
+
+			amount, err := parseAmountFromQrPaymentCommand(msg)
+			if err == nil {
+				// if amount is specified in the command, set it
+				if err := payment.SetAmount(fmt.Sprintf("%d", amount)); err != nil {
+					b.logger.Errorf("could not set payment amount: %w", err)
+				}
+			}
+
+			img, err := qrpay.GetQRCodeImage(payment)
+			if err != nil {
+				return fmt.Errorf("could not get QR Code: %w", err)
+			}
+
+			err = b.whatsapp.SendImage(from, "Zaplať QR kódem", img)
+			if err != nil {
+				return fmt.Errorf("could not send image: %w", err)
+			}
+
+			b.storeConversation(from, msg, "Image with QR code for payment has been sent.")
+
+			return nil
 		},
 	}
 }
@@ -486,6 +531,22 @@ func (b *Botka) sanitizeCommand(command string) string {
 	}
 
 	return c
+}
+
+var reAmountQr = regexp.MustCompile(`/?[Qq][Rr] ([1-9][0-9]+).*`)
+
+func parseAmountFromQrPaymentCommand(command string) (int, error) {
+	matches := reAmountQr.FindStringSubmatch(command)
+	if len(matches) < 2 {
+		return 0, fmt.Errorf("could not parse amount from command: %s", command)
+	}
+
+	amount, err := strconv.Atoi(matches[1])
+	if err != nil {
+		return 0, fmt.Errorf("could not parse amount from command: %s", command)
+	}
+
+	return amount, nil
 }
 
 func mapUser(author store.ConversationMessageAuthor) string {

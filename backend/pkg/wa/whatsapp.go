@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"os"
 	"sync"
 
 	"github.com/kotrzina/keg-scale/pkg/config"
@@ -222,17 +221,12 @@ func (wa *WhatsAppClient) SendLocation(to string, loc Location) error {
 	return wa.send(to, msg)
 }
 
-func (wa *WhatsAppClient) SendImage(to, caption, imagePath string) error {
+func (wa *WhatsAppClient) SendImage(to, caption string, image []byte) error {
 	if !wa.IsReady() {
 		return fmt.Errorf("WhatsAppClient is not ready")
 	}
 
-	imageBytes, err := os.ReadFile(imagePath) //nolint: gosec
-	if err != nil {
-		return fmt.Errorf("failed to read image: %w", err)
-	}
-
-	imgResp, err := wa.client.Upload(wa.ctx, imageBytes, whatsmeow.MediaImage)
+	imgResp, err := wa.client.Upload(wa.ctx, image, whatsmeow.MediaImage)
 	if err != nil {
 		return fmt.Errorf("failed to upload image: %w", err)
 	}
@@ -240,7 +234,7 @@ func (wa *WhatsAppClient) SendImage(to, caption, imagePath string) error {
 
 	imageMsg := &waE2E.ImageMessage{
 		Caption:  proto.String(caption),
-		Mimetype: proto.String(http.DetectContentType(imageBytes)),
+		Mimetype: proto.String(http.DetectContentType(image)),
 
 		URL:           &imgResp.URL,
 		DirectPath:    &imgResp.DirectPath,

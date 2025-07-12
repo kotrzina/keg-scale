@@ -7,6 +7,7 @@ toolchain go1.24.3
 require (
 	github.com/antchfx/htmlquery v1.3.4
 	github.com/apognu/gocal v0.9.1
+	github.com/dundee/qrpay v0.0.4
 	github.com/gorilla/mux v1.8.1
 	github.com/hako/durafmt v0.0.0-20210608085754-5c1018a4e16b
 	github.com/jbub/fio v0.7.0
@@ -43,6 +44,7 @@ require (
 	github.com/golang/groupcache v0.0.0-20241129210726-2c02b8208cf8 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
+	github.com/jbub/banking v0.6.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect

@@ -46,6 +46,7 @@ type Config struct {
 	OpenAiAPIKey           string
 
 	FioToken string
+	FioIban  string
 
 	Commands BotkaCommands
 
@@ -78,6 +79,7 @@ func NewConfig() *Config {
 		OpenAiAPIKey:           getStringEnvDefault("OPENAI_API_KEY", ""),
 
 		FioToken: getStringEnvDefault("FIO_TOKEN", ""),
+		FioIban:  getStringEnvDefault("FIO_IBAN", ""),
 
 		Commands: parseBotkaCommands(os.Getenv("BOTKA_COMMANDS")),
 

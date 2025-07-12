@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/dundee/qrpay"
 	"github.com/kotrzina/keg-scale/pkg/ai"
 	"github.com/kotrzina/keg-scale/pkg/config"
 	"github.com/kotrzina/keg-scale/pkg/promector"
@@ -336,6 +337,49 @@ func (hr *HandlerRepository) scaleChartHandler() func(http.ResponseWriter, *http
 		if err = json.NewEncoder(w).Encode(data); err != nil {
 			hr.logger.Errorf("Could not write response: %v", err)
 			w.WriteHeader(http.StatusInternalServerError)
+		}
+	}
+}
+
+func (hr *HandlerRepository) paymentQrHandler() func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		auth := r.URL.Query().Get("auth")
+		if auth != hr.config.Password {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		if hr.config.FioIban == "" {
+			http.Error(w, "could not generate payment qr code", http.StatusInternalServerError)
+			hr.logger.Errorf("Fio IBAN is not configured")
+			return
+		}
+
+		p := qrpay.NewSpaydPayment()
+		if err := p.SetIBAN(hr.config.FioIban); err != nil {
+			http.Error(w, "could not set iban to the qr code", http.StatusInternalServerError)
+			hr.logger.Errorf("could not set IBAN: %v", err)
+			return
+		}
+
+		img, err := qrpay.GetQRCodeImage(p)
+		if err != nil {
+			http.Error(w, "could not generate payment qr code", http.StatusInternalServerError)
+			hr.logger.Errorf("could not generate QR code: %v", err)
+			return
+		}
+
+		w.Header().Set("Content-Type", "image/png")
+		w.WriteHeader(http.StatusOK)
+		if _, err := w.Write(img); err != nil {
+			hr.logger.Errorf("Could not write QR code image: %v", err)
+			http.Error(w, "could not write QR code image", http.StatusInternalServerError)
+			return
 		}
 	}
 }
