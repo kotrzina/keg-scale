@@ -1,8 +1,10 @@
 package hook
 
 import (
+	"context"
 	"fmt"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -60,6 +62,7 @@ func NewBotka(
 		client.RegisterEventHandler(w.kegHandler())
 		client.RegisterEventHandler(w.pricesHandler())
 		client.RegisterEventHandler(w.qrPaymentHandler())
+		client.RegisterEventHandler(w.bankHandler())
 		client.RegisterEventHandler(w.warehouseHandler())
 		client.RegisterEventHandler(w.resetHandler())
 
@@ -150,6 +153,7 @@ func (b *Botka) helpHandler() wa.EventHandler {
 				"/becka - informace o aktuální bečce \n" +
 				"/cenik - ceník \n" +
 				"/qr 275 - zaplať QR kódem \n" +
+				"/banka - stav bankovního účtu \n" +
 				"/sklad - stav skladu\n" +
 				"/reset - Pan Botka zapomene všechno"
 			err := b.whatsapp.SendText(from, reply)
@@ -296,6 +300,36 @@ func (b *Botka) qrPaymentHandler() wa.EventHandler {
 			b.storeConversation(from, msg, "Image with QR code for payment has been sent.")
 
 			return nil
+		},
+	}
+}
+
+func (b *Botka) bankHandler() wa.EventHandler {
+	return wa.EventHandler{
+		MatchFunc: func(msg string) bool {
+			return len(msg) < 8 && strings.HasPrefix(b.sanitizeCommand(msg), "bank")
+		},
+		HandleFunc: func(from, msg string) error {
+			err := b.scale.BankRefresh(context.Background(), true)
+			if err != nil {
+				b.logger.Errorf("could not refresh bank data: %v", err)
+				reply := "Něco se pokazilo při načítání dat z banky. Zkus to prosím znovu později."
+				return b.whatsapp.SendText(from, reply)
+			}
+
+			s := b.scale.GetScale()
+
+			sb := strings.Builder{}
+			sb.WriteString(fmt.Sprintf("Stav účtu: %s Kč\n\n", s.BankBalance.Balance.String()))
+			sb.WriteString("Poslední transakce:\n")
+			slices.Reverse(s.BankTransactions)
+			for _, t := range s.BankTransactions {
+				sb.WriteString(fmt.Sprintf("- %s: %s Kč\n", t.AccountName, t.Amount.String()))
+			}
+
+			reply := strings.TrimSuffix(sb.String(), "\n")
+			b.storeConversation(from, msg, reply)
+			return b.whatsapp.SendText(from, reply)
 		},
 	}
 }
