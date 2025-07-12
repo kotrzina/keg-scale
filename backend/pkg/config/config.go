@@ -20,6 +20,7 @@ type BotkaCommands struct {
 	Open       string
 	Volleyball string
 	NoMessage  string
+	Shout      string
 }
 
 type Config struct {
@@ -156,5 +157,6 @@ func parseBotkaCommands(input string) BotkaCommands {
 		Open:       commands["open"],
 		Volleyball: commands["volleyball"],
 		NoMessage:  commands["no_message"],
+		Shout:      commands["shout"],
 	}
 }

@@ -70,6 +70,7 @@ func NewBotka(
 		client.RegisterEventHandler(w.openHandler())
 		client.RegisterEventHandler(w.volleyballHandler())
 		client.RegisterEventHandler(w.noMessageHandler())
+		client.RegisterEventHandler(w.shoutHandler())
 
 		client.RegisterEventHandler(w.aiHandler())
 	}
@@ -386,6 +387,7 @@ func (b *Botka) secretHelpHandler() wa.EventHandler {
 			sb.WriteString(fmt.Sprintf("*!%s* - otevři hospodu\n", b.config.Commands.Open))
 			sb.WriteString(fmt.Sprintf("*!%s* - volejbal zpráva do skupiny hospoda\n", b.config.Commands.Volleyball))
 			sb.WriteString(fmt.Sprintf("*!%s* - neposílej dnes zprávu o otevření hospody\n", b.config.Commands.NoMessage))
+			sb.WriteString(fmt.Sprintf("*!%s ...* - zpráva do kanálu Hospoda\n", b.config.Commands.Shout))
 
 			sb.WriteString("\nPříkaz musí být napsaný přesně tak, jak je zde uveden.")
 
@@ -464,6 +466,32 @@ func (b *Botka) noMessageHandler() wa.EventHandler {
 				return fmt.Errorf("could not send message: %w", err)
 			}
 
+			return nil
+		},
+	}
+}
+
+func (b *Botka) shoutHandler() wa.EventHandler {
+	return wa.EventHandler{
+		MatchFunc: func(msg string) bool {
+			return strings.HasPrefix(msg, fmt.Sprintf("!%s", b.config.Commands.Shout))
+		},
+		HandleFunc: func(from, msg string) error {
+			text := strings.TrimSpace(strings.TrimPrefix(msg, fmt.Sprintf("!%s", b.config.Commands.Shout)))
+			if text == "" {
+				return fmt.Errorf("no message provided for shout command")
+			}
+
+			reply := "Ok, posílám zprávu do skupiny Hospoda."
+			if err := b.whatsapp.SendText(from, reply); err != nil {
+				return fmt.Errorf("could not send message: %w", err)
+			}
+
+			if err := b.whatsapp.SendText(b.config.WhatsAppOpenJid, text); err != nil {
+				return fmt.Errorf("could not send shout message to the group chat: %w", err)
+			}
+
+			b.logger.Infof("%s requested shout command", from)
 			return nil
 		},
 	}
