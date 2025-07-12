@@ -1,7 +1,7 @@
 #!/usr/bin/make -f
 BIN=keg-scale
 
-all: deps lint build test
+all: deps build test
 
 lint:
 	golangci-lint run

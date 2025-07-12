@@ -279,7 +279,7 @@ func (b *Botka) qrPaymentHandler() wa.EventHandler {
 			if err == nil {
 				// if amount is specified in the command, set it
 				if err := payment.SetAmount(fmt.Sprintf("%d", amount)); err != nil {
-					b.logger.Errorf("could not set payment amount: %w", err)
+					b.logger.Errorf("could not set payment amount: %s", err)
 				}
 			}
 
