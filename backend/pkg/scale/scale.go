@@ -219,7 +219,7 @@ func (s *Scale) loadDataFromStore() {
 		s.pub.closedAt = closeAt
 	}
 
-	s.monitor.BeersTotal.WithLabelValues().Add(float64(s.getBeersTotal()))
+	s.monitor.BeersTotal.WithLabelValues().Set(float64(s.getBeersTotal()))
 }
 
 // AddMeasurement handles a new measurement from the scale
@@ -603,7 +603,7 @@ func (s *Scale) addCurrentKegToTotal() error {
 	}
 
 	s.beersTotal += s.activeKeg * 2 // liters to beers
-	s.monitor.BeersTotal.WithLabelValues().Add(float64(s.getBeersTotal()))
+	s.monitor.BeersTotal.WithLabelValues().Set(float64(s.getBeersTotal()))
 	if err := s.store.SetBeersTotal(s.beersTotal); err != nil {
 		return fmt.Errorf("could not store beers_total: %w", err)
 	}
@@ -633,7 +633,7 @@ func (s *Scale) updateMetrics() {
 	s.monitor.Weight.WithLabelValues().Set(s.weight)
 	s.monitor.BeersLeft.WithLabelValues().Set(float64(s.beersLeft))
 	s.monitor.ActiveKeg.WithLabelValues().Set(float64(s.activeKeg))
-	s.monitor.BeersTotal.WithLabelValues().Add(float64(s.getBeersTotal()))
+	s.monitor.BeersTotal.WithLabelValues().Set(float64(s.getBeersTotal()))
 }
 
 func (s *Scale) shouldRefreshBank(lastRefresh time.Time, force bool) bool {
