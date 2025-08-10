@@ -80,7 +80,7 @@ func (ai *OpenAi) GetResponse(history []ChatMessage, quality ModelQuality) (Resp
 		}
 	}
 
-	tools := ai.toolsFactory.GetTools()
+	tools := ai.toolsFactory.GetTools(model)
 
 	param := openai.ChatCompletionNewParams{
 		Messages: messages,

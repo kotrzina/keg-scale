@@ -23,7 +23,7 @@ type ToolFactory struct {
 	logger *logrus.Logger
 }
 
-func (tf *ToolFactory) GetTools() []Tool {
+func (tf *ToolFactory) GetTools(model string) []Tool {
 	tools := []Tool{
 		tf.currentTimeTool(),
 		tf.isOpenTool(),
@@ -50,6 +50,7 @@ func (tf *ToolFactory) GetTools() []Tool {
 		tf.pubCalendarTool(),
 		tf.bankTransactionsTool(),
 		tf.bankBalanceTool(),
+		tf.aiModelTool(model),
 	}
 
 	// concat with static tools
@@ -593,6 +594,16 @@ func (tf *ToolFactory) bankBalanceTool() Tool {
 			}
 
 			return fmt.Sprintf("Bank balance in JSON format:\n\n```json\n%s\n```", string(output)), nil
+		},
+	}
+}
+
+func (tf *ToolFactory) aiModelTool(model string) Tool {
+	return Tool{
+		Name:        "ai_model",
+		Description: "Provides used AI model. Use if user asks about the AI model used for the response.",
+		Fn: func(_ string) (string, error) {
+			return fmt.Sprintf("Used AI model: %q", model), nil
 		},
 	}
 }

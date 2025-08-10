@@ -73,7 +73,7 @@ func (ai *Anthropic) GetResponse(history []ChatMessage, quality ModelQuality) (R
 		}
 	}
 
-	tools := ai.toolsFactory.GetTools()
+	tools := ai.toolsFactory.GetTools(model)
 	toolDefinitions := ai.getToolsDefinitions(tools)
 
 	running := true
