@@ -8,8 +8,8 @@ import (
 	"github.com/kotrzina/keg-scale/pkg/config"
 	"github.com/kotrzina/keg-scale/pkg/prometheus"
 	"github.com/kotrzina/keg-scale/pkg/scale"
-	"github.com/openai/openai-go"
-	"github.com/openai/openai-go/option"
+	"github.com/openai/openai-go/v2"
+	"github.com/openai/openai-go/v2/option"
 	"github.com/sirupsen/logrus"
 )
 
@@ -45,10 +45,10 @@ func NewOpenAi(ctx context.Context, conf *config.Config, s *scale.Scale, m *prom
 
 func (ai *OpenAi) GetQuality(quality ModelQuality) string {
 	if quality == ModelQualityHigh {
-		return openai.ChatModelGPT4_1
+		return openai.ChatModelGPT5
 	}
 
-	return openai.ChatModelGPT4_1Mini
+	return openai.ChatModelGPT5Mini
 }
 
 func (ai *OpenAi) GetResponse(history []ChatMessage, quality ModelQuality) (Response, error) {
@@ -135,24 +135,24 @@ func (ai *OpenAi) GetResponse(history []ChatMessage, quality ModelQuality) (Resp
 	return output, nil
 }
 
-func (ai *OpenAi) convertTools(tools []Tool) []openai.ChatCompletionToolParam {
-	ret := make([]openai.ChatCompletionToolParam, len(tools))
+func (ai *OpenAi) convertTools(tools []Tool) []openai.ChatCompletionToolUnionParam {
+	ret := make([]openai.ChatCompletionToolUnionParam, len(tools))
 	for i, t := range tools {
 		if t.HasSchema {
-			ret[i] = openai.ChatCompletionToolParam{
-				Function: openai.FunctionDefinitionParam{
+			ret[i] = openai.ChatCompletionFunctionTool(
+				openai.FunctionDefinitionParam{
 					Name:        t.Name,
 					Description: openai.String(t.Description),
 					Parameters:  ai.convertField(t.Schema),
 				},
-			}
+			)
 		} else {
-			ret[i] = openai.ChatCompletionToolParam{
-				Function: openai.FunctionDefinitionParam{
+			ret[i] = openai.ChatCompletionFunctionTool(
+				openai.FunctionDefinitionParam{
 					Name:        t.Name,
 					Description: openai.String(t.Description),
 				},
-			}
+			)
 		}
 	}
 
