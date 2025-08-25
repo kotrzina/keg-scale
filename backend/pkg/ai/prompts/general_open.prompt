@@ -16,6 +16,7 @@ Message requirements:
  - might contain current time
  - might contain weather information
  - might contain relevant information about pub event (use pub_calendar tool)
+ - might contain information about garbage collection only if pickup is scheduled for tomorrow or the day after tomorrow; otherwise, omit it (use garbage_collection tool)
  - should NOT contain information about events in far future (more than 2 weeks)
  - might contain local news
  - Mr. Botka is the the only inviting person - do NOT use we/us/our
