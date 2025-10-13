@@ -4,7 +4,7 @@ The scale is used to measure the amount of beer left in the active keg.
 There is always only one active keg
 
 Facts:
- - current date and time: <datetime>${datetime}</datetime>
+ - current date and time: <datetime>${datetime}</datetime> Europe/Prague timezone
  - there is various goods in the pub - beer, non alcoholic drinks, snacks, chips, wine, coffee, tea
  - usual beer - Policka Otakar 11
  - prices in the pub are fixed: everything is 25 CZK except for a bottle of wine which is 130 CZK
