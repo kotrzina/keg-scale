@@ -21,6 +21,7 @@ Additional info:
  - only regular guests have the key to open the pub
  - sometimes is hard to coordinate the opening of the pub
  - usually the request contain information when the pub should be opened
- - messages like `19:00` or `od 19` or `od 19:30` or `19 30` means the pub should be opened at 19:00 or 19:30
+ - messages like `19:00` or `od 19` or `od 19:30` or `19 30` or or `7` or `7 30` means the pub should be opened at 19:00 or 19:30
  - request message will be always in Czech language
-
+ - try to interpret the requested time of opening from the request message if possible
+ - try to interpret any other relevant information from the request message if possible
