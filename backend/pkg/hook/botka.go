@@ -59,6 +59,7 @@ func NewBotka(
 		client.RegisterEventHandler(w.helpHandler())
 		client.RegisterEventHandler(w.helloHandler())
 		client.RegisterEventHandler(w.pubHandler())
+		client.RegisterEventHandler(w.thirstHandler())
 		client.RegisterEventHandler(w.kegHandler())
 		client.RegisterEventHandler(w.pricesHandler())
 		client.RegisterEventHandler(w.qrPaymentHandler())
@@ -151,6 +152,7 @@ func (b *Botka) helpHandler() wa.EventHandler {
 			reply := "Příkazy: \n" +
 				"/help - zobrazí nápovědu \n" +
 				"/pub /hospoda - informace o hospodě \n" +
+				"/zizen - pošle stamgastům zprávu, že bys dnes na jedno šel \n" +
 				"/becka - informace o aktuální bečce \n" +
 				"/cenik - ceník \n" +
 				"/qr 275 - zaplať QR kódem \n" +
@@ -211,6 +213,42 @@ func (b *Botka) pubHandler() wa.EventHandler {
 			b.storeConversation(from, msg, reply)
 			err := b.whatsapp.SendText(from, reply)
 			return err
+		},
+	}
+}
+
+func (b *Botka) thirstHandler() wa.EventHandler {
+	return wa.EventHandler{
+		MatchFunc: func(msg string) bool {
+			sanitized := b.sanitizeCommand(msg)
+
+			if len(sanitized) > 6 {
+				return false
+			}
+
+			return strings.HasPrefix(sanitized, "zizen")
+		},
+		HandleFunc: func(from, msg string) error {
+			//s := b.scale.GetScale()
+			//if s.Pub.IsOpen {
+			//	reply = fmt.Sprintf("🍺 Hospoda je dávno otevřená! %s.", s.Pub.OpenedAt)
+			//	return b.whatsapp.SendText(from, reply)
+			//}
+
+			err := b.whatsapp.SendText(from, "🙋🏻Ok, hned vygeneruji zprávu pro štamgasty.")
+			if err != nil {
+				return err
+			}
+
+			// remove the command prefix
+			sanitized := strings.TrimPrefix(b.sanitizeCommand(msg), "zizen")
+
+			groupMsg, err := b.ai.GenerateRegularsMessage(sanitized)
+			if err != nil {
+				b.logger.Errorf("could not generate regulars message: %v", err)
+			}
+
+			return b.whatsapp.SendText(b.config.WhatsAppRegularsJid, groupMsg)
 		},
 	}
 }

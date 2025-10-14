@@ -42,6 +42,11 @@ var customOpenPrompt string
 //go:embed prompts/general_open.prompt
 var customGeneralMessage string
 
+// customGeneralMessage general opening message prompt
+//
+//go:embed prompts/regulars_request.prompt
+var regularsRequestPrompt string
+
 //go:embed prompts/volleyball.prompt
 var volleyballMessage string
 
@@ -90,6 +95,24 @@ func (ai *Ai) GenerateGeneralOpenMessage() (string, error) {
 	resp, err := ai.GetResponse(messages, ModelQualityHigh)
 	if err != nil {
 		return "", fmt.Errorf("failed to generate open message %w", err)
+	}
+
+	return resp.Text, nil
+}
+
+// GenerateRegularsMessage generates a message for regulars that somebody wants to go to the pub today
+func (ai *Ai) GenerateRegularsMessage(msg string) (string, error) {
+	templated := strings.ReplaceAll(regularsRequestPrompt, "${message}", msg)
+	messages := []ChatMessage{
+		{
+			From: Me,
+			Text: templated,
+		},
+	}
+
+	resp, err := ai.GetResponse(messages, ModelQualityHigh)
+	if err != nil {
+		return "", fmt.Errorf("failed to generate regulars request message %w", err)
 	}
 
 	return resp.Text, nil

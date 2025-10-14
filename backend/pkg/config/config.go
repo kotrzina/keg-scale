@@ -42,6 +42,7 @@ type Config struct {
 	DBString string
 
 	WhatsAppOpenJid        string
+	WhatsAppRegularsJid    string
 	WhatsAppCustomMessages []CustomMessage
 	AnthropicAPIKey        string
 	OpenAiAPIKey           string
@@ -75,6 +76,7 @@ func NewConfig() *Config {
 		DBString: getStringEnvDefault("DB_STRING", "host=localhost port=5432 user=postgres password=admin dbname=pub sslmode=disable"),
 
 		WhatsAppOpenJid:        getStringEnvDefault("WHATSAPP_OPEN_JID", ""),
+		WhatsAppRegularsJid:    getStringEnvDefault("WHATSAPP_REGULARS_JID", ""),
 		WhatsAppCustomMessages: parseCustomMessages(getStringEnvDefault("WHATSAPP_CUSTOM_MESSAGES", "")),
 		AnthropicAPIKey:        getStringEnvDefault("ANTHROPIC_API_KEY", ""),
 		OpenAiAPIKey:           getStringEnvDefault("OPENAI_API_KEY", ""),
