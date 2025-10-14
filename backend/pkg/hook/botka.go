@@ -221,11 +221,6 @@ func (b *Botka) thirstHandler() wa.EventHandler {
 	return wa.EventHandler{
 		MatchFunc: func(msg string) bool {
 			sanitized := b.sanitizeCommand(msg)
-
-			if len(sanitized) > 6 {
-				return false
-			}
-
 			return strings.HasPrefix(sanitized, "zizen")
 		},
 		HandleFunc: func(from, msg string) error {
