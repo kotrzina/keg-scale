@@ -94,10 +94,13 @@ func (ai *Ai) GenerateGeneralOpenMessage() (string, error) {
 
 	// check if today we have a special beer
 	beer, err := ai.storage.GetTodayBeer()
+	if err != nil {
+		ai.logger.Errorf("failed to get today beer: %v", err)
+	}
 	if err == nil && beer != "" {
 		req.WriteString(fmt.Sprintf(" - must contain an information that today we have %s beer on tap", beer))
 		if err := ai.storage.ResetTodayBeer(); err != nil {
-			return "", fmt.Errorf("failed to reset today beer: %w", err)
+			ai.logger.Errorf("failed to reset today beer: %v", err)
 		}
 	}
 
