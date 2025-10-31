@@ -465,7 +465,7 @@ func (b *Botka) cepHandler() wa.EventHandler {
 			return strings.HasPrefix(b.sanitizeCommand(msg), "cep")
 		},
 		HandleFunc: func(from, msg string) error {
-			beer := msg[5:] // remove the command prefix
+			beer := strings.TrimSpace(msg[4:]) // remove the command prefix
 
 			if err := b.storage.SetTodayBeer(beer); err != nil {
 				return fmt.Errorf("could not set today beer: %w", err)
