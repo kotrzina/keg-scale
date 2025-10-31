@@ -26,6 +26,7 @@ const (
 	OpenAtKey          = "open_at"
 	CloseAtKey         = "close_at"
 	IsOpenKey          = "is_open"
+	TodayBeerKey       = "today_beer"
 	ConversationPrefix = "conversation:"
 )
 
@@ -179,6 +180,18 @@ func (s *RedisStore) SetIsOpen(isOpen bool) error {
 
 func (s *RedisStore) GetIsOpen() (bool, error) {
 	return s.Client.Get(s.ctx, IsOpenKey).Bool()
+}
+
+func (s *RedisStore) SetTodayBeer(beer string) error {
+	return s.Client.Set(s.ctx, TodayBeerKey, beer, 0).Err()
+}
+
+func (s *RedisStore) GetTodayBeer() (string, error) {
+	return s.Client.Get(s.ctx, TodayBeerKey).String(), nil
+}
+
+func (s *RedisStore) ResetTodayBeer() error {
+	return s.Client.Del(s.ctx, TodayBeerKey).Err()
 }
 
 func (s *RedisStore) AddConversationMessage(id string, msg ConservationMessage) error {

@@ -10,6 +10,7 @@ import (
 	"github.com/kotrzina/keg-scale/pkg/config"
 	"github.com/kotrzina/keg-scale/pkg/prometheus"
 	"github.com/kotrzina/keg-scale/pkg/scale"
+	"github.com/kotrzina/keg-scale/pkg/store"
 	"github.com/kotrzina/keg-scale/pkg/utils"
 	"github.com/sirupsen/logrus"
 )
@@ -63,14 +64,18 @@ type Provider interface {
 
 type Ai struct {
 	providers map[string]Provider
+	storage   store.Storage
+	logger    *logrus.Logger
 }
 
-func NewAi(ctx context.Context, conf *config.Config, s *scale.Scale, m *prometheus.Monitor, l *logrus.Logger) *Ai {
+func NewAi(ctx context.Context, conf *config.Config, s *scale.Scale, m *prometheus.Monitor, storage store.Storage, l *logrus.Logger) *Ai {
 	return &Ai{
 		providers: map[string]Provider{
 			"openai":    NewOpenAi(ctx, conf, s, m, l),
 			"anthropic": NewAnthropic(ctx, conf, s, m, l),
 		},
+		storage: storage,
+		logger:  l,
 	}
 }
 
@@ -85,10 +90,23 @@ func (ai *Ai) GetResponse(history []ChatMessage, quality ModelQuality) (Response
 
 // GenerateGeneralOpenMessage generates a message for group WhatsApp chat
 func (ai *Ai) GenerateGeneralOpenMessage() (string, error) {
+	req := strings.Builder{}
+
+	// check if today we have a special beer
+	beer, err := ai.storage.GetTodayBeer()
+	if err == nil && beer != "" {
+		req.WriteString(fmt.Sprintf(" - must contain an information that today we have %s beer on tap", beer))
+		if err := ai.storage.ResetTodayBeer(); err != nil {
+			return "", fmt.Errorf("failed to reset today beer: %w", err)
+		}
+	}
+
+	templatedPrompt := strings.ReplaceAll(customGeneralMessage, "${requirements}", req.String())
+	fmt.Println(templatedPrompt)
 	messages := []ChatMessage{
 		{
 			From: Me,
-			Text: customGeneralMessage,
+			Text: templatedPrompt,
 		},
 	}
 

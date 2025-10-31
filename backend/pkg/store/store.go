@@ -56,6 +56,10 @@ type Storage interface {
 	SetIsOpen(isOpen bool) error // set is open flag
 	GetIsOpen() (bool, error)    // get is open flag
 
+	SetTodayBeer(todayBeer string) error // set today beer
+	GetTodayBeer() (string, error)       // get today beer
+	ResetTodayBeer() error               // reset today beer
+
 	AddConversationMessage(id string, msg ConservationMessage) error // add conversation message
 	GetConversation(id string) ([]ConservationMessage, error)        // get conversation messages from oldest to newest
 	ResetConversation(id string) error                               // reset conversation - delete all messages

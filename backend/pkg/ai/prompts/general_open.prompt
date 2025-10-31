@@ -20,6 +20,7 @@ Message requirements:
  - should NOT contain information about events in far future (more than 2 weeks)
  - might contain local news
  - Mr. Botka is the the only inviting person - do NOT use we/us/our
+ ${requirements}
 
 Additional requirements:
  - the keg is technically empty when there is less than 6 beers - in this case there will be a new keg soon

@@ -69,6 +69,7 @@ func NewBotka(
 
 		client.RegisterEventHandler(w.secretHelpHandler())
 		client.RegisterEventHandler(w.openHandler())
+		client.RegisterEventHandler(w.cepHandler())
 		client.RegisterEventHandler(w.volleyballHandler())
 		client.RegisterEventHandler(w.noMessageHandler())
 		client.RegisterEventHandler(w.shoutHandler())
@@ -418,6 +419,7 @@ func (b *Botka) secretHelpHandler() wa.EventHandler {
 
 			sb.WriteString("*Příkazy:*\n")
 			sb.WriteString(fmt.Sprintf("*!%s* - otevři hospodu\n", b.config.Commands.Open))
+			sb.WriteString(fmt.Sprintf("*!%s* - dnes točíme tohle pivo\n", "cep")) // semi-secret command
 			sb.WriteString(fmt.Sprintf("*!%s* - volejbal zpráva do skupiny hospoda\n", b.config.Commands.Volleyball))
 			sb.WriteString(fmt.Sprintf("*!%s* - neposílej dnes zprávu o otevření hospody\n", b.config.Commands.NoMessage))
 			sb.WriteString(fmt.Sprintf("*!%s ...* - zpráva do kanálu Hospoda\n", b.config.Commands.Shout))
@@ -453,6 +455,24 @@ func (b *Botka) openHandler() wa.EventHandler {
 			}
 
 			return nil
+		},
+	}
+}
+
+func (b *Botka) cepHandler() wa.EventHandler {
+	return wa.EventHandler{
+		MatchFunc: func(msg string) bool {
+			return strings.HasPrefix(b.sanitizeCommand(msg), "cep")
+		},
+		HandleFunc: func(from, msg string) error {
+			beer := msg[5:] // remove the command prefix
+
+			if err := b.storage.SetTodayBeer(beer); err != nil {
+				return fmt.Errorf("could not set today beer: %w", err)
+			}
+
+			reply := fmt.Sprintf("Ok, zmíním pivo: %s to při otevření hospody.", beer)
+			return b.whatsapp.SendText(from, reply)
 		},
 	}
 }
@@ -619,8 +639,11 @@ func (b *Botka) storeConversation(id, question, answer string) {
 }
 
 func (b *Botka) sanitizeCommand(command string) string {
-	c := strings.ToLower(strings.TrimSpace(strings.TrimPrefix(command, "/")))
-	c, err := diacritics.Remove(c)
+	var err error
+	c := strings.TrimPrefix(command, "/")
+	c = strings.TrimPrefix(c, "!")
+	c = strings.ToLower(strings.TrimSpace(c))
+	c, err = diacritics.Remove(c)
 	if err != nil {
 		b.logger.Fatalf("could not remove diacritics: %v", err) // should never happen
 	}

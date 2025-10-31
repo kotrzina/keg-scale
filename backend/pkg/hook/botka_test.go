@@ -31,6 +31,10 @@ func TestWhatsApp_SanitizeCommand(t *testing.T) {
 			command: "/BEČKA",
 			want:    "becka",
 		},
+		{
+			command: "!cep Plzen",
+			want:    "cep plzen",
+		},
 	}
 
 	b := Botka{}

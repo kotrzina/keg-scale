@@ -117,6 +117,18 @@ func (s *FakeStore) GetIsOpen() (bool, error) {
 	return false, nil
 }
 
+func (s *FakeStore) SetTodayBeer(_ string) error {
+	return nil
+}
+
+func (s *FakeStore) ResetTodayBeer() error {
+	return nil
+}
+
+func (s *FakeStore) GetTodayBeer() (string, error) {
+	return "", nil
+}
+
 func (s *FakeStore) AddConversationMessage(_ string, _ ConservationMessage) error {
 	return nil
 }
