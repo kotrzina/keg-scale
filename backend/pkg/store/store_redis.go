@@ -187,7 +187,7 @@ func (s *RedisStore) SetTodayBeer(beer string) error {
 }
 
 func (s *RedisStore) GetTodayBeer() (string, error) {
-	return s.Client.Get(s.ctx, TodayBeerKey).String(), nil
+	return s.Client.Get(s.ctx, TodayBeerKey).Val(), nil
 }
 
 func (s *RedisStore) ResetTodayBeer() error {
