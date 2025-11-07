@@ -471,7 +471,7 @@ func (b *Botka) cepHandler() wa.EventHandler {
 				return fmt.Errorf("could not set today beer: %w", err)
 			}
 
-			reply := fmt.Sprintf("Ok, zmíním pivo: %s to při otevření hospody.", beer)
+			reply := fmt.Sprintf("Ok, zmíním pivo: %s při otevření hospody.", beer)
 			return b.whatsapp.SendText(from, reply)
 		},
 	}
