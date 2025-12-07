@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 	"sync"
 
 	"github.com/kotrzina/keg-scale/pkg/config"
@@ -140,7 +141,7 @@ func (wa *WhatsAppClient) handleIncomingMessage(msg *events.Message) {
 		return
 	}
 
-	from := msg.Info.Chat.User // we want to replay to the same chat
+	from := fmt.Sprintf("%s@%s", msg.Info.Chat.User, msg.Info.Chat.Server) // we want to replay to the same chat
 	wa.logger.Infof(
 		"received message in chat %s@%s from %s@%s: %s",
 		msg.Info.Chat.User,
@@ -269,6 +270,18 @@ func (wa *WhatsAppClient) buildJid(user string) types.JID {
 		user = wa.config.WhatsAppOpenJid // it is set to my personal account
 	}
 
+	if strings.Contains(user, "@") {
+		parts := strings.Split(user, "@")
+		if len(parts) == 2 {
+			return types.JID{
+				User:   parts[0],
+				Server: parts[1],
+			}
+		}
+
+		wa.logger.Errorf("Invalid jid user: %s", user)
+	}
+
 	server := "s.whatsapp.net" // users
 	if len(user) > 14 {        // longer that phone number
 		server = "g.us" // groups
@@ -289,7 +302,7 @@ func (wa *WhatsAppClient) send(to string, msg *waE2E.Message) error {
 		return fmt.Errorf("failed to send message: %w", err)
 	}
 
-	wa.logger.Infof("Message sent: %s", resp.ID)
+	wa.logger.Infof("Message sent to %s with ID %s", to, resp.ID)
 	return err
 }
 
