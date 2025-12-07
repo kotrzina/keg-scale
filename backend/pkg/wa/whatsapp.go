@@ -89,7 +89,7 @@ func New(ctx context.Context, conf *config.Config, logger *logrus.Logger) *Whats
 		}
 	}
 
-	err = client.SendPresence(types.PresenceAvailable)
+	err = client.SendPresence(ctx, types.PresenceAvailable)
 	if err != nil {
 		logger.Errorf("Failed to send presence: %v", err)
 	}
@@ -191,7 +191,7 @@ func (wa *WhatsAppClient) SetTyping(to string, typing bool) error {
 		state = types.ChatPresenceComposing
 	}
 
-	err := wa.client.SendChatPresence(wa.buildJid(to), state, types.ChatPresenceMediaText)
+	err := wa.client.SendChatPresence(context.Background(), wa.buildJid(to), state, types.ChatPresenceMediaText)
 	if err != nil {
 		return fmt.Errorf("failed to send chat presence: %w", err)
 	}
