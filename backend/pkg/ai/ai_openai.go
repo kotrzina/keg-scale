@@ -8,8 +8,8 @@ import (
 	"github.com/kotrzina/keg-scale/pkg/config"
 	"github.com/kotrzina/keg-scale/pkg/prometheus"
 	"github.com/kotrzina/keg-scale/pkg/scale"
-	"github.com/openai/openai-go/v2"
-	"github.com/openai/openai-go/v2/option"
+	"github.com/openai/openai-go/v3"
+	"github.com/openai/openai-go/v3/option"
 	"github.com/sirupsen/logrus"
 )
 
@@ -45,7 +45,7 @@ func NewOpenAi(ctx context.Context, conf *config.Config, s *scale.Scale, m *prom
 
 func (ai *OpenAi) GetQuality(quality ModelQuality) string {
 	if quality == ModelQualityHigh {
-		return openai.ChatModelGPT4_1
+		return openai.ChatModelGPT5_2
 	}
 
 	return openai.ChatModelGPT4_1Mini
