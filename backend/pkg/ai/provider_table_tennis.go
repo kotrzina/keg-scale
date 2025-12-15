@@ -12,7 +12,7 @@ import (
 )
 
 func ProvideTableTennisResults() (string, error) {
-	url := "https://stis.ping-pong.cz/los-vse/svaz-420701/rocnik-2024/soutez-5685/druzstvo-58442"
+	url := "https://stis.ping-pong.cz/los-vse/svaz-420104/rocnik-2025/soutez-6238/druzstvo-62339"
 	body, err := providerTableTennisPage(url)
 	if err != nil {
 		return "", fmt.Errorf("could not get response from Stis: %w", err)
@@ -36,7 +36,7 @@ func ProvideTableTennisResults() (string, error) {
 }
 
 func ProvideTableTennisLeagueTable() (string, error) {
-	url := "https://stis.ping-pong.cz/tabulka/svaz-420701/rocnik-2024/soutez-5685"
+	url := "https://stis.ping-pong.cz/tabulka/svaz-420104/rocnik-2025/soutez-6238"
 	body, err := providerTableTennisPage(url)
 	if err != nil {
 		return "", fmt.Errorf("could not get response from Stis: %w", err)
