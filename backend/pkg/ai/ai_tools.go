@@ -51,6 +51,8 @@ func (tf *ToolFactory) GetTools(model string) []Tool {
 		tf.bankTransactionsTool(),
 		tf.bankBalanceTool(),
 		tf.aiModelTool(model),
+		tf.municipalNewsletterSearchTool(),
+		tf.municipalNewsletterArticleTool(),
 	}
 
 	// concat with static tools
@@ -604,6 +606,64 @@ func (tf *ToolFactory) aiModelTool(model string) Tool {
 		Description: "Provides used AI model. Use if user asks about the AI model used for the response.",
 		Fn: func(_ string) (string, error) {
 			return fmt.Sprintf("Used AI model: %q", model), nil
+		},
+	}
+}
+
+func (tf *ToolFactory) municipalNewsletterSearchTool() Tool {
+	return Tool{
+		Name:        "municipal_newsletter_search",
+		Description: "Searches articles in the municipal newsletter (Zpravodaj obce Vavřinec). Supports multi-word queries and sentences, ignores diacritics. Returns top 10 most relevant articles ranked by relevance score (text match + recency). Use municipal_newsletter_article tool to get full article content.",
+		HasSchema:   true,
+		Schema: Property{
+			Type: SchemaTypeObject,
+			Properties: map[string]Property{
+				"query": {
+					Type:        SchemaTypeString,
+					Description: "Search query - can be a word, multiple words, or a sentence",
+				},
+			},
+			Required: []string{"query"},
+		},
+		Fn: func(input string) (string, error) {
+			var data struct {
+				Query string `json:"query"`
+			}
+
+			if err := json.Unmarshal([]byte(input), &data); err != nil {
+				return "", fmt.Errorf("error unmarshalling input: %w", err)
+			}
+
+			return ProvideMunicipalNewsletterSearch(data.Query)
+		},
+	}
+}
+
+func (tf *ToolFactory) municipalNewsletterArticleTool() Tool {
+	return Tool{
+		Name:        "municipal_newsletter_article",
+		Description: "Retrieves the full content of a specific article from the municipal newsletter by its ID. Use after searching to get complete article text.",
+		HasSchema:   true,
+		Schema: Property{
+			Type: SchemaTypeObject,
+			Properties: map[string]Property{
+				"article_id": {
+					Type:        SchemaTypeString,
+					Description: "The unique identifier of the article to retrieve",
+				},
+			},
+			Required: []string{"article_id"},
+		},
+		Fn: func(input string) (string, error) {
+			var data struct {
+				ArticleID string `json:"article_id"`
+			}
+
+			if err := json.Unmarshal([]byte(input), &data); err != nil {
+				return "", fmt.Errorf("error unmarshalling input: %w", err)
+			}
+
+			return ProvideMunicipalNewsletterArticle(data.ArticleID)
 		},
 	}
 }

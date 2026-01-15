@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:static.kozak.in)",
+      "Bash(curl:*)",
+      "Bash(make lint:*)",
+      "Bash(go test:*)",
+      "Bash(make test:*)",
+      "WebFetch(domain:github.com)"
+    ]
+  }
+}
