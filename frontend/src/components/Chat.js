@@ -1,14 +1,14 @@
-import {Alert, Col, Offcanvas, Row, ToastContainer} from "react-bootstrap";
+import { Alert, Col, Offcanvas, Row, ToastContainer } from "react-bootstrap";
 import Form from "react-bootstrap/Form";
-import React, {useEffect} from "react";
-import {buildUrl} from "./Api";
+import React, { useEffect } from "react";
+import { buildUrl } from "../lib/Api";
 import Button from "react-bootstrap/Button";
-import useApiPassword from "./useApiPassword";
+import { useAuth } from "../contexts/AuthContext";
 import PasswordBox from "./PasswordBox";
 
 function Chat(props) {
 
-    const [apiPassword, isApiReady] = useApiPassword()
+    const { password, isAuthenticated } = useAuth();
     const [showError, setShowError] = React.useState(false)
     const [text, setText] = React.useState("")
     const [messages, setMessages] = React.useState([])
@@ -30,16 +30,16 @@ function Chat(props) {
     async function send() {
         // add message to messages
         setMessages((curr) => {
-            return [{text: text, from: "me"}, ...curr]
+            return [{ text: text, from: "me" }, ...curr]
         })
 
         const request = new Request(buildUrl("/api/ai/test"), {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
-                "Authorization": apiPassword,
+                "Authorization": password,
             },
-            body: JSON.stringify([{text: text, from: "me"}, ...messages].reverse()), // reverse to keep order for AI
+            body: JSON.stringify([{ text: text, from: "me" }, ...messages].reverse()), // reverse to keep order for AI
         });
         setText("")
 
@@ -50,7 +50,7 @@ function Chat(props) {
             const data = await response.json()
             setShowLoadingMessage(false)
             setMessages((curr) => {
-                return [{text: data.text, from: "ai", cost: data.cost}, ...curr]
+                return [{ text: data.text, from: "ai", cost: data.cost }, ...curr]
             })
         } else {
             setShowError(true)
@@ -67,7 +67,7 @@ function Chat(props) {
                 <Offcanvas.Title>Chat</Offcanvas.Title>
             </Offcanvas.Header>
             <Offcanvas.Body>
-                <Row hidden={!isApiReady}>
+                <Row hidden={!isAuthenticated}>
                     <Alert hidden={!showError} variant={"danger"}>
                         Chyba! Zkus to prosim pozdeji.
                     </Alert>
@@ -95,7 +95,7 @@ function Chat(props) {
                             size={"lg"}
                             variant="success"
                             type="submit"
-                            style={{marginRight: "10px"}}
+                            style={{ marginRight: "10px" }}
                         >Odeslat</Button>
                         <Button
                             onClick={() => {
@@ -112,7 +112,7 @@ function Chat(props) {
                     <Col md={12} className={"mt-3"}>
                         <ToastContainer className="position-static">
                             <Alert hidden={!showLoadingMessage} key={"default"} className={"mt-2"}
-                                   variant={"success"}>
+                                variant={"success"}>
                                 <Alert.Heading>Pan Botka</Alert.Heading>
                                 <p>
                                     {loadingText}
@@ -121,11 +121,11 @@ function Chat(props) {
                             {messages.map((message, k) => {
                                 return (
                                     <Alert key={k} className={"mt-2"}
-                                           variant={message.from === "ai" ? "success" : "info"}
-                                           title={message.from === "ai" ? `${message.cost.input} / ${message.cost.output}` : ""}
+                                        variant={message.from === "ai" ? "success" : "info"}
+                                        title={message.from === "ai" ? `${message.cost.input} / ${message.cost.output}` : ""}
                                     >
                                         <Alert.Heading>{message.from === "ai" ? "Pan Botka" : "Místní štamgast"}</Alert.Heading>
-                                        <p dangerouslySetInnerHTML={{__html: message.text}}></p>
+                                        <p dangerouslySetInnerHTML={{ __html: message.text }}></p>
                                     </Alert>
                                 )
                             })}
@@ -133,7 +133,7 @@ function Chat(props) {
                     </Col>
                 </Row>
 
-                <PasswordBox/>
+                <PasswordBox />
 
             </Offcanvas.Body>
         </Offcanvas>

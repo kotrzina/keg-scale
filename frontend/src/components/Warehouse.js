@@ -1,13 +1,13 @@
-import {Alert, Col, Offcanvas, Row, Table} from "react-bootstrap";
+import { Alert, Col, Offcanvas, Row, Table } from "react-bootstrap";
 import React from "react";
 import WarehouseKeg from "./WarehouseKeg";
-import useApiPassword from "./useApiPassword";
+import { useAuth } from "../contexts/AuthContext";
 import PasswordBox from "./PasswordBox";
 
 
 function Warehouse(props) {
 
-    const [, isApiReady] = useApiPassword()
+    const { isAuthenticated } = useAuth();
     const [showError, setShowError] = React.useState(false)
 
     return (
@@ -19,7 +19,7 @@ function Warehouse(props) {
             </Offcanvas.Header>
             <Offcanvas.Body>
 
-                <Row hidden={!isApiReady}>
+                <Row hidden={!isAuthenticated}>
                     <Alert hidden={!showError} variant={"danger"}>
                         Chyba! Zkus to prosim pozdeji.
                     </Alert>
@@ -42,7 +42,7 @@ function Warehouse(props) {
                     </Col>
                 </Row>
 
-                <PasswordBox/>
+                <PasswordBox />
             </Offcanvas.Body>
         </Offcanvas>
     )

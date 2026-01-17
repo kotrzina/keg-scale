@@ -1,14 +1,14 @@
-import {Alert, Col, Offcanvas, Row} from "react-bootstrap";
+import { Alert, Col, Offcanvas, Row } from "react-bootstrap";
 import Button from "react-bootstrap/Button";
 import React from "react";
-import {buildUrl} from "./Api";
-import useApiPassword from "./useApiPassword";
+import { buildUrl } from "../lib/Api";
+import { useAuth } from "../contexts/AuthContext";
 import PasswordBox from "./PasswordBox";
 
 function Keg(props) {
 
     const [showError, setShowError] = React.useState(false)
-    const [apiPassword, isApiReady] = useApiPassword()
+    const { password, isAuthenticated } = useAuth();
 
     const kegs = [0, 10, 15, 20, 30, 50]
 
@@ -18,9 +18,9 @@ function Keg(props) {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
-                "Authorization": apiPassword,
+                "Authorization": password,
             },
-            body: JSON.stringify({keg: size}),
+            body: JSON.stringify({ keg: size }),
         });
 
         const response = await fetch(request)
@@ -41,7 +41,7 @@ function Keg(props) {
                 <Offcanvas.Title>Naražená bečka</Offcanvas.Title>
             </Offcanvas.Header>
             <Offcanvas.Body>
-                <Row hidden={!isApiReady}>
+                <Row hidden={!isAuthenticated}>
                     <Alert hidden={!showError} variant={"danger"}>
                         Chyba! Zkus to prosim pozdeji.
                     </Alert>
@@ -63,7 +63,7 @@ function Keg(props) {
                     </Col>
                 </Row>
 
-                <PasswordBox/>
+                <PasswordBox />
 
             </Offcanvas.Body>
         </Offcanvas>

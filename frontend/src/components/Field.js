@@ -1,4 +1,4 @@
-import {Col, Toast} from "react-bootstrap";
+import { Col, Toast } from "react-bootstrap";
 
 function Field(props) {
 

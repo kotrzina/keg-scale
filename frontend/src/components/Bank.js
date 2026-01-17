@@ -1,14 +1,14 @@
-import {Col, Offcanvas, Row, Table} from "react-bootstrap";
+import { Col, Offcanvas, Row, Table } from "react-bootstrap";
 import React from "react";
-import useApiPassword from "./useApiPassword";
-import {buildUrl} from "./Api";
+import { useAuth } from "../contexts/AuthContext";
+import { buildUrl } from "../lib/Api";
 import PasswordBox from "./PasswordBox";
 
 function Bank(props) {
 
-    const [apiPassword, isApiReady] = useApiPassword();
+    const { password, isAuthenticated } = useAuth();
 
-    if (!isApiReady) {
+    if (!isAuthenticated) {
         return (
             <Offcanvas show={props.showCanvas} onHide={() => {
                 props.setShowCanvas(false)
@@ -17,7 +17,7 @@ function Bank(props) {
                     <Offcanvas.Title>Nejsi přihlášený</Offcanvas.Title>
                 </Offcanvas.Header>
                 <Offcanvas.Body>
-                    <PasswordBox/>
+                    <PasswordBox />
                 </Offcanvas.Body>
             </Offcanvas>
         )
@@ -62,9 +62,9 @@ function Bank(props) {
                             </tbody>
                         </Table>
                     </Col>
-                    <Col md={12} style={{textAlign: "center"}}>
+                    <Col md={12} style={{ textAlign: "center" }}>
                         <img
-                            src={buildUrl("/api/payment/qr?auth=" + apiPassword)}
+                            src={buildUrl("/api/payment/qr?auth=" + password)}
                             alt={"QR Payment"}
                             width={"75%"}
                         />

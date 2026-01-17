@@ -1,25 +1,30 @@
 import 'bootstrap/dist/css/bootstrap.min.css';
+import './index.css';
 import * as React from "react";
-import {createRoot} from "react-dom/client";
+import { createRoot } from "react-dom/client";
 import {
     createBrowserRouter,
     RouterProvider,
 } from "react-router-dom";
-import Dashboard from "./Dashboard";
+import { AuthProvider } from "./contexts/AuthContext";
+import Layout from "./components/Layout";
+import Dashboard from "./pages/Dashboard";
 
 const router = createBrowserRouter([
     {
         path: "/",
-        element: (
-            <div><Dashboard/></div>
-        ),
-    },
-    {
-        path: "about",
-        element: <div>About</div>,
+        element: <Layout />,
+        children: [
+            {
+                index: true,
+                element: <Dashboard />,
+            },
+        ],
     },
 ]);
 
 createRoot(document.getElementById("root")).render(
-    <RouterProvider router={router}/>
+    <AuthProvider>
+        <RouterProvider router={router} />
+    </AuthProvider>
 );

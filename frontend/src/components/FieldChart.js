@@ -1,10 +1,10 @@
-import {Col, Row, Toast} from "react-bootstrap";
-import {Line} from "react-chartjs-2";
-import {useCallback, useEffect, useMemo, useRef, useState} from "react";
+import { Col, Row, Toast } from "react-bootstrap";
+import { Line } from "react-chartjs-2";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 // eslint-disable-next-line
 import Chart from 'chart.js/auto';
 import FormRange from "react-bootstrap/FormRange";
-import {buildUrl} from "./Api";
+import { buildUrl } from "../lib/Api";
 
 function FieldChart(props) {
 
@@ -100,9 +100,9 @@ function FieldChart(props) {
     return (
         <Row className={"mt-3"}>
             <Col xs={12} sm={12} md={12} lg={12} xl={12} xxl={12}>
-                <Toast style={{width: "100%"}}>
+                <Toast style={{ width: "100%" }}>
                     <Toast.Header closeButton={false}>
-                        <Row style={{width: "100%", textAlign: "center", margin: 0}}>
+                        <Row style={{ width: "100%", textAlign: "center", margin: 0 }}>
                             <Col md={1}>
                                 <strong>{ranges[activeInterval]}</strong>
                             </Col>
@@ -133,7 +133,7 @@ function FieldChart(props) {
                     </Toast.Header>
                     <Toast.Body>
                         <div>
-                            <Line ref={chartRef} data={data} options={options}/>
+                            <Line ref={chartRef} data={data} options={options} />
                         </div>
                     </Toast.Body>
                 </Toast>
