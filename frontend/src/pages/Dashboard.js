@@ -116,7 +116,7 @@ function Dashboard() {
                 </Field>
             </Row>
 
-            <FieldChart title={"Zbýva piva"} metric={"scale_beers_left"} defaultRange="ted" stepped={false} />
+            <FieldChart title={"Zbývá piva"} metric={"scale_beers_left"} defaultRange="ted" stepped={false} />
             <FieldChart title={"Aktivní bečka"} metric={"scale_active_keg"} defaultRange="2w" stepped={true} />
 
             <Row className={"mt-4"}></Row>

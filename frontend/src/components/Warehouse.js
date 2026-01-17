@@ -21,7 +21,7 @@ function Warehouse(props) {
 
                 <Row hidden={!isAuthenticated}>
                     <Alert hidden={!showError} variant={"danger"}>
-                        Chyba! Zkus to prosim pozdeji.
+                        Chyba! Zkus to prosím později.
                     </Alert>
 
                     <Col md={12}>

@@ -69,7 +69,7 @@ function Chat(props) {
             <Offcanvas.Body>
                 <Row hidden={!isAuthenticated}>
                     <Alert hidden={!showError} variant={"danger"}>
-                        Chyba! Zkus to prosim pozdeji.
+                        Chyba! Zkus to prosím později.
                     </Alert>
 
                     <Form className="d-flex" onSubmit={(e) => {

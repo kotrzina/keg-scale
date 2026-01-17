@@ -28,7 +28,7 @@ function Bank(props) {
             props.setShowCanvas(false)
         }}>
             <Offcanvas.Header closeButton>
-                <Offcanvas.Title>Poslední trasakce</Offcanvas.Title>
+                <Offcanvas.Title>Poslední transakce</Offcanvas.Title>
             </Offcanvas.Header>
             <Offcanvas.Body>
                 <Row>
