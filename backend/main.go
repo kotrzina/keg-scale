@@ -48,7 +48,22 @@ func main() {
 
 	monitor := prometheus.New()
 	prometheusCollector := promector.NewPromector(ctx, conf, logger)
-	storage := store.NewRedisStore(ctx, conf)
+
+	// Initialize PostgreSQL store
+	storage, err := store.NewPostgresStore(ctx, conf.DBString)
+	if err != nil {
+		logger.Fatalf("Failed to create PostgreSQL store: %v", err)
+	}
+
+	// Migrate data from Redis on first run
+	redisStore := store.NewRedisStore(ctx, conf)
+	migrated, err := storage.MigrateFromRedis(redisStore)
+	if err != nil {
+		logger.Errorf("Failed to migrate from Redis: %v", err)
+	} else if migrated {
+		logger.Info("Successfully migrated data from Redis to PostgreSQL")
+	}
+
 	kegScale := scale.New(ctx, monitor, storage, conf, logger)
 	intelligence := ai.NewAi(ctx, conf, kegScale, monitor, storage, logger)
 	_ = hook.NewBotka(whatsapp, kegScale, intelligence, conf, storage, logger)
