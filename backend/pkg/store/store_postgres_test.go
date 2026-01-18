@@ -44,7 +44,6 @@ func cleanupTables(t *testing.T, s *PostgresStore) {
 		"DELETE FROM " + tablePrefix + "events",
 		"DELETE FROM " + tablePrefix + "kv",
 		"DELETE FROM " + tablePrefix + "conversation_messages",
-		"DELETE FROM " + tablePrefix + "migrations",
 	}
 
 	for _, query := range queries {
@@ -423,23 +422,6 @@ func TestPostgresStore_ConversationLimit(t *testing.T) {
 	messages, err := store.GetConversation(convID)
 	require.NoError(t, err)
 	assert.Len(t, messages, 500)
-}
-
-func TestPostgresStore_MigrateFromRedis(t *testing.T) {
-	store := setupTestStore(t)
-
-	// We can't test actual Redis migration without Redis, but we can test the tracking
-	// Mark migration as done manually for testing
-	//nolint:gosec // Table name is a hardcoded constant
-	_, err := store.db.ExecContext(store.ctx,
-		"INSERT INTO "+tablePrefix+"migrations (name) VALUES ($1) ON CONFLICT DO NOTHING",
-		"redis_migration")
-	require.NoError(t, err)
-
-	// Migration should return false (already done)
-	migrated, err := store.MigrateFromRedis(&RedisStore{})
-	require.NoError(t, err)
-	assert.False(t, migrated)
 }
 
 func TestPostgresStore_MigrationsIdempotent(t *testing.T) {

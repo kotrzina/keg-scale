@@ -71,13 +71,6 @@ func (s *PostgresStore) migrate() error {
 		// Index for conversation messages
 		fmt.Sprintf(`CREATE INDEX IF NOT EXISTS %sconversation_messages_conv_id_idx ON %sconversation_messages (conv_id)`,
 			tablePrefix, tablePrefix),
-
-		// Migration tracking table
-		fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %smigrations (
-			id SERIAL PRIMARY KEY,
-			name TEXT NOT NULL UNIQUE,
-			executed_at TIMESTAMPTZ DEFAULT NOW()
-		)`, tablePrefix),
 	}
 
 	for _, migration := range migrations {
@@ -87,108 +80,6 @@ func (s *PostgresStore) migrate() error {
 	}
 
 	return nil
-}
-
-// MigrateFromRedis transfers all data from Redis store to PostgreSQL
-// Returns true if migration was performed, false if already done
-func (s *PostgresStore) MigrateFromRedis(redis *RedisStore) (bool, error) {
-	// Check if migration was already done
-	var count int
-	err := s.db.QueryRowContext(s.ctx,
-		fmt.Sprintf("SELECT COUNT(*) FROM %smigrations WHERE name = $1", tablePrefix),
-		"redis_migration").Scan(&count)
-	if err != nil {
-		return false, fmt.Errorf("failed to check migration status: %w", err)
-	}
-
-	if count > 0 {
-		return false, nil // Already migrated
-	}
-
-	// Migrate events
-	events, err := redis.GetEvents()
-	if err == nil && len(events) > 0 {
-		for _, event := range events {
-			if err := s.AddEvent(event); err != nil {
-				return false, fmt.Errorf("failed to migrate event: %w", err)
-			}
-		}
-	}
-
-	// Migrate weight
-	if weight, err := redis.GetWeight(); err == nil {
-		_ = s.SetWeight(weight)
-	}
-
-	// Migrate weight at
-	if weightAt, err := redis.GetWeightAt(); err == nil {
-		_ = s.SetWeightAt(weightAt)
-	}
-
-	// Migrate active keg
-	if activeKeg, err := redis.GetActiveKeg(); err == nil {
-		_ = s.SetActiveKeg(activeKeg)
-	}
-
-	// Migrate active keg at
-	if activeKegAt, err := redis.GetActiveKegAt(); err == nil {
-		_ = s.SetActiveKegAt(activeKegAt)
-	}
-
-	// Migrate beers left
-	if beersLeft, err := redis.GetBeersLeft(); err == nil {
-		_ = s.SetBeersLeft(beersLeft)
-	}
-
-	// Migrate beers total
-	if beersTotal, err := redis.GetBeersTotal(); err == nil {
-		_ = s.SetBeersTotal(beersTotal)
-	}
-
-	// Migrate is low
-	if isLow, err := redis.GetIsLow(); err == nil {
-		_ = s.SetIsLow(isLow)
-	}
-
-	// Migrate warehouse
-	if warehouse, err := redis.GetWarehouse(); err == nil {
-		_ = s.SetWarehouse(warehouse)
-	}
-
-	// Migrate last ok
-	if lastOk, err := redis.GetLastOk(); err == nil {
-		_ = s.SetLastOk(lastOk)
-	}
-
-	// Migrate open at
-	if openAt, err := redis.GetOpenAt(); err == nil {
-		_ = s.SetOpenAt(openAt)
-	}
-
-	// Migrate close at
-	if closeAt, err := redis.GetCloseAt(); err == nil {
-		_ = s.SetCloseAt(closeAt)
-	}
-
-	// Migrate is open
-	if isOpen, err := redis.GetIsOpen(); err == nil {
-		_ = s.SetIsOpen(isOpen)
-	}
-
-	// Migrate today beer
-	if todayBeer, err := redis.GetTodayBeer(); err == nil && todayBeer != "" {
-		_ = s.SetTodayBeer(todayBeer)
-	}
-
-	// Mark migration as done
-	_, err = s.db.ExecContext(s.ctx,
-		fmt.Sprintf("INSERT INTO %smigrations (name) VALUES ($1)", tablePrefix),
-		"redis_migration")
-	if err != nil {
-		return false, fmt.Errorf("failed to mark migration as done: %w", err)
-	}
-
-	return true, nil
 }
 
 // Helper methods for key-value store
