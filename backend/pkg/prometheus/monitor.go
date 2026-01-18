@@ -43,7 +43,7 @@ func New() *Monitor {
 		}, []string{}),
 
 		BeersTotal: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Name: "scale_beers_total",
+			Name: "scale_beers_consumed",
 			Help: "Total number of beers consumed",
 		}, []string{}),
 

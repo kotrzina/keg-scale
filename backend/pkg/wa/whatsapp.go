@@ -128,12 +128,12 @@ func (wa *WhatsAppClient) eventHandler(evt interface{}) {
 
 func (wa *WhatsAppClient) handleIncomingMessage(msg *events.Message) {
 	text := ""
-	if msg.Message.ExtendedTextMessage != nil && msg.Message.ExtendedTextMessage.Text != nil {
-		text = msg.Message.ExtendedTextMessage.GetText()
+	if msg.Message.GetExtendedTextMessage() != nil && msg.Message.GetExtendedTextMessage().Text != nil {
+		text = msg.Message.GetExtendedTextMessage().GetText()
 	}
 
-	if msg.Message.Conversation != nil {
-		text = *msg.Message.Conversation
+	if msg.Message.GetConversation() != "" {
+		text = msg.Message.GetConversation()
 	}
 
 	if text == "" {

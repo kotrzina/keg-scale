@@ -44,6 +44,7 @@ type municipalNewsletterCache struct {
 	fetchedAt time.Time
 }
 
+//nolint:gochecknoglobals // cache needs to be global for singleton pattern
 var mnCache = &municipalNewsletterCache{}
 
 func fetchMunicipalNewsletterData() ([]MunicipalNewsletterIssue, error) {
@@ -163,6 +164,7 @@ func ProvideMunicipalNewsletterSearch(query string) (string, error) {
 }
 
 // Czech stop words to ignore in search
+//nolint:gochecknoglobals // constant lookup table
 var czechStopWords = map[string]bool{
 	"a": true, "i": true, "o": true, "u": true, "v": true, "z": true, "k": true, "s": true,
 	"je": true, "se": true, "na": true, "ze": true, "do": true, "to": true, "za": true,

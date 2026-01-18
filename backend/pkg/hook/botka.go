@@ -225,11 +225,11 @@ func (b *Botka) thirstHandler() wa.EventHandler {
 			return strings.HasPrefix(sanitized, "zizen")
 		},
 		HandleFunc: func(from, msg string) error {
-			//s := b.scale.GetScale()
-			//if s.Pub.IsOpen {
-			//	reply = fmt.Sprintf("🍺 Hospoda je dávno otevřená! %s.", s.Pub.OpenedAt)
-			//	return b.whatsapp.SendText(from, reply)
-			//}
+			// s := b.scale.GetScale()
+			// if s.Pub.IsOpen {
+			// 	reply = fmt.Sprintf("🍺 Hospoda je dávno otevřená! %s.", s.Pub.OpenedAt)
+			// 	return b.whatsapp.SendText(from, reply)
+			// }
 
 			err := b.whatsapp.SendText(from, "🙋🏻Ok, hned vygeneruji zprávu pro štamgasty.")
 			if err != nil {
