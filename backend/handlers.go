@@ -392,6 +392,28 @@ func (hr *HandlerRepository) paymentQrHandler() func(http.ResponseWriter, *http.
 	}
 }
 
+func (hr *HandlerRepository) forceBankRefresh() func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPut {
+			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		auth := r.Header.Get("Authorization")
+		if auth != hr.config.Password {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		if err := hr.scale.BankRefresh(r.Context(), true); err != nil {
+			http.Error(w, "could not force bank refresh", http.StatusInternalServerError)
+			return
+		}
+
+		w.WriteHeader(http.StatusNoContent)
+	}
+}
+
 var reCustomDuration = regexp.MustCompile(`^(\d{1,2})([hdwmy])$`)
 
 // parseCustomDuration parses custom duration string
