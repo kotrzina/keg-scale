@@ -449,3 +449,59 @@ func TestPostgresStore_MigrationsIdempotent(t *testing.T) {
 	// Clean up
 	cleanupTables(t, store2)
 }
+
+func TestPostgresStore_AttendanceKnownDevices(t *testing.T) {
+	store := setupTestStore(t)
+
+	// Get known devices when not set (should return empty map, no error)
+	devices, err := store.GetAttendanceKnownDevices()
+	require.NoError(t, err)
+	assert.Empty(t, devices)
+
+	// Set and get known devices
+	knownDevices := map[string]string{
+		"AA:BB:CC:DD:EE:FF": "John Doe",
+		"11:22:33:44:55:66": "Jane Smith",
+	}
+	require.NoError(t, store.SetAttendanceKnownDevices(knownDevices))
+	devices, err = store.GetAttendanceKnownDevices()
+	require.NoError(t, err)
+	assert.Equal(t, knownDevices, devices)
+
+	// Update known devices
+	updatedDevices := map[string]string{
+		"AA:BB:CC:DD:EE:FF": "John Updated",
+	}
+	require.NoError(t, store.SetAttendanceKnownDevices(updatedDevices))
+	devices, err = store.GetAttendanceKnownDevices()
+	require.NoError(t, err)
+	assert.Equal(t, updatedDevices, devices)
+}
+
+func TestPostgresStore_AttendanceIrks(t *testing.T) {
+	store := setupTestStore(t)
+
+	// Get IRKs when not set (should return empty map, no error)
+	irks, err := store.GetAttendanceIrks()
+	require.NoError(t, err)
+	assert.Empty(t, irks)
+
+	// Set and get IRKs
+	testIrks := map[string]string{
+		"AA:BB:CC:DD:EE:FF": "1234567890abcdef1234567890abcdef",
+		"11:22:33:44:55:66": "fedcba0987654321fedcba0987654321",
+	}
+	require.NoError(t, store.SetAttendanceIrks(testIrks))
+	irks, err = store.GetAttendanceIrks()
+	require.NoError(t, err)
+	assert.Equal(t, testIrks, irks)
+
+	// Update IRKs
+	updatedIrks := map[string]string{
+		"AA:BB:CC:DD:EE:FF": "00000000000000000000000000000000",
+	}
+	require.NoError(t, store.SetAttendanceIrks(updatedIrks))
+	irks, err = store.GetAttendanceIrks()
+	require.NoError(t, err)
+	assert.Equal(t, updatedIrks, irks)
+}

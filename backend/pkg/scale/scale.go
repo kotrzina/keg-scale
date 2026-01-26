@@ -29,8 +29,9 @@ type Scale struct {
 	isLow        bool      // is the keg low and needs to be replaced soon
 	warehouse    [5]int    // warehouse of kegs [10l, 15l, 20l, 30l, 50l]
 
-	pub  pub
-	bank *bank
+	pub        pub
+	bank       *bank
+	attendance attendance
 
 	lastOk time.Time
 	rssi   float64
@@ -100,6 +101,12 @@ func New(
 			client:     fio.NewClient(conf.FioToken, nil),
 			lastUpdate: time.Now().Add(-9999 * time.Hour),
 			refreshMtx: sync.Mutex{},
+		},
+
+		attendance: attendance{
+			irks:   []Irk{},
+			active: []Device{},
+			known:  map[string]string{},
 		},
 
 		lastOk: time.Now().Add(-9999 * time.Hour),
@@ -217,6 +224,25 @@ func (s *Scale) loadDataFromStore() {
 	closeAt, err := s.store.GetCloseAt()
 	if err == nil {
 		s.pub.closedAt = closeAt
+	}
+
+	knownDevices, err := s.store.GetAttendanceKnownDevices()
+	if err == nil {
+		s.attendance.known = knownDevices
+	}
+
+	irksRaw, err := s.store.GetAttendanceIrks()
+	if err == nil {
+		i := 0
+		irks := make([]Irk, len(irksRaw))
+		for address, name := range irksRaw {
+			irks[i] = Irk{
+				IdentityAddress: address,
+				DeviceName:      name,
+			}
+			i++
+		}
+		s.attendance.irks = irks
 	}
 
 	s.monitor.BeersTotal.WithLabelValues().Set(float64(s.getBeersTotal()))

@@ -63,4 +63,10 @@ type Storage interface {
 	AddConversationMessage(id string, msg ConservationMessage) error // add conversation message
 	GetConversation(id string) ([]ConservationMessage, error)        // get conversation messages from oldest to newest
 	ResetConversation(id string) error                               // reset conversation - delete all messages
+
+	SetAttendanceKnownDevices(devices map[string]string) error // set known attendance devices
+	GetAttendanceKnownDevices() (map[string]string, error)     // get known attendance devices
+
+	SetAttendanceIrks(irks map[string]string) error // set irks
+	GetAttendanceIrks() (map[string]string, error)  // get irks
 }

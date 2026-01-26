@@ -8,30 +8,41 @@ func TestNewMonitor(t *testing.T) {
 	monitor := New()
 
 	if monitor.Registry == nil {
-		t.Error("Registry should not be nil")
+		t.Fatal("Registry should not be nil")
 	}
 
-	if monitor.Weight == nil {
-		t.Error("Weight should not be nil")
+	tests := []struct {
+		name   string
+		metric interface{}
+	}{
+		{"Weight", monitor.Weight},
+		{"ActiveKeg", monitor.ActiveKeg},
+		{"BeersLeft", monitor.BeersLeft},
+		{"BeersTotal", monitor.BeersTotal},
+		{"ScaleWifiRssi", monitor.ScaleWifiRssi},
+		{"LastPing", monitor.LastPing},
+		{"PubIsOpen", monitor.PubIsOpen},
+		{"AttendanceUptime", monitor.AttendanceUptime},
+		{"AttendanceLastPing", monitor.AttendanceLastPing},
+		{"AttendanceScanCount", monitor.AttendanceScanCount},
+		{"AttendanceCpuMhz", monitor.AttendanceCpuMhz},
+		{"AttendanceHeapSize", monitor.AttendanceHeapSize},
+		{"AttendanceFreeHeap", monitor.AttendanceFreeHeap},
+		{"AttendanceMinFreeHeap", monitor.AttendanceMinFreeHeap},
+		{"AttendanceWifiRssi", monitor.AttendanceWifiRssi},
+		{"AttendanceDetectedCount", monitor.AttendanceDetectedCount},
+		{"AttendanceIrkCount", monitor.AttendanceIrkCount},
+		{"AnthropicInputTokens", monitor.AnthropicInputTokens},
+		{"AnthropicOutputTokens", monitor.AnthropicOutputTokens},
+		{"OpenAiInputTokens", monitor.OpenAiInputTokens},
+		{"OpenAiOutputTokens", monitor.OpenAiOutputTokens},
 	}
 
-	if monitor.ActiveKeg == nil {
-		t.Error("ActiveKeg should not be nil")
-	}
-
-	if monitor.BeersLeft == nil {
-		t.Error("BeersLeft should not be nil")
-	}
-
-	if monitor.ScaleWifiRssi == nil {
-		t.Error("ScaleWifiRssi should not be nil")
-	}
-
-	if monitor.LastPing == nil {
-		t.Error("LastPing should not be nil")
-	}
-
-	if monitor.PubIsOpen == nil {
-		t.Error("PubIsOpen should not be nil")
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.metric == nil {
+				t.Errorf("%s should not be nil", tt.name)
+			}
+		})
 	}
 }

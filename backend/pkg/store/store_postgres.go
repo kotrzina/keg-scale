@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
@@ -108,6 +109,48 @@ func (s *PostgresStore) deleteValue(key string) error {
 	query := fmt.Sprintf("DELETE FROM %skv WHERE key = $1", tablePrefix)
 	_, err := s.db.ExecContext(s.ctx, query, key)
 	return err
+}
+
+func (s *PostgresStore) setMap(key string, m map[string]string) error {
+	data, err := json.Marshal(m)
+	if err != nil {
+		return fmt.Errorf("failed to marshal map: %w", err)
+	}
+	return s.setValue(key, string(data))
+}
+
+func (s *PostgresStore) getMap(key string) (map[string]string, error) {
+	val, err := s.getValue(key)
+	if err != nil {
+		// the key does not exist - no ideal solution
+		return map[string]string{}, nil
+	}
+
+	var m map[string]string
+	if err := json.Unmarshal([]byte(val), &m); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal map: %w", err)
+	}
+	return m, nil
+}
+
+func (s *PostgresStore) setStructArray(key string, arr interface{}) error {
+	data, err := json.Marshal(arr)
+	if err != nil {
+		return fmt.Errorf("failed to marshal array: %w", err)
+	}
+	return s.setValue(key, string(data))
+}
+
+func (s *PostgresStore) getStructArray(key string, result interface{}) error {
+	val, err := s.getValue(key)
+	if err != nil {
+		return err
+	}
+
+	if err := json.Unmarshal([]byte(val), result); err != nil {
+		return fmt.Errorf("failed to unmarshal array: %w", err)
+	}
+	return nil
 }
 
 // Storage interface implementation
@@ -379,4 +422,20 @@ func (s *PostgresStore) ResetConversation(id string) error {
 	query := fmt.Sprintf("DELETE FROM %sconversation_messages WHERE conv_id = $1", tablePrefix)
 	_, err := s.db.ExecContext(s.ctx, query, id)
 	return err
+}
+
+func (s *PostgresStore) SetAttendanceKnownDevices(devices map[string]string) error {
+	return s.setMap("attendance_known_devices", devices)
+}
+
+func (s *PostgresStore) GetAttendanceKnownDevices() (map[string]string, error) {
+	return s.getMap("attendance_known_devices")
+}
+
+func (s *PostgresStore) SetAttendanceIrks(irks map[string]string) error {
+	return s.setMap("attendance_irks", irks)
+}
+
+func (s *PostgresStore) GetAttendanceIrks() (map[string]string, error) {
+	return s.getMap("attendance_irks")
 }

@@ -140,3 +140,19 @@ func (s *FakeStore) GetConversation(_ string) ([]ConservationMessage, error) {
 func (s *FakeStore) ResetConversation(_ string) error {
 	return nil
 }
+
+func (s *FakeStore) SetAttendanceKnownDevices(_ map[string]string) error {
+	return nil
+}
+
+func (s *FakeStore) GetAttendanceKnownDevices() (map[string]string, error) {
+	return map[string]string{}, nil
+}
+
+func (s *FakeStore) SetAttendanceIrks(_ map[string]string) error {
+	return nil
+}
+
+func (s *FakeStore) GetAttendanceIrks() (map[string]string, error) {
+	return map[string]string{}, nil
+}

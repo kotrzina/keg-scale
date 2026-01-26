@@ -55,6 +55,10 @@ func NewRouter(hr *HandlerRepository) *mux.Router {
 	router.HandleFunc("/api/payment/qr", hr.paymentQrHandler())
 	router.HandleFunc("/api/bank/refresh", hr.forceBankRefresh())
 
+	router.HandleFunc("/api/irks", hr.attendanceIrksHandler())
+	router.HandleFunc("/api/attendance", hr.attendanceHandler())
+	router.HandleFunc("/api/device/rename", hr.attendanceDeviceRenameHandler())
+
 	router.HandleFunc("/api/check/password", hr.checkPassword())
 
 	router.HandleFunc("/api/pub/active_keg", hr.activeKegHandler())

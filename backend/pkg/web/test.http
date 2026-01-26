@@ -25,3 +25,47 @@ Content-Type: text/plain
 Authorization: test
 
 ping|1234|-71|
+
+### Attendance Add IRK
+POST http://localhost:8080/api/irks
+Content-Type: application/json
+Authorization: test
+
+{
+  "identity_address": "AA:BB:CC:DD:EE:FF",
+  "irk": "0123456789abcdef0123456789abcdef",
+  "device_name": "iPhone",
+  "rssi": -65,
+  "appearance": 512
+}
+
+### Attendance GET IRKs
+GET http://localhost:8080/api/irks
+Authorization: test
+Cache-Control: no-cache
+
+### Attendance
+POST http://localhost:8080/api/attendance HTTP/1.1
+Authorization: test
+Content-Type: application/json
+
+{
+  "ble": [
+    {"address": "AA:BB:CC:DD:EE:FF", "rssi": -72},
+    {"address": "11:22:33:44:55:66", "rssi": -58}
+  ],
+  "bounded": [
+    {"address": "99:88:77:66:55:44", "rssi": -45}
+  ],
+  "telemetry": {
+    "uptime_s": 3600,
+    "scan_count": 120,
+    "cpu_mhz": 80,
+    "heap_size": 327680,
+    "free_heap": 245000,
+    "min_free_heap": 220000,
+    "wifi_rssi": -55,
+    "irk_count": 5,
+    "devices_found": 12
+  }
+}

@@ -15,6 +15,17 @@ type Monitor struct {
 	LastPing      *prometheus.GaugeVec
 	PubIsOpen     *prometheus.GaugeVec
 
+	AttendanceUptime        *prometheus.GaugeVec
+	AttendanceLastPing      *prometheus.GaugeVec
+	AttendanceScanCount     *prometheus.GaugeVec
+	AttendanceCpuMhz        *prometheus.GaugeVec
+	AttendanceHeapSize      *prometheus.GaugeVec
+	AttendanceFreeHeap      *prometheus.GaugeVec
+	AttendanceMinFreeHeap   *prometheus.GaugeVec
+	AttendanceWifiRssi      *prometheus.GaugeVec
+	AttendanceDetectedCount *prometheus.GaugeVec
+	AttendanceIrkCount      *prometheus.GaugeVec
+
 	AnthropicInputTokens  *prometheus.CounterVec
 	AnthropicOutputTokens *prometheus.CounterVec
 	OpenAiInputTokens     *prometheus.CounterVec
@@ -62,6 +73,56 @@ func New() *Monitor {
 			Help: "Is the pub open/closed",
 		}, []string{}),
 
+		AttendanceUptime: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Name: "attendance_uptime_seconds",
+			Help: "Uptime of the attendance device in seconds",
+		}, []string{}),
+
+		AttendanceLastPing: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Name: "attendance_last_ping",
+			Help: "Last ping time of the attendance device",
+		}, []string{}),
+
+		AttendanceScanCount: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Name: "attendance_scan",
+			Help: "Number of scans performed by the attendance device",
+		}, []string{}),
+
+		AttendanceCpuMhz: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Name: "attendance_cpu_mhz",
+			Help: "CPU frequency of the attendance device in MHz",
+		}, []string{}),
+
+		AttendanceHeapSize: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Name: "attendance_heap_size",
+			Help: "Heap size of the attendance device in bytes",
+		}, []string{}),
+
+		AttendanceFreeHeap: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Name: "attendance_free_heap",
+			Help: "Free heap of the attendance device in bytes",
+		}, []string{}),
+
+		AttendanceMinFreeHeap: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Name: "attendance_min_free_heap",
+			Help: "Minimum free heap of the attendance device in bytes",
+		}, []string{}),
+
+		AttendanceWifiRssi: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Name: "attendance_wifi_rssi",
+			Help: "WiFi RSSI of the attendance device",
+		}, []string{}),
+
+		AttendanceDetectedCount: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Name: "attendance_detected",
+			Help: "Number of detected devices using BLE scan",
+		}, []string{}),
+
+		AttendanceIrkCount: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Name: "attendance_irk",
+			Help: "Number of IRKs stored in the attendance device",
+		}, []string{}),
+
 		AnthropicInputTokens: prometheus.NewCounterVec(prometheus.CounterOpts{
 			Name: "anthropic_input_tokens_total",
 			Help: "Number of input tokens processed by the AI",
@@ -95,6 +156,16 @@ func New() *Monitor {
 		monitor.AnthropicOutputTokens,
 		monitor.OpenAiInputTokens,
 		monitor.OpenAiOutputTokens,
+		monitor.AttendanceUptime,
+		monitor.AttendanceLastPing,
+		monitor.AttendanceScanCount,
+		monitor.AttendanceCpuMhz,
+		monitor.AttendanceHeapSize,
+		monitor.AttendanceFreeHeap,
+		monitor.AttendanceMinFreeHeap,
+		monitor.AttendanceWifiRssi,
+		monitor.AttendanceDetectedCount,
+		monitor.AttendanceIrkCount,
 	)
 
 	return monitor
