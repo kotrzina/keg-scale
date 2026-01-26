@@ -367,6 +367,14 @@ func (hr *HandlerRepository) paymentQrHandler() func(http.ResponseWriter, *http.
 			return
 		}
 
+		amount := r.URL.Query().Get("amount")
+		if amount != "" {
+			// test if the amount is valid
+			if _, err := strconv.Atoi(amount); err == nil {
+				_ = p.SetAmount(amount)
+			}
+		}
+
 		img, err := qrpay.GetQRCodeImage(p)
 		if err != nil {
 			http.Error(w, "could not generate payment qr code", http.StatusInternalServerError)
