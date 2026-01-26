@@ -1,4 +1,4 @@
-package main
+package web
 
 import (
 	"encoding/json"
@@ -31,6 +31,26 @@ type HandlerRepository struct {
 	monitor   *prometheus.Monitor
 	logger    *logrus.Logger
 	wa        *wa.WhatsAppClient
+}
+
+func NewHandlerRepository(
+	scale *scale.Scale,
+	promector *promector.Promector,
+	ai *ai.Ai,
+	config *config.Config,
+	monitor *prometheus.Monitor,
+	logger *logrus.Logger,
+	wa *wa.WhatsAppClient,
+) *HandlerRepository {
+	return &HandlerRepository{
+		scale:     scale,
+		promector: promector,
+		ai:        ai,
+		config:    config,
+		monitor:   monitor,
+		logger:    logger,
+		wa:        wa,
+	}
 }
 
 func (hr *HandlerRepository) scaleMessageHandler() func(http.ResponseWriter, *http.Request) {

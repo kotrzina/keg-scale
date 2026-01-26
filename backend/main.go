@@ -16,6 +16,7 @@ import (
 	"github.com/kotrzina/keg-scale/pkg/scale"
 	"github.com/kotrzina/keg-scale/pkg/store"
 	"github.com/kotrzina/keg-scale/pkg/wa"
+	"github.com/kotrzina/keg-scale/pkg/web"
 	_ "github.com/lib/pq"
 	"github.com/sirupsen/logrus"
 )
@@ -59,17 +60,17 @@ func main() {
 	intelligence := ai.NewAi(ctx, conf, kegScale, monitor, storage, logger)
 	_ = hook.NewBotka(whatsapp, kegScale, intelligence, conf, storage, logger)
 
-	router := NewRouter(&HandlerRepository{
-		scale:     kegScale,
-		promector: prometheusCollector,
-		ai:        intelligence,
-		config:    conf,
-		monitor:   monitor,
-		logger:    logger,
-		wa:        whatsapp,
-	})
+	router := web.NewRouter(web.NewHandlerRepository(
+		kegScale,
+		prometheusCollector,
+		intelligence,
+		conf,
+		monitor,
+		logger,
+		whatsapp,
+	))
 
-	srv := StartServer(router, 8080, logger)
+	srv := web.StartServer(router, 8080, logger)
 
 	<-done
 	logger.Infof("Terminate signal received")
