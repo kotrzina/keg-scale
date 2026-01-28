@@ -1,5 +1,10 @@
 package scale
 
+import (
+	"fmt"
+	"time"
+)
+
 type Irk struct {
 	IdentityAddress string `json:"identity_address"`
 	Irk             string `json:"irk"`
@@ -7,21 +12,24 @@ type Irk struct {
 }
 
 type Device struct {
-	IdentityAddress string `json:"identity_address"`
-	RSSI            int    `json:"rssi"`
-	Bounded         bool   `json:"bounded"`
+	IdentityAddress string    `json:"identity_address"`
+	RSSI            int       `json:"rssi"`
+	Bounded         bool      `json:"bounded"`
+	LastSeen        time.Time `json:"last_seen"`
 }
 
 type attendance struct {
 	irks   []Irk
-	active []Device          // list of active devices
+	active map[string]Device // list of active devices
 	known  map[string]string // list of known devices -> translated names
+	lastOk time.Time
 }
 
-func (s *Scale) AddIrk(irk Irk) {
+func (s *Scale) AddIrk(irk Irk) error {
 	s.mux.Lock()
 	defer s.mux.Unlock()
 
+	// If IRK already exists, remove it
 	for i, existingIrk := range s.attendance.irks {
 		if existingIrk.IdentityAddress == irk.IdentityAddress {
 			s.attendance.irks = append(s.attendance.irks[:i], s.attendance.irks[i+1:]...)
@@ -29,11 +37,19 @@ func (s *Scale) AddIrk(irk Irk) {
 		}
 	}
 
-	s.attendance.known[irk.IdentityAddress] = irk.DeviceName
+	// Store device name (only if it's not already known)
+	knownName, f := s.attendance.known[irk.IdentityAddress]
+	if !f || knownName == "" {
+		s.attendance.known[irk.IdentityAddress] = irk.DeviceName
+	}
+
+	// store IRK
 	s.attendance.irks = append(s.attendance.irks, irk)
 
-	// it could fail, we don't really care
-	_ = s.store.SetAttendanceKnownDevices(s.attendance.known)
+	if err := s.store.SetAttendanceKnownDevices(s.attendance.known); err != nil {
+		s.logger.Errorf("failed to store known devices: %s => %s because %s", irk.IdentityAddress, irk.DeviceName, err)
+		return fmt.Errorf("failed to store known devices: %w", err)
+	}
 
 	irks := make(map[string]string, len(s.attendance.irks))
 	for _, item := range s.attendance.irks {
@@ -41,7 +57,10 @@ func (s *Scale) AddIrk(irk Irk) {
 	}
 	if err := s.store.SetAttendanceIrks(irks); err != nil {
 		s.logger.Errorf("failed to store irk: %s => %s because %s", irk.IdentityAddress, irk.Irk, err)
+		return fmt.Errorf("failed to store irk: %w", err)
 	}
+
+	return nil
 }
 
 func (s *Scale) GetIrks() []Irk {
@@ -53,11 +72,22 @@ func (s *Scale) GetIrks() []Irk {
 	return irks
 }
 
-func (s *Scale) SetDevices(devices []Device) {
+func (s *Scale) SetDevices(devices map[string]Device) {
 	s.mux.Lock()
 	defer s.mux.Unlock()
 
-	s.attendance.active = devices
+	for address, device := range devices {
+		s.attendance.active[address] = device
+	}
+
+	// delete inactive devices
+	for address, device := range s.attendance.active {
+		if device.LastSeen.Before(time.Now().Add(-15 * time.Minute)) {
+			delete(s.attendance.active, address)
+		}
+	}
+
+	s.attendance.lastOk = time.Now()
 }
 
 func (s *Scale) RenameKnownDevice(address string, newName string) error {

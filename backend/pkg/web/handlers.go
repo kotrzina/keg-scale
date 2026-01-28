@@ -176,6 +176,8 @@ func (hr *HandlerRepository) scaleDashboardHandler() func(http.ResponseWriter, *
 				Balance: decimal.NewFromInt(0),
 			}
 			data.Scale.BankTransactions = []scale.TransactionOutput{}
+			data.Scale.BtDevices = []scale.BtDevice{}
+			data.Scale.BtDevicesLastOk = time.Now()
 		}
 
 		w.Header().Set("Content-Type", "application/json")
