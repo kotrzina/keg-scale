@@ -24,6 +24,7 @@ type BtDevice struct {
 	IdentityAddress string `json:"identity_address"`
 	RSSI            int    `json:"rssi"`
 	Known           bool   `json:"known"`
+	LastSeen        string `json:"last_seen"`
 }
 
 type FullOutput struct {
@@ -81,6 +82,7 @@ func (s *Scale) GetScale() FullOutput {
 			IdentityAddress: device.IdentityAddress,
 			RSSI:            device.RSSI,
 			Known:           f,
+			LastSeen:        utils.FormatDate(device.LastSeen),
 		}
 		i++
 	}
