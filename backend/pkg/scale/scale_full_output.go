@@ -19,6 +19,14 @@ type PubOutput struct {
 	ClosedAt string `json:"closed_at"`
 }
 
+type BtDevice struct {
+	Name            string `json:"name"`
+	IdentityAddress string `json:"identity_address"`
+	RSSI            int    `json:"rssi"`
+	Known           bool   `json:"known"`
+	LastSeen        string `json:"last_seen"`
+}
+
 type FullOutput struct {
 	IsOk               bool            `json:"is_ok"`
 	BeersLeft          int             `json:"beers_left"`
@@ -39,6 +47,9 @@ type FullOutput struct {
 
 	BankBalance      BalanceOutput       `json:"bank_balance"`
 	BankTransactions []TransactionOutput `json:"bank_transactions"`
+
+	BtDevicesLastOk time.Time  `json:"bt_devices_last_ok"`
+	BtDevices       []BtDevice `json:"bt_devices"`
 }
 
 func (s *Scale) GetScale() FullOutput {
@@ -56,6 +67,25 @@ func (s *Scale) GetScale() FullOutput {
 	// Copy the transactions
 	bt := make([]TransactionOutput, len(s.bank.transactions))
 	copy(bt, s.bank.transactions)
+
+	btDevices := make([]BtDevice, len(s.attendance.active))
+	i := 0
+	for _, device := range s.attendance.active {
+		name := device.IdentityAddress
+		knownName, f := s.attendance.known[device.IdentityAddress]
+		if f && knownName != "" {
+			name = knownName
+		}
+
+		btDevices[i] = BtDevice{
+			Name:            name,
+			IdentityAddress: device.IdentityAddress,
+			RSSI:            device.RSSI,
+			Known:           f,
+			LastSeen:        utils.FormatDate(device.LastSeen),
+		}
+		i++
+	}
 
 	output := FullOutput{
 		IsOk:               s.isOk(),
@@ -80,6 +110,9 @@ func (s *Scale) GetScale() FullOutput {
 		WarehouseBeerLeft: GetWarehouseBeersLeft(s.warehouse),
 		BankBalance:       s.bank.balance,
 		BankTransactions:  bt,
+
+		BtDevicesLastOk: s.attendance.lastOk,
+		BtDevices:       btDevices,
 	}
 
 	return output
