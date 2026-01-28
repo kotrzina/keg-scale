@@ -135,6 +135,7 @@ func (hr *HandlerRepository) attendanceDeviceRenameHandler() func(http.ResponseW
 
 		if r.Method != http.MethodPut {
 			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+			return
 		}
 
 		auth := r.Header.Get("Authorization")
