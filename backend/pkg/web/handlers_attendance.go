@@ -48,7 +48,7 @@ func (hr *HandlerRepository) attendanceHandler() func(http.ResponseWriter, *http
 			return
 		}
 
-		var devices map[string]scale.Device
+		devices := make(map[string]scale.Device)
 
 		irks := hr.scale.GetIrks()
 
