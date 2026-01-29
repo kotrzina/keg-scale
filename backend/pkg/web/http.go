@@ -1,6 +1,7 @@
 package web
 
 import (
+	_ "embed"
 	"errors"
 	"fmt"
 	"net/http"
@@ -12,6 +13,9 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
 )
+
+//go:embed static/terms.html
+var termsContent []byte
 
 // NewRouter creates a new HTTP router
 func NewRouter(hr *HandlerRepository) *mux.Router {
@@ -63,6 +67,11 @@ func NewRouter(hr *HandlerRepository) *mux.Router {
 
 	router.HandleFunc("/api/pub/active_keg", hr.activeKegHandler())
 	router.HandleFunc("/api/wa/qr", hr.wa.QrCodeImageHandler)
+
+	router.HandleFunc("/terms", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html")
+		_, _ = w.Write(termsContent)
+	})
 
 	// frontend
 	dir := hr.config.FrontendPath
