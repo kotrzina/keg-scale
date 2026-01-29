@@ -86,6 +86,32 @@ func NewBotka(
 	return w
 }
 
+func (b *Botka) ProvideWebHandlers() []wa.EventHandler {
+	if b.config.Debug {
+		return []wa.EventHandler{}
+	}
+
+	return []wa.EventHandler{
+		b.helpHandler(),
+		b.helloHandler(),
+		b.pubHandler(),
+		b.thirstHandler(),
+		b.kegHandler(),
+		b.pricesHandler(),
+		// b.qrPaymentHandler(),
+		b.bankHandler(),
+		b.warehouseHandler(),
+		// b.resetHandler(),
+		b.secretHelpHandler(),
+		b.openHandler(),
+		b.cepHandler(),
+		b.volleyballHandler(),
+		b.noMessageHandler(),
+		b.shoutHandler(),
+		//b.aiHandler(), // web has own ai logic
+	}
+}
+
 // nolint: govet // temporary
 func (b *Botka) messageOpen(_ scale.EventType) error {
 	msg, err := b.ai.GenerateGeneralOpenMessage()
@@ -149,7 +175,7 @@ func (b *Botka) helpHandler() wa.EventHandler {
 				strings.HasPrefix(sanitized, "napoveda") ||
 				strings.HasPrefix(sanitized, "pomoc")
 		},
-		HandleFunc: func(from, _ string) error {
+		HandleFunc: func(from, _ string) (string, error) {
 			reply := "Příkazy: \n" +
 				"/help - zobrazí nápovědu \n" +
 				"/pub /hospoda - informace o hospodě \n" +
@@ -160,8 +186,8 @@ func (b *Botka) helpHandler() wa.EventHandler {
 				"/banka - stav bankovního účtu \n" +
 				"/sklad - stav skladu\n" +
 				"/reset - Pan Botka zapomene všechno"
-			err := b.whatsapp.SendText(from, reply)
-			return err
+
+			return reply, nil
 		},
 	}
 }
@@ -182,11 +208,11 @@ func (b *Botka) helloHandler() wa.EventHandler {
 				strings.HasPrefix(sanitized, "cau") ||
 				strings.HasPrefix(sanitized, "cus")
 		},
-		HandleFunc: func(from, msg string) error {
+		HandleFunc: func(from, msg string) (string, error) {
 			reply := "Ahoj! Já jsem Pan Botka. Napiš /help pro nápovědu."
 			b.storeConversation(from, msg, reply)
-			err := b.whatsapp.SendText(from, reply)
-			return err
+
+			return reply, nil
 		},
 	}
 }
@@ -203,7 +229,7 @@ func (b *Botka) pubHandler() wa.EventHandler {
 			return strings.HasPrefix(sanitized, "pub") ||
 				strings.HasPrefix(sanitized, "hospoda")
 		},
-		HandleFunc: func(from, msg string) error {
+		HandleFunc: func(from, msg string) (string, error) {
 			s := b.scale.GetScale()
 			var reply string
 			if s.Pub.IsOpen {
@@ -212,8 +238,8 @@ func (b *Botka) pubHandler() wa.EventHandler {
 				reply = "😥 Hospoda je bohužel zavřená! Půjdeš otevřít?"
 			}
 			b.storeConversation(from, msg, reply)
-			err := b.whatsapp.SendText(from, reply)
-			return err
+
+			return reply, nil
 		},
 	}
 }
@@ -224,18 +250,7 @@ func (b *Botka) thirstHandler() wa.EventHandler {
 			sanitized := b.sanitizeCommand(msg)
 			return strings.HasPrefix(sanitized, "zizen")
 		},
-		HandleFunc: func(from, msg string) error {
-			// s := b.scale.GetScale()
-			// if s.Pub.IsOpen {
-			// 	reply = fmt.Sprintf("🍺 Hospoda je dávno otevřená! %s.", s.Pub.OpenedAt)
-			// 	return b.whatsapp.SendText(from, reply)
-			// }
-
-			err := b.whatsapp.SendText(from, "🙋🏻Ok, hned vygeneruji zprávu pro štamgasty.")
-			if err != nil {
-				return err
-			}
-
+		HandleFunc: func(from, msg string) (string, error) {
 			// remove the command prefix
 			sanitized := strings.TrimPrefix(b.sanitizeCommand(msg), "zizen")
 
@@ -244,7 +259,14 @@ func (b *Botka) thirstHandler() wa.EventHandler {
 				b.logger.Errorf("could not generate regulars message: %v", err)
 			}
 
-			return b.whatsapp.SendText(b.config.WhatsAppRegularsJid, groupMsg)
+			err = b.whatsapp.SendText(b.config.WhatsAppRegularsJid, groupMsg)
+			if err != nil {
+				b.logger.Errorf("could not send regulars message: %v", err)
+				return "Nemůžu poslat zprávu štamgastům, něco se pokazilo.", fmt.Errorf("could not send thirst message to regulars group chat: %w", err)
+			}
+
+			reply := "🙋🏻Ok, hned vygeneruji zprávu pro štamgasty."
+			return reply, nil
 		},
 	}
 }
@@ -261,7 +283,7 @@ func (b *Botka) kegHandler() wa.EventHandler {
 			return strings.HasPrefix(sanitized, "becka") ||
 				strings.HasPrefix(sanitized, "keg")
 		},
-		HandleFunc: func(from, msg string) error {
+		HandleFunc: func(from, msg string) (string, error) {
 			s := b.scale.GetScale()
 			var reply string
 			if s.ActiveKeg == 0 {
@@ -276,9 +298,9 @@ func (b *Botka) kegHandler() wa.EventHandler {
 					utils.FormatTime(s.ActiveKegAt),
 				)
 			}
+
 			b.storeConversation(from, msg, reply)
-			err := b.whatsapp.SendText(from, reply)
-			return err
+			return reply, nil
 		},
 	}
 }
@@ -288,13 +310,12 @@ func (b *Botka) pricesHandler() wa.EventHandler {
 		MatchFunc: func(msg string) bool {
 			return b.sanitizeCommand(msg) == "cenik"
 		},
-		HandleFunc: func(from, msg string) error {
+		HandleFunc: func(from, msg string) (string, error) {
 			reply := "Ceník: \n" +
 				"- Vše 25 Kč \n" +
 				"- Víno 130 Kč"
 			b.storeConversation(from, msg, reply)
-			err := b.whatsapp.SendText(from, reply)
-			return err
+			return reply, nil
 		},
 	}
 }
@@ -304,14 +325,15 @@ func (b *Botka) qrPaymentHandler() wa.EventHandler {
 		MatchFunc: func(msg string) bool {
 			return len(msg) < 10 && strings.HasPrefix(b.sanitizeCommand(msg), "qr")
 		},
-		HandleFunc: func(from, msg string) error {
+		HandleFunc: func(from, msg string) (string, error) {
+			errMsg := "Nepodařilo se vygenerovat QR kód"
 			if b.config.FioIban == "" {
-				return fmt.Errorf("fio IBAN is not configured")
+				return errMsg, fmt.Errorf("fio IBAN is not configured")
 			}
 
 			payment := qrpay.NewSpaydPayment()
 			if err := payment.SetIBAN(b.config.FioIban); err != nil {
-				return fmt.Errorf("could not set IBAN: %w", err)
+				return errMsg, fmt.Errorf("could not set IBAN: %w", err)
 			}
 
 			amount, err := parseAmountFromQrPaymentCommand(msg)
@@ -324,17 +346,16 @@ func (b *Botka) qrPaymentHandler() wa.EventHandler {
 
 			img, err := qrpay.GetQRCodeImage(payment)
 			if err != nil {
-				return fmt.Errorf("could not get QR Code: %w", err)
+				return errMsg, fmt.Errorf("could not get QR Code: %w", err)
 			}
 
 			err = b.whatsapp.SendImage(from, "Zaplať QR kódem", img)
 			if err != nil {
-				return fmt.Errorf("could not send image: %w", err)
+				return errMsg, fmt.Errorf("could not send image: %w", err)
 			}
 
 			b.storeConversation(from, msg, "Image with QR code for payment has been sent.")
-
-			return nil
+			return "", nil
 		},
 	}
 }
@@ -344,12 +365,12 @@ func (b *Botka) bankHandler() wa.EventHandler {
 		MatchFunc: func(msg string) bool {
 			return len(msg) < 8 && strings.HasPrefix(b.sanitizeCommand(msg), "bank")
 		},
-		HandleFunc: func(from, msg string) error {
+		HandleFunc: func(from, msg string) (string, error) {
 			err := b.scale.BankRefresh(context.Background(), true)
 			if err != nil {
 				b.logger.Errorf("could not refresh bank data: %v", err)
 				reply := "Něco se pokazilo při načítání dat z banky. Zkus to prosím znovu později."
-				return b.whatsapp.SendText(from, reply)
+				return reply, nil
 			}
 
 			s := b.scale.GetScale()
@@ -364,7 +385,7 @@ func (b *Botka) bankHandler() wa.EventHandler {
 
 			reply := strings.TrimSuffix(sb.String(), "\n")
 			b.storeConversation(from, msg, reply)
-			return b.whatsapp.SendText(from, reply)
+			return reply, nil
 		},
 	}
 }
@@ -374,7 +395,7 @@ func (b *Botka) warehouseHandler() wa.EventHandler {
 		MatchFunc: func(msg string) bool {
 			return b.sanitizeCommand(msg) == "sklad"
 		},
-		HandleFunc: func(from, msg string) error {
+		HandleFunc: func(from, msg string) (string, error) {
 			s := b.scale.GetScale()
 			reply := fmt.Sprintf("Ve skladu máme celkem %d piv.", s.WarehouseBeerLeft)
 			for _, w := range s.Warehouse {
@@ -383,8 +404,7 @@ func (b *Botka) warehouseHandler() wa.EventHandler {
 				}
 			}
 			b.storeConversation(from, msg, reply)
-			err := b.whatsapp.SendText(from, reply)
-			return err
+			return reply, nil
 		},
 	}
 }
@@ -394,7 +414,7 @@ func (b *Botka) resetHandler() wa.EventHandler {
 		MatchFunc: func(msg string) bool {
 			return strings.HasPrefix(b.sanitizeCommand(msg), "reset")
 		},
-		HandleFunc: func(from, _ string) error {
+		HandleFunc: func(from, _ string) (string, error) {
 			err := b.storage.ResetConversation(from)
 			reply := "Cože? O čem jsme to mluvili? 🤔"
 			if err != nil {
@@ -404,7 +424,7 @@ func (b *Botka) resetHandler() wa.EventHandler {
 				b.logger.Infof("conversation with %q has been reset", from)
 			}
 
-			return b.whatsapp.SendText(from, reply)
+			return reply, nil
 		},
 	}
 }
@@ -414,7 +434,7 @@ func (b *Botka) secretHelpHandler() wa.EventHandler {
 		MatchFunc: func(msg string) bool {
 			return checkSecretCommand(msg, b.config.Commands.Help)
 		},
-		HandleFunc: func(from, _ string) error {
+		HandleFunc: func(from, _ string) (string, error) {
 			sb := strings.Builder{}
 
 			sb.WriteString("*Příkazy:*\n")
@@ -426,12 +446,7 @@ func (b *Botka) secretHelpHandler() wa.EventHandler {
 
 			sb.WriteString("\nPříkaz musí být napsaný přesně tak, jak je zde uveden.")
 
-			err := b.whatsapp.SendText(from, sb.String())
-			if err != nil {
-				return fmt.Errorf("could not send message: %w", err)
-			}
-
-			return nil
+			return sb.String(), nil
 		},
 	}
 }
@@ -441,20 +456,14 @@ func (b *Botka) openHandler() wa.EventHandler {
 		MatchFunc: func(msg string) bool {
 			return checkSecretCommand(msg, b.config.Commands.Open)
 		},
-		HandleFunc: func(from, _ string) error {
+		HandleFunc: func(from, _ string) (string, error) {
 			reply := "Jasnňačka! Otevírám hospodu. 🍻"
-
 			if err := b.scale.ForceOpen(); err != nil {
 				b.logger.Infof("could not open pub: %v", err)
 				reply = "Něco se pokazilo, hospodu se nepodařilo otevřít. Zkus to prosím znovu později."
 			}
 
-			err := b.whatsapp.SendText(from, reply)
-			if err != nil {
-				return fmt.Errorf("could not send message: %w", err)
-			}
-
-			return nil
+			return reply, nil
 		},
 	}
 }
@@ -464,15 +473,15 @@ func (b *Botka) cepHandler() wa.EventHandler {
 		MatchFunc: func(msg string) bool {
 			return strings.HasPrefix(b.sanitizeCommand(msg), "cep")
 		},
-		HandleFunc: func(from, msg string) error {
+		HandleFunc: func(from, msg string) (string, error) {
 			beer := strings.TrimSpace(msg[4:]) // remove the command prefix
 
 			if err := b.storage.SetTodayBeer(beer); err != nil {
-				return fmt.Errorf("could not set today beer: %w", err)
+				return "Nepodařilo se mi nastavit pivo na dnešek", fmt.Errorf("could not set today beer: %w", err)
 			}
 
 			reply := fmt.Sprintf("Ok, zmíním pivo: %s při otevření hospody.", beer)
-			return b.whatsapp.SendText(from, reply)
+			return reply, nil
 		},
 	}
 }
@@ -482,24 +491,19 @@ func (b *Botka) volleyballHandler() wa.EventHandler {
 		MatchFunc: func(msg string) bool {
 			return checkSecretCommand(msg, b.config.Commands.Volleyball)
 		},
-		HandleFunc: func(from, _ string) error {
-			reply := "Rozkaz kapitáne! 🏐🏐\n\nHned vygeneruji zprávu o volejbalu a pošlu ji do skupiny Hospoda."
-			err := b.whatsapp.SendText(from, reply)
-			if err != nil {
-				return fmt.Errorf("could not send message: %w", err)
-			}
-
+		HandleFunc: func(from, _ string) (string, error) {
 			msg, err := b.ai.GenerateVolleyballMessage()
 			if err != nil {
-				return fmt.Errorf("could not generate volleyball message: %w", err)
+				return "Nepodařilo se mi vygenerovat zprávu", fmt.Errorf("could not generate volleyball message: %w", err)
 			}
 
 			err = b.whatsapp.SendText(b.config.WhatsAppOpenJid, msg)
 			if err != nil {
-				return fmt.Errorf("could not send volleyball message to group chat: %w", err)
+				return "Nepodařilo se mi odeslat zprávu do skupiny", fmt.Errorf("could not send volleyball message to group chat: %w", err)
 			}
 
-			return nil
+			reply := "Rozkaz kapitáne! 🏐🏐\n\nHned vygeneruji zprávu o volejbalu a pošlu ji do skupiny Hospoda."
+			return reply, nil
 		},
 	}
 }
@@ -509,17 +513,11 @@ func (b *Botka) noMessageHandler() wa.EventHandler {
 		MatchFunc: func(msg string) bool {
 			return checkSecretCommand(msg, b.config.Commands.NoMessage)
 		},
-		HandleFunc: func(from, _ string) error {
+		HandleFunc: func(from, _ string) (string, error) {
 			b.scale.ResetOpenAt()
 			b.logger.Infof("%s requested no message open", from)
-
 			reply := "Rozumím, dneska na tajňačku!! 🤫🤫"
-			err := b.whatsapp.SendText(from, reply)
-			if err != nil {
-				return fmt.Errorf("could not send message: %w", err)
-			}
-
-			return nil
+			return reply, nil
 		},
 	}
 }
@@ -529,23 +527,19 @@ func (b *Botka) shoutHandler() wa.EventHandler {
 		MatchFunc: func(msg string) bool {
 			return strings.HasPrefix(msg, fmt.Sprintf("!%s", b.config.Commands.Shout))
 		},
-		HandleFunc: func(from, msg string) error {
+		HandleFunc: func(from, msg string) (string, error) {
 			text := strings.TrimSpace(strings.TrimPrefix(msg, fmt.Sprintf("!%s", b.config.Commands.Shout)))
 			if text == "" {
-				return fmt.Errorf("no message provided for shout command")
-			}
-
-			reply := "Ok, posílám zprávu do skupiny Hospoda."
-			if err := b.whatsapp.SendText(from, reply); err != nil {
-				return fmt.Errorf("could not send message: %w", err)
+				return "Musíš něco napsat.", fmt.Errorf("no message provided for shout command")
 			}
 
 			if err := b.whatsapp.SendText(b.config.WhatsAppOpenJid, text); err != nil {
-				return fmt.Errorf("could not send shout message to the group chat: %w", err)
+				return "Nepodařilo se mi poslat zprávu do skupiny Hospoda.", fmt.Errorf("could not send shout message to the group chat: %w", err)
 			}
 
 			b.logger.Infof("%s requested shout command", from)
-			return nil
+			reply := "Ok, posílám zprávu do skupiny Hospoda."
+			return reply, nil
 		},
 	}
 }
@@ -555,7 +549,7 @@ func (b *Botka) aiHandler() wa.EventHandler {
 		MatchFunc: func(_ string) bool {
 			return true // always match as a backup command
 		},
-		HandleFunc: func(from, msg string) error {
+		HandleFunc: func(from, msg string) (string, error) {
 			err := b.whatsapp.SetTyping(from, true)
 			if err != nil {
 				b.logger.Warnf("could not set typing: %v", err)
@@ -570,7 +564,7 @@ func (b *Botka) aiHandler() wa.EventHandler {
 
 			conversation, err := b.storage.GetConversation(from)
 			if err != nil {
-				return fmt.Errorf("could not get conversation: %w", err)
+				return "Nemůžu ti odpovědět, protože se mi nepodařilo načíst konverzaci.", fmt.Errorf("could not get conversation: %w", err)
 			}
 
 			var messages []ai.ChatMessage
@@ -610,12 +604,16 @@ func (b *Botka) aiHandler() wa.EventHandler {
 			}
 
 			b.storeConversation(from, msg, response.Text)
-			return b.whatsapp.SendText(from, response.Text)
+			return response.Text, nil
 		},
 	}
 }
 
 func (b *Botka) storeConversation(id, question, answer string) {
+	if id == "API" {
+		return
+	}
+
 	now := time.Now()
 	err := b.storage.AddConversationMessage(id, store.ConservationMessage{
 		ID:      id,
