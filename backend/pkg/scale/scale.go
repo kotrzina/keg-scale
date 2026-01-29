@@ -105,8 +105,9 @@ func New(
 
 		attendance: attendance{
 			irks:   []Irk{},
-			active: []Device{},
+			active: map[string]Device{},
 			known:  map[string]string{},
+			lastOk: time.Now().Add(-9999 * time.Hour),
 		},
 
 		lastOk: time.Now().Add(-9999 * time.Hour),
@@ -235,10 +236,10 @@ func (s *Scale) loadDataFromStore() {
 	if err == nil {
 		i := 0
 		irks := make([]Irk, len(irksRaw))
-		for address, name := range irksRaw {
+		for address, irk := range irksRaw {
 			irks[i] = Irk{
 				IdentityAddress: address,
-				DeviceName:      name,
+				Irk:             irk,
 			}
 			i++
 		}

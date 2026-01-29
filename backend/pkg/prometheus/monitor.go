@@ -120,7 +120,7 @@ func New() *Monitor {
 
 		AttendanceIrkCount: prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Name: "attendance_irk",
-			Help: "Number of IRKs stored in the attendance device",
+			Help: "Number of IRKs",
 		}, []string{}),
 
 		AnthropicInputTokens: prometheus.NewCounterVec(prometheus.CounterOpts{
