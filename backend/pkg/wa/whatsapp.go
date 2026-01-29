@@ -34,7 +34,7 @@ type WhatsAppClient struct {
 
 type EventMatchFunc func(msg string) bool
 
-type EventHandleFunc func(from, msg string) error // from = sender ID
+type EventHandleFunc func(from, msg string) (string, error) // from = sender ID
 
 type EventHandler struct {
 	MatchFunc  EventMatchFunc
@@ -170,13 +170,19 @@ func (wa *WhatsAppClient) handleIncomingMessage(msg *events.Message) {
 
 	for _, handler := range wa.handlers {
 		if handler.MatchFunc(text) {
-			if err := handler.HandleFunc(from, text); err != nil {
-				wa.logger.Errorf("Failed from handle message: %v", err)
-				err = wa.SendText(from, "🥺Omlouvám se, ale něco se pokazilo. Zkuste to prosím později znovu.")
-				if err != nil {
-					wa.logger.Errorf("Failed to send WA error message: %v", err)
+			reply, err := handler.HandleFunc(from, text)
+			if err != nil {
+				wa.logger.Errorf("Handler error: %v", err)
+				if reply == "" {
+					reply = "🥺Omlouvám se, ale něco se pokazilo. Zkuste to prosím později znovu."
 				}
 			}
+			if reply != "" {
+				if serr := wa.SendText(from, reply); serr != nil {
+					wa.logger.Errorf("Failed to send reply: %v", serr)
+				}
+			}
+
 			break // do not process other handlers
 		}
 	}

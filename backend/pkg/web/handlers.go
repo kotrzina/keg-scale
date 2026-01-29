@@ -13,6 +13,7 @@ import (
 	"github.com/dundee/qrpay"
 	"github.com/kotrzina/keg-scale/pkg/ai"
 	"github.com/kotrzina/keg-scale/pkg/config"
+	"github.com/kotrzina/keg-scale/pkg/hook"
 	"github.com/kotrzina/keg-scale/pkg/promector"
 	"github.com/kotrzina/keg-scale/pkg/prometheus"
 	"github.com/kotrzina/keg-scale/pkg/scale"
@@ -31,6 +32,7 @@ type HandlerRepository struct {
 	monitor   *prometheus.Monitor
 	logger    *logrus.Logger
 	wa        *wa.WhatsAppClient
+	botka     *hook.Botka
 }
 
 func NewHandlerRepository(
@@ -41,6 +43,8 @@ func NewHandlerRepository(
 	monitor *prometheus.Monitor,
 	logger *logrus.Logger,
 	wa *wa.WhatsAppClient,
+	botka *hook.Botka,
+
 ) *HandlerRepository {
 	return &HandlerRepository{
 		scale:     scale,
@@ -50,6 +54,7 @@ func NewHandlerRepository(
 		monitor:   monitor,
 		logger:    logger,
 		wa:        wa,
+		botka:     botka,
 	}
 }
 
@@ -261,15 +266,38 @@ func (hr *HandlerRepository) aiTestHandler() func(http.ResponseWriter, *http.Req
 			return
 		}
 
-		resp, err := hr.ai.GetResponse(data, ai.ModelQualityHigh)
-		if err != nil {
-			hr.logger.Errorf("could not get response from AI: %v", err)
-			resp = ai.Response{
-				Text: "Teď bohužel nedokážu odpovědět. Zkus to prosím později.",
-				Cost: ai.Cost{
-					Input:  0,
-					Output: 0,
-				},
+		resp := ai.Response{
+			Cost: ai.Cost{
+				Input:  0,
+				Output: 0,
+			},
+		}
+
+		// try botka handlers first
+		handlers := hr.botka.ProvideWebHandlers()
+		lastMessage := data[len(data)-1]
+		for _, handler := range handlers {
+			if handler.MatchFunc(lastMessage.Text) {
+				resp.Text, err = handler.HandleFunc("API", lastMessage.Text)
+				if err != nil {
+					hr.logger.Errorf("could not handle message: %v", err)
+				}
+				break
+			}
+		}
+
+		// if no botka handler found, try ai
+		if resp.Text == "" {
+			resp, err = hr.ai.GetResponse(data, ai.ModelQualityHigh)
+			if err != nil {
+				hr.logger.Errorf("could not get response from AI: %v", err)
+				resp = ai.Response{
+					Text: "Teď bohužel nedokážu odpovědět. Zkus to prosím později.",
+					Cost: ai.Cost{
+						Input:  0,
+						Output: 0,
+					},
+				}
 			}
 		}
 

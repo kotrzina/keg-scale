@@ -58,7 +58,7 @@ func main() {
 
 	kegScale := scale.New(ctx, monitor, storage, conf, logger)
 	intelligence := ai.NewAi(ctx, conf, kegScale, monitor, storage, logger)
-	_ = hook.NewBotka(whatsapp, kegScale, intelligence, conf, storage, logger)
+	botka := hook.NewBotka(whatsapp, kegScale, intelligence, conf, storage, logger)
 
 	router := web.NewRouter(web.NewHandlerRepository(
 		kegScale,
@@ -68,6 +68,7 @@ func main() {
 		monitor,
 		logger,
 		whatsapp,
+		botka,
 	))
 
 	srv := web.StartServer(router, 8080, logger)
