@@ -33,7 +33,7 @@ function Chat(props) {
             return [{ text: text, from: "me" }, ...curr]
         })
 
-        const request = new Request(buildUrl("/api/ai/test"), {
+        const request = new Request(buildUrl("/api/ai/chat"), {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
