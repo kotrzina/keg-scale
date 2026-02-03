@@ -52,6 +52,7 @@ func (hr *HandlerRepository) attendanceHandler() func(http.ResponseWriter, *http
 
 		irks := hr.scale.GetIrks()
 		known := hr.scale.GetKnownDevices()
+		knownCount := 0
 
 		for _, dev := range req.Ble {
 			addr := dev.Address
@@ -59,11 +60,13 @@ func (hr *HandlerRepository) attendanceHandler() func(http.ResponseWriter, *http
 
 			_, isKnown := known[addr]
 			if isKnown {
+				knownCount++
 				bounded = true // known devices are always "bounded"
 			}
 
 			irk, found := resolveRPA(dev.Address, irks)
 			if found {
+				knownCount++
 				addr = irk.IdentityAddress // rewrite current RPA by bond address
 				bounded = true
 			}
@@ -86,6 +89,7 @@ func (hr *HandlerRepository) attendanceHandler() func(http.ResponseWriter, *http
 		hr.monitor.AttendanceWifiRssi.WithLabelValues().Set(float64(req.Telemetry.WifiRssi))
 		hr.monitor.AttendanceDetectedCount.WithLabelValues().Set(float64(len(devices)))
 		hr.monitor.AttendanceIrkCount.WithLabelValues().Set(float64(len(irks)))
+		hr.monitor.AttendanceKnownCount.WithLabelValues().Set(float64(knownCount))
 
 		hr.scale.SetDevices(devices)
 

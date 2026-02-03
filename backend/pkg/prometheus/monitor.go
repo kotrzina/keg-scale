@@ -24,6 +24,7 @@ type Monitor struct {
 	AttendanceMinFreeHeap   *prometheus.GaugeVec
 	AttendanceWifiRssi      *prometheus.GaugeVec
 	AttendanceDetectedCount *prometheus.GaugeVec
+	AttendanceKnownCount    *prometheus.GaugeVec
 	AttendanceIrkCount      *prometheus.GaugeVec
 
 	AnthropicInputTokens  *prometheus.CounterVec
@@ -118,6 +119,11 @@ func New() *Monitor {
 			Help: "Number of detected devices using BLE scan",
 		}, []string{}),
 
+		AttendanceKnownCount: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Name: "attendance_known",
+			Help: "Number of known devices using BLE scan",
+		}, []string{}),
+
 		AttendanceIrkCount: prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Name: "attendance_irk",
 			Help: "Number of IRKs",
@@ -165,6 +171,7 @@ func New() *Monitor {
 		monitor.AttendanceMinFreeHeap,
 		monitor.AttendanceWifiRssi,
 		monitor.AttendanceDetectedCount,
+		monitor.AttendanceKnownCount,
 		monitor.AttendanceIrkCount,
 	)
 
