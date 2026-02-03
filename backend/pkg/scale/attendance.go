@@ -90,6 +90,19 @@ func (s *Scale) SetDevices(devices map[string]Device) {
 	s.attendance.lastOk = time.Now()
 }
 
+func (s *Scale) GetKnownDevices() map[string]string {
+	s.mux.Lock()
+	defer s.mux.Unlock()
+
+	// create a copy of known devices
+	r := make(map[string]string, len(s.attendance.known))
+	for k, v := range s.attendance.known {
+		r[k] = v
+	}
+
+	return r
+}
+
 func (s *Scale) RenameKnownDevice(address string, newName string) error {
 	s.mux.Lock()
 	defer s.mux.Unlock()

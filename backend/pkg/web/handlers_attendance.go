@@ -51,15 +51,23 @@ func (hr *HandlerRepository) attendanceHandler() func(http.ResponseWriter, *http
 		devices := make(map[string]scale.Device)
 
 		irks := hr.scale.GetIrks()
+		known := hr.scale.GetKnownDevices()
 
 		for _, dev := range req.Ble {
 			addr := dev.Address
 			bounded := false
+
+			_, isKnown := known[addr]
+			if isKnown {
+				bounded = true // known devices are always "bounded"
+			}
+
 			irk, found := resolveRPA(dev.Address, irks)
 			if found {
 				addr = irk.IdentityAddress // rewrite current RPA by bond address
 				bounded = true
 			}
+
 			devices[addr] = scale.Device{
 				IdentityAddress: addr,
 				RSSI:            dev.Rssi,
