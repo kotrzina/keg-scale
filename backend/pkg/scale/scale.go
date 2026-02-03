@@ -339,6 +339,9 @@ func (s *Scale) Recheck() {
 	if !s.isOk() && s.pub.isOpen {
 		s.updatePub(false, false) // close the pub
 	}
+
+	// we want to remove expired devices even if the BT device does not work
+	s.deleteInactiveBtDevices()
 }
 
 // BankRefresh refreshes the bank transactions and balance

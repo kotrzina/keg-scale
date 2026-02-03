@@ -5,6 +5,8 @@ import (
 	"time"
 )
 
+const btDeviceTimeout = 15 * time.Minute
+
 type Irk struct {
 	IdentityAddress string `json:"identity_address"`
 	Irk             string `json:"irk"`
@@ -80,14 +82,16 @@ func (s *Scale) SetDevices(devices map[string]Device) {
 		s.attendance.active[address] = device
 	}
 
-	// delete inactive devices
+	s.deleteInactiveBtDevices()
+	s.attendance.lastOk = time.Now()
+}
+
+func (s *Scale) deleteInactiveBtDevices() {
 	for address, device := range s.attendance.active {
-		if device.LastSeen.Before(time.Now().Add(-15 * time.Minute)) {
+		if device.LastSeen.Before(time.Now().Add(-btDeviceTimeout)) {
 			delete(s.attendance.active, address)
 		}
 	}
-
-	s.attendance.lastOk = time.Now()
 }
 
 func (s *Scale) GetKnownDevices() map[string]string {
