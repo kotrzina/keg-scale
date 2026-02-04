@@ -59,6 +59,7 @@ func NewBotka(
 		client.RegisterEventHandler(w.helpHandler())
 		client.RegisterEventHandler(w.helloHandler())
 		client.RegisterEventHandler(w.pubHandler())
+		client.RegisterEventHandler(w.peopleHandler())
 		client.RegisterEventHandler(w.thirstHandler())
 		client.RegisterEventHandler(w.kegHandler())
 		client.RegisterEventHandler(w.pricesHandler())
@@ -95,6 +96,7 @@ func (b *Botka) ProvideWebHandlers() []wa.EventHandler {
 		b.helpHandler(),
 		b.helloHandler(),
 		b.pubHandler(),
+		b.peopleHandler(),
 		b.thirstHandler(),
 		b.kegHandler(),
 		b.pricesHandler(),
@@ -267,6 +269,38 @@ func (b *Botka) thirstHandler() wa.EventHandler {
 
 			reply := "🙋🏻Ok, hned vygeneruji zprávu pro štamgasty."
 			return reply, nil
+		},
+	}
+}
+
+// provides a list of people in the pub
+func (b *Botka) peopleHandler() wa.EventHandler {
+	return wa.EventHandler{
+		MatchFunc: func(msg string) bool {
+			sanitized := b.sanitizeCommand(msg)
+			return strings.HasPrefix(sanitized, "stul")
+		},
+		HandleFunc: func(from, msg string) (string, error) {
+			output := b.scale.GetScale()
+
+			var names []string
+			for _, bt := range output.BtDevices {
+				if bt.Known {
+					names = append(names, bt.Name)
+				}
+			}
+
+			if len(names) == 0 {
+				return "🪹Nikdo v hospodě není.", nil
+			}
+
+			sb := strings.Builder{}
+			sb.WriteString("🍻Osazenstvo:\n")
+			for _, name := range names {
+				sb.WriteString(fmt.Sprintf("- %s\n", name))
+			}
+
+			return strings.TrimSpace(sb.String()), nil
 		},
 	}
 }
