@@ -498,10 +498,6 @@ func (s *Scale) ForceOpen() error {
 	s.mux.Lock()
 	defer s.mux.Unlock()
 
-	if s.pub.isOpen {
-		return fmt.Errorf("already open")
-	}
-
 	s.updatePub(true, true)
 	return nil
 }
