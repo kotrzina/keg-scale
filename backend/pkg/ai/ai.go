@@ -43,6 +43,11 @@ var customOpenPrompt string
 //go:embed prompts/general_open.prompt
 var customGeneralMessage string
 
+// svazOpenPrompt general opening message from svazarm
+//
+//go:embed prompts/svaz_open.prompt
+var svazOpenPrompt string
+
 // customGeneralMessage general opening message prompt
 //
 //go:embed prompts/regulars_request.prompt
@@ -105,7 +110,6 @@ func (ai *Ai) GenerateGeneralOpenMessage() (string, error) {
 	}
 
 	templatedPrompt := strings.ReplaceAll(customGeneralMessage, "${requirements}", req.String())
-	fmt.Println(templatedPrompt)
 	messages := []ChatMessage{
 		{
 			From: Me,
@@ -116,6 +120,23 @@ func (ai *Ai) GenerateGeneralOpenMessage() (string, error) {
 	resp, err := ai.GetResponse(messages, ModelQualityHigh)
 	if err != nil {
 		return "", fmt.Errorf("failed to generate open message %w", err)
+	}
+
+	return resp.Text, nil
+}
+
+// GenerateSvazOpenMessage generates a message for group WhatsApp chat to open the pub from svazarm
+func (ai *Ai) GenerateSvazOpenMessage() (string, error) {
+	messages := []ChatMessage{
+		{
+			From: Me,
+			Text: svazOpenPrompt,
+		},
+	}
+
+	resp, err := ai.GetResponse(messages, ModelQualityHigh)
+	if err != nil {
+		return "", fmt.Errorf("failed to generate svaz open message %w", err)
 	}
 
 	return resp.Text, nil

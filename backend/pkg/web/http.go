@@ -55,10 +55,15 @@ func NewRouter(hr *HandlerRepository) *mux.Router {
 	router.HandleFunc("/api/scale/dashboard", hr.scaleDashboardHandler())
 	router.HandleFunc("/api/scale/chart", hr.scaleChartHandler())
 	router.HandleFunc("/api/scale/warehouse", hr.scaleWarehouseHandler())
+
+	router.HandleFunc("/api/button/svazarm/open", hr.buttonSvazarmOpen())
+
 	router.HandleFunc("/api/ai/test", hr.aiTestHandler())
 	router.HandleFunc("/api/ai/chat", hr.aiTestHandler())
 	router.HandleFunc("/api/payment/qr", hr.paymentQrHandler())
 	router.HandleFunc("/api/bank/refresh", hr.forceBankRefresh())
+
+
 
 	router.HandleFunc("/api/irks", hr.attendanceIrksHandler())
 	router.HandleFunc("/api/attendance", hr.attendanceHandler())

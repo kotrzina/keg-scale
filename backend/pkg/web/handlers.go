@@ -240,6 +240,42 @@ func (hr *HandlerRepository) scaleWarehouseHandler() func(http.ResponseWriter, *
 	}
 }
 
+func (hr *HandlerRepository) buttonSvazarmOpen() func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		auth := r.Header.Get("Authorization")
+		if auth != hr.config.AuthToken {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		// temporary halt to test the button
+		hr.logger.Infof("Received button svazarm open")
+		w.WriteHeader(http.StatusNoContent)
+		return
+
+		//msg, err := hr.ai.GenerateSvazOpenMessage()
+		//if err != nil {
+		//	hr.logger.Errorf("Could not generate open message: %v", err)
+		//	w.WriteHeader(http.StatusInternalServerError)
+		//	return
+		//}
+		//
+		//err = hr.wa.SendText(hr.config.WhatsAppOpenJid, msg)
+		//if err != nil {
+		//	hr.logger.Errorf("Could not send open message: %v", err)
+		//	w.WriteHeader(http.StatusInternalServerError)
+		//	return
+		//}
+		//
+		//w.WriteHeader(http.StatusNoContent)
+	}
+}
+
 func (hr *HandlerRepository) aiTestHandler() func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
