@@ -1,4 +1,4 @@
-FROM golang:1.25 AS backend
+FROM golang:1.26 AS backend
 ENV CGO_ENABLED=0
 ADD backend /app
 WORKDIR /app

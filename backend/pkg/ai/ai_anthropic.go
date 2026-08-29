@@ -43,7 +43,7 @@ func NewAnthropic(ctx context.Context, conf *config.Config, s *scale.Scale, m *p
 
 func (ai *Anthropic) GetQuality(_ ModelQuality) string {
 	// we use sonnet only
-	return string(anthropic.ModelClaude3Dot5SonnetLatest)
+	return string(anthropic.ModelClaudeSonnet5)
 }
 
 func (ai *Anthropic) GetResponse(history []ChatMessage, quality ModelQuality) (Response, error) {
