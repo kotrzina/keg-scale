@@ -5,3 +5,5 @@
 /firmware/src/secrets.h
 
 .env
+
+/firmware-pinger/src/secrets.h
