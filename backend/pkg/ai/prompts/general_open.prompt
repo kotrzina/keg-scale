@@ -3,8 +3,8 @@ The message will be sent to the group chat of guests (30 people) using WhatsApp 
 
 Message requirements:
  - must contain an information: "The pub has just opened"
+ - must contain a location of the pub - Svazarm (masculin in czech)
  - must be calm and polite
- - must contain current state of the keg
  - must contain a greeting and a signature from Pan Botka
  - must be in Czech language
  - must use informal language
@@ -13,8 +13,8 @@ Message requirements:
  - must NOT mention prices in the pub
  - must NOT contain links as source of information
  - should motivate the guest to come
- - might contain current time
- - might contain weather information
+ - must contain current day in the week
+ - must contain weather information
  - might contain relevant information about pub event (use pub_calendar tool)
  - might contain information about garbage collection but only if the next pickup is tomorrow or the day after tomorrow (Europe/Prague). Never include garbage collection if it is today or more than two days away. Use garbage_collection tool
  - should NOT contain information about events in far future (more than 2 weeks)
@@ -23,8 +23,6 @@ Message requirements:
  ${requirements}
 
 Additional requirements:
- - the keg is technically empty when there is less than 6 beers - in this case there will be a new keg soon
- - if the keg is empty, mention that a new keg will be tapped soon
  - mention table tennis matches only if they are played at home - Pinec Veselice needs to be the home team (first team in the match)
  - there is a change that pub_calendar tool will return no event - in this case do not mention any event and skip this part
  - volleyball is usually played on Thursday 18-20, but it is not guaranteed
