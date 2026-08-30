@@ -112,3 +112,31 @@ func TestParseAmountFromQrPaymentCommand(t *testing.T) {
 		})
 	}
 }
+
+func TestParsePubTestingCommand(t *testing.T) {
+	tests := []struct {
+		command string
+		want    bool
+		wantOk  bool
+	}{
+		{command: "pubtesting on", want: true, wantOk: true},
+		{command: "pubtesting off", want: false, wantOk: true},
+		{command: "pubtesting", want: false, wantOk: false},
+		{command: "pubtesting onn", want: false, wantOk: false},
+		{command: "pubtesting on off", want: false, wantOk: false},
+		{command: "pub", want: false, wantOk: false},
+	}
+
+	b := Botka{}
+	match := b.pubTestingHandler().MatchFunc
+	for _, tt := range tests {
+		t.Run(tt.command, func(t *testing.T) {
+			got, ok := parsePubTestingCommand(tt.command)
+			assert.Equal(t, tt.wantOk, ok)
+			assert.Equal(t, tt.want, got)
+
+			// the handler has to match the same commands - with the ! prefix
+			assert.Equal(t, tt.wantOk, match("!"+tt.command))
+		})
+	}
+}

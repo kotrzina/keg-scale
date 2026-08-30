@@ -354,6 +354,18 @@ func (s *PostgresStore) GetIsOpen() (bool, error) {
 	return strconv.ParseBool(val)
 }
 
+func (s *PostgresStore) SetPubTesting(pubTesting bool) error {
+	return s.setValue("pub_testing", strconv.FormatBool(pubTesting))
+}
+
+func (s *PostgresStore) GetPubTesting() (bool, error) {
+	val, err := s.getValue("pub_testing")
+	if err != nil {
+		return false, err
+	}
+	return strconv.ParseBool(val)
+}
+
 func (s *PostgresStore) SetTodayBeer(todayBeer string) error {
 	return s.setValue("today_beer", todayBeer)
 }

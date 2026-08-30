@@ -62,6 +62,7 @@ func main() {
 
 	router := web.NewRouter(web.NewHandlerRepository(
 		kegScale,
+		storage,
 		prometheusCollector,
 		intelligence,
 		conf,

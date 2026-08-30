@@ -17,6 +17,7 @@ import (
 	"github.com/kotrzina/keg-scale/pkg/promector"
 	"github.com/kotrzina/keg-scale/pkg/prometheus"
 	"github.com/kotrzina/keg-scale/pkg/scale"
+	"github.com/kotrzina/keg-scale/pkg/store"
 	"github.com/kotrzina/keg-scale/pkg/utils"
 	"github.com/kotrzina/keg-scale/pkg/wa"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -26,6 +27,7 @@ import (
 
 type HandlerRepository struct {
 	scale     *scale.Scale
+	store     store.Storage
 	promector *promector.Promector
 	ai        *ai.Ai
 	config    *config.Config
@@ -37,6 +39,7 @@ type HandlerRepository struct {
 
 func NewHandlerRepository(
 	scale *scale.Scale,
+	store store.Storage,
 	promector *promector.Promector,
 	ai *ai.Ai,
 	config *config.Config,
@@ -48,6 +51,7 @@ func NewHandlerRepository(
 ) *HandlerRepository {
 	return &HandlerRepository{
 		scale:     scale,
+		store:     store,
 		promector: promector,
 		ai:        ai,
 		config:    config,
@@ -81,6 +85,23 @@ func (hr *HandlerRepository) scaleMessageHandler() func(http.ResponseWriter, *ht
 		if err != nil {
 			hr.logger.Warnf("Could not parse scale message: %s because %v", string(body), err)
 			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		// the flag does not have to be set at all - in that case we are not in the testing mode
+		// we never want to drop a real measurement because of the storage error
+		pubTesting, err := hr.store.GetPubTesting()
+		if err != nil {
+			hr.logger.Warnf("Could not get pub testing from the storage: %v", err)
+			pubTesting = false
+		}
+
+		if pubTesting {
+			hr.logger.Warnf("Pub testing is enabled, skipping scale message processing message: %s", string(body))
+			_, err = w.Write([]byte(hr.scale.GetPushResponse()))
+			if err != nil {
+				hr.logger.Errorf("Could not write response: %v", err)
+			}
 			return
 		}
 

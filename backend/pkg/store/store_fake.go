@@ -6,8 +6,9 @@ import (
 
 // FakeStore is primarily used for testing purposes
 type FakeStore struct {
-	beersLeft int
-	isLow     bool
+	beersLeft  int
+	isLow      bool
+	pubTesting bool
 }
 
 func (s *FakeStore) AddEvent(_ string) error {
@@ -115,6 +116,15 @@ func (s *FakeStore) SetIsOpen(_ bool) error {
 
 func (s *FakeStore) GetIsOpen() (bool, error) {
 	return false, nil
+}
+
+func (s *FakeStore) SetPubTesting(pubTesting bool) error {
+	s.pubTesting = pubTesting
+	return nil
+}
+
+func (s *FakeStore) GetPubTesting() (bool, error) {
+	return s.pubTesting, nil
 }
 
 func (s *FakeStore) SetTodayBeer(_ string) error {

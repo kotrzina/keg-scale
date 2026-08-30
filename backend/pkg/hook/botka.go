@@ -71,6 +71,7 @@ func NewBotka(
 		client.RegisterEventHandler(w.secretHelpHandler())
 		client.RegisterEventHandler(w.openHandler())
 		client.RegisterEventHandler(w.cepHandler())
+		client.RegisterEventHandler(w.pubTestingHandler())
 		client.RegisterEventHandler(w.volleyballHandler())
 		client.RegisterEventHandler(w.noMessageHandler())
 		client.RegisterEventHandler(w.shoutHandler())
@@ -107,6 +108,7 @@ func (b *Botka) ProvideWebHandlers() []wa.EventHandler {
 		b.secretHelpHandler(),
 		b.openHandler(),
 		b.cepHandler(),
+		b.pubTestingHandler(),
 		b.volleyballHandler(),
 		b.noMessageHandler(),
 		b.shoutHandler(),
@@ -520,6 +522,34 @@ func (b *Botka) cepHandler() wa.EventHandler {
 	}
 }
 
+// pubTestingHandler sets the pub testing flag in the storage
+// hidden command - not listed in any help
+func (b *Botka) pubTestingHandler() wa.EventHandler {
+	return wa.EventHandler{
+		MatchFunc: func(msg string) bool {
+			_, ok := parsePubTestingCommand(b.sanitizeCommand(msg))
+			return ok
+		},
+		HandleFunc: func(from, msg string) (string, error) {
+			state, ok := parsePubTestingCommand(b.sanitizeCommand(msg))
+			if !ok {
+				return "Nerozumím. Použij *!pubtesting on* nebo *!pubtesting off*.", fmt.Errorf("could not parse pub testing command: %s", msg)
+			}
+
+			if err := b.storage.SetPubTesting(state); err != nil {
+				return "Nepodařilo se mi nastavit pubTesting.", fmt.Errorf("could not set pub testing: %w", err)
+			}
+
+			b.logger.Infof("%s set pub testing to %t", from, state)
+			if state {
+				return "Ok, pubTesting zapnut. ✅", nil
+			}
+
+			return "Ok, pubTesting vypnut. 🚫", nil
+		},
+	}
+}
+
 func (b *Botka) volleyballHandler() wa.EventHandler {
 	return wa.EventHandler{
 		MatchFunc: func(msg string) bool {
@@ -697,6 +727,19 @@ func parseAmountFromQrPaymentCommand(command string) (int, error) {
 	}
 
 	return amount, nil
+}
+
+// parsePubTestingCommand parses the sanitized pubtesting command
+// returns the requested state and true if the command is valid
+func parsePubTestingCommand(sanitized string) (bool, bool) {
+	switch strings.TrimSpace(sanitized) {
+	case "pubtesting on":
+		return true, true
+	case "pubtesting off":
+		return false, true
+	default:
+		return false, false
+	}
 }
 
 func mapUser(author store.ConversationMessageAuthor) string {

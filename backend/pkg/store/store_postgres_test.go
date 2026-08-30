@@ -223,6 +223,26 @@ func TestPostgresStore_IsOpen(t *testing.T) {
 	assert.False(t, isOpen)
 }
 
+func TestPostgresStore_PubTesting(t *testing.T) {
+	store := setupTestStore(t)
+
+	// Get pub testing when not set
+	_, err := store.GetPubTesting()
+	require.Error(t, err)
+
+	// Set and get pub testing
+	require.NoError(t, store.SetPubTesting(true))
+	pubTesting, err := store.GetPubTesting()
+	require.NoError(t, err)
+	assert.True(t, pubTesting)
+
+	// Update pub testing
+	require.NoError(t, store.SetPubTesting(false))
+	pubTesting, err = store.GetPubTesting()
+	require.NoError(t, err)
+	assert.False(t, pubTesting)
+}
+
 func TestPostgresStore_Warehouse(t *testing.T) {
 	store := setupTestStore(t)
 

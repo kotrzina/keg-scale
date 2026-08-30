@@ -26,6 +26,7 @@ const (
 	OpenAtKey          = "open_at"
 	CloseAtKey         = "close_at"
 	IsOpenKey          = "is_open"
+	PubTestingKey      = "pub_testing"
 	TodayBeerKey       = "today_beer"
 	ConversationPrefix = "conversation:"
 )
@@ -180,6 +181,14 @@ func (s *RedisStore) SetIsOpen(isOpen bool) error {
 
 func (s *RedisStore) GetIsOpen() (bool, error) {
 	return s.Client.Get(s.ctx, IsOpenKey).Bool()
+}
+
+func (s *RedisStore) SetPubTesting(pubTesting bool) error {
+	return s.Client.Set(s.ctx, PubTestingKey, pubTesting, 0).Err()
+}
+
+func (s *RedisStore) GetPubTesting() (bool, error) {
+	return s.Client.Get(s.ctx, PubTestingKey).Bool()
 }
 
 func (s *RedisStore) SetTodayBeer(beer string) error {

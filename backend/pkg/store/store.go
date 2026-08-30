@@ -56,6 +56,9 @@ type Storage interface {
 	SetIsOpen(isOpen bool) error // set is open flag
 	GetIsOpen() (bool, error)    // get is open flag
 
+	SetPubTesting(pubTesting bool) error // set pub testing flag
+	GetPubTesting() (bool, error)        // get pub testing flag
+
 	SetTodayBeer(todayBeer string) error // set today beer
 	GetTodayBeer() (string, error)       // get today beer
 	ResetTodayBeer() error               // reset today beer
