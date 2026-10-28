@@ -7,3 +7,5 @@
 .env
 
 /firmware-pinger/src/secrets.h
+
+/firmware/build
