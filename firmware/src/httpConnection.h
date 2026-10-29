@@ -19,10 +19,12 @@ public:
     int getBeersLeft();
 
 private:
+    bool resolveBackend();
+
     int status = WL_IDLE_STATUS; // wifi status
     WiFiSSLClient *sslClient;
     WiFiClient *client;
-    HttpClient *backend;
+    IPAddress backendIp; // last successfully resolved BACKEND_HOST, fallback when DNS fails
 
     int lastCode = 0;
     int lastResponse = 0;
